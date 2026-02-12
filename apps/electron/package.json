@@ -2,8 +2,7 @@
 	"name": "@xiaoa/electron",
 	"version": "0.1.0",
 	"private": true,
-	"type": "module",
-	"main": ".vite/build/main.js",
+	"main": ".vite/build/index.js",
 	"scripts": {
 		"dev": "electron-forge start",
 		"build": "electron-forge package",
@@ -19,7 +18,8 @@
 		"jotai": "catalog:",
 		"lucide-react": "catalog:",
 		"react": "catalog:",
-		"react-dom": "catalog:"
+		"react-dom": "catalog:",
+		"scheduler": "^0.27.0"
 	},
 	"devDependencies": {
 		"electron": "^40.4.0",
