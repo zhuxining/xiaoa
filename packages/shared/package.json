@@ -11,5 +11,9 @@
 	},
 	"devDependencies": {
 		"typescript": "catalog:"
+	},
+	"dependencies": {
+		"@mariozechner/pi-agent-core": "^0.52.9",
+		"@mariozechner/pi-ai": "^0.52.9"
 	}
 }
