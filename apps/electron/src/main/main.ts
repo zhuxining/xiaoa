@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import { app, BrowserWindow } from "electron";
 import started from "electron-squirrel-startup";
+import { APP_ID, APP_NAME } from "../shared/constants";
 import { registerIpcHandlers } from "./ipc";
 
 let mainWindow: BrowserWindow | null = null;
@@ -8,6 +9,15 @@ let mainWindow: BrowserWindow | null = null;
 if (started) {
 	app.quit();
 }
+
+app.setName(APP_NAME);
+app.setAppUserModelId(APP_ID);
+app.setAboutPanelOptions({
+	applicationName: APP_NAME,
+	applicationVersion: app.getVersion(),
+	version: "",
+});
+
 function createWindow() {
 	mainWindow = new BrowserWindow({
 		width: 1200,
@@ -20,15 +30,17 @@ function createWindow() {
 		},
 	});
 
+	mainWindow.maximize();
+
 	if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
 		mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
-		mainWindow.webContents.openDevTools();
+		// mainWindow.webContents.openDevTools();
 	} else {
 		mainWindow.loadFile(
 			join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
 		);
 	}
-	mainWindow.webContents.openDevTools();
+	// mainWindow.webContents.openDevTools();
 }
 
 app.whenReady().then(() => {
