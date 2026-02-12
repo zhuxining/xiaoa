@@ -22,6 +22,6 @@
 		"commit-commands@claude-plugins-official": true
 	},
 	"permissions": {
-		"allow": ["Bash(bun )"]
+		"allow": ["Bash(bun)", "Bash(git)", "Bash(cd)", "Bash(ls)", "Bash(cat)"]
 	}
 }
