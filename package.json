@@ -27,9 +27,9 @@
 		}
 	},
 	"scripts": {
-		"dev": "bun run --filter '@xiaoa/electron' dev",
-		"build": "bun run --filter '@xiaoa/electron' build",
-		"make": "bun run --filter '@xiaoa/electron' make",
+		"dev": "cd apps/electron && bun run dev",
+		"build": "cd apps/electron && bun run build",
+		"make": "cd apps/electron && bun run make",
 		"clean": "git clean -xdf",
 		"check": "biome check --write --unsafe",
 		"check-types": "bun run --filter '*' typecheck"
