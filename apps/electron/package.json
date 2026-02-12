@@ -1,0 +1,46 @@
+{
+	"name": "@xiaoa/electron",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"main": ".vite/build/main.js",
+	"scripts": {
+		"dev": "electron-forge start",
+		"build": "electron-forge package",
+		"make": "electron-forge make",
+		"typecheck": "tsgo --noEmit"
+	},
+	"dependencies": {
+		"@radix-ui/react-slot": "catalog:",
+		"@xiaoa/shared": "workspace:*",
+		"@xiaoa/types": "workspace:*",
+		"@xiaoa/ui": "workspace:*",
+		"electron-squirrel-startup": "^1.0.1",
+		"jotai": "catalog:",
+		"lucide-react": "catalog:",
+		"react": "catalog:",
+		"react-dom": "catalog:"
+	},
+	"devDependencies": {
+		"electron": "^40.4.0",
+		"@electron-forge/cli": "^7.11.1",
+		"@electron-forge/plugin-vite": "^7.11.1",
+		"@electron-forge/shared-types": "^7.11.1",
+		"@electron-forge/maker-zip": "^7.11.1:",
+		"@electron-forge/maker-dmg": "^7.11.1:",
+		"@electron-forge/maker-deb": "^7.11.1",
+		"@electron-forge/maker-rpm": "^7.11.1",
+		"@electron-forge/maker-squirrel": "^7.11.1",
+		"@electron-forge/plugin-auto-unpack-natives": "^7.11.1",
+		"@electron-forge/plugin-fuses": "^7.11.1",
+		"@electron/fuses": "^2.0.0",
+		"@types/electron-squirrel-startup": "^1.0.2",
+		"vite": "catalog:",
+		"@vitejs/plugin-react": "catalog:",
+		"@tailwindcss/vite": "catalog:",
+		"tailwindcss": "catalog:",
+		"@types/react": "catalog:",
+		"@types/react-dom": "catalog:",
+		"typescript": "catalog:"
+	}
+}

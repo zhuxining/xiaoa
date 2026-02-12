@@ -1,0 +1,12 @@
+@import "tailwindcss";
+@import "@xiaoa/ui/styles";
+
+body {
+	-webkit-app-region: drag;
+}
+
+button,
+input,
+a {
+	-webkit-app-region: no-drag;
+}
