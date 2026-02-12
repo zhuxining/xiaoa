@@ -20,7 +20,7 @@
 			"@vitejs/plugin-react": "^5.1.4",
 			"jotai": "^2.12.3",
 			"lucide-react": "^0.563.0",
-			"@radix-ui/react-slot": "^1.2.3"
+			"@base-ui/react": "^1.1.0"
 		}
 	},
 	"scripts": {

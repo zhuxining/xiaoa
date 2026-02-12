@@ -10,7 +10,6 @@
 		"typecheck": "tsgo --noEmit"
 	},
 	"dependencies": {
-		"@radix-ui/react-slot": "catalog:",
 		"@xiaoa/shared": "workspace:*",
 		"@xiaoa/types": "workspace:*",
 		"@xiaoa/ui": "workspace:*",

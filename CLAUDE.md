@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 小 A 是一个为非Coding群体打造的Agent工作站。基于[@mariozechner/pi-agent-core](https://github.com/badlogic/pi-mono.git)的基础能力与设计原则，参考[craft-agents-oss](https://github.com/lukilabs/craft-agents-oss.git)项目架构设计。
 
-**技术栈**: Electron + React 19 | TailwindCSS 4 + shadcn/ui | Jotai | Bun monorepos
+**技术栈**: Electron + React 19 | TailwindCSS 4 + Base UI | Jotai | Bun monorepos
 
 ## 子包文档
 
@@ -30,12 +30,11 @@ xiaoa/
 │       │   └── shared/        # 本地类型重导出
 │       └── vite.config.ts     # Renderer 构建配置
 ├── packages/
-│   ├── ui/                    # @xiaoa/ui - UI 组件库 (shadcn/ui + 主题)
+│   ├── ui/                    # @xiaoa/ui - UI 组件库 (Base UI + 主题)
 │   │   ├── src/
-│   │   │   ├── components/ui/ # shadcn/ui 组件
+│   │   │   ├── components/    # 基于 Base UI 的样式化组件
 │   │   │   ├── lib/utils.ts   # cn() 工具函数
 │   │   │   └── styles/        # 主题 CSS 变量
-│   │   └── components.json    # shadcn/ui 配置
 │   ├── types/                 # @xiaoa/types - IPC 通道 & API 类型
 │   └── shared/                # @xiaoa/shared - 非 UI 共享工具
 ├── biome.json                 # 代码格式化 & Lint
@@ -65,11 +64,12 @@ bun run check-types  # TypeScript 类型检查
 - **构建**: Electron Forge + Vite，详见 `apps/electron/CLAUDE.md`
 - **IPC 通信**: 通过 `@xiaoa/types` 定义通道常量，详见 `packages/types/CLAUDE.md`
 - **状态管理**: Jotai (原子化状态)
-- **UI 组件**: shadcn/ui (New York 风格) + TailwindCSS 4
+- **UI 组件**: Base UI (无样式原语) + TailwindCSS 4
 
 ## 导入规范
 
 - UI 组件和 `cn()` 从 `@xiaoa/ui` 导入
+- Base UI 原语直接从 `@base-ui/react/<component>` 导入
 - 主题 CSS 通过 `@import "@xiaoa/ui/styles"` 引入
 - 使用 `@xiaoa/types` 和 `@xiaoa/shared` workspace 包共享代码
 - Renderer 内使用 `@/` 别名指向 `src/renderer/`

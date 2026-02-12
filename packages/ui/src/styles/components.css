@@ -1,0 +1,269 @@
+/**
+ * Base UI 组件通用样式类
+ *
+ * 这些类配合 TailwindCSS 4 使用，提供统一的组件外观。
+ * 使用时直接在 className 中引用，如：
+ *
+ * <Dialog.Popup className="popup-bg popup-shadow popup-rounded">
+ */
+
+/* ========== 通用 ========== */
+.popup-bg {
+	background-color: var(--color-background);
+}
+
+.popup-shadow {
+	box-shadow: var(--shadow-lg);
+}
+
+.popup-rounded {
+	border-radius: var(--radius-lg);
+}
+
+.overlay-bg {
+	background-color: var(--color-overlay);
+}
+
+/* ========== Button ========== */
+.btn-base {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--spacing-sm);
+	padding: var(--spacing-sm) var(--spacing-md);
+	border-radius: var(--radius);
+	font-weight: 500;
+	transition: all 150ms ease-out;
+	cursor: pointer;
+	border: none;
+	outline: none;
+}
+
+.btn-primary {
+	background-color: var(--color-primary);
+	color: var(--color-primary-foreground);
+}
+
+.btn-primary[data-hovered] {
+	opacity: 0.9;
+}
+
+.btn-secondary {
+	background-color: var(--color-secondary);
+	color: var(--color-secondary-foreground);
+}
+
+.btn-outline {
+	background-color: transparent;
+	border: 1px solid var(--color-border);
+	color: var(--color-foreground);
+}
+
+.btn-destructive {
+	background-color: var(--color-destructive);
+	color: var(--color-destructive-foreground);
+}
+
+.btn-destructive[data-hovered] {
+	opacity: 0.9;
+}
+
+.btn-disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* ========== Input ========== */
+.input-base {
+	width: 100%;
+	padding: var(--spacing-sm) var(--spacing-md);
+	border: 1px solid var(--color-input);
+	border-radius: var(--radius);
+	background-color: var(--color-background);
+	color: var(--color-foreground);
+	font-size: inherit;
+	transition: border-color 150ms ease-out;
+	outline: none;
+}
+
+.input-base[data-focused] {
+	border-color: var(--color-primary);
+	box-shadow: 0 0 0 2px var(--color-primary / 0.2);
+}
+
+.input-disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* ========== Dialog ========== */
+.dialog-backdrop {
+	background-color: var(--color-overlay);
+}
+
+.dialog-panel {
+	background-color: var(--color-background);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-lg);
+	max-width: min(90vw, 500px);
+	max-height: min(90vh, 85vh);
+	overflow: auto;
+}
+
+.dialog-title {
+	font-size: 1.125rem;
+	font-weight: 600;
+	color: var(--color-foreground);
+}
+
+.dialog-description {
+	color: var(--color-muted-foreground);
+	font-size: 0.875rem;
+}
+
+/* ========== Menu ========== */
+.menu-popover {
+	background-color: var(--color-background);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	box-shadow: var(--shadow-lg);
+	padding: var(--spacing-xs);
+	min-width: 180px;
+}
+
+.menu-item {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-sm);
+	padding: var(--spacing-sm) var(--spacing-md);
+	border-radius: var(--radius);
+	color: var(--color-foreground);
+	cursor: pointer;
+	transition: background-color 100ms ease-out;
+}
+
+.menu-item[data-highlighted] {
+	background-color: var(--color-highlight);
+}
+
+.menu-item[data-disabled] {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.menu-separator {
+	height: 1px;
+	background-color: var(--color-border);
+	margin: var(--spacing-xs) 0;
+}
+
+/* ========== Tooltip ========== */
+.tooltip-popup {
+	background-color: var(--color-foreground);
+	color: var(--color-background);
+	padding: var(--spacing-xs) var(--spacing-sm);
+	border-radius: var(--radius);
+	font-size: 0.75rem;
+	max-width: 250px;
+	box-shadow: var(--shadow-md);
+}
+
+/* ========== Toast ========== */
+.toast-root {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--spacing-sm);
+	padding: var(--spacing-md);
+	border-radius: var(--radius-lg);
+	background-color: var(--color-background);
+	border: 1px solid var(--color-border);
+	box-shadow: var(--shadow-lg);
+	min-width: 300px;
+	max-width: 500px;
+}
+
+.toast-title {
+	font-weight: 600;
+	color: var(--color-foreground);
+}
+
+.toast-description {
+	color: var(--color-muted-foreground);
+	font-size: 0.875rem;
+}
+
+.toast-success {
+	border-color: var(--color-success);
+}
+
+.toast-error {
+	border-color: var(--color-destructive);
+}
+
+/* ========== Tabs ========== */
+.tabs-list {
+	display: flex;
+	gap: var(--spacing-xs);
+	border-bottom: 1px solid var(--color-border);
+	padding: 0 var(--spacing-sm);
+}
+
+.tabs-trigger {
+	padding: var(--spacing-sm) var(--spacing-md);
+	border-radius: var(--radius) var(--radius) 0 0;
+	color: var(--color-muted-foreground);
+	transition: all 150ms ease-out;
+	cursor: pointer;
+}
+
+.tabs-trigger[data-selected] {
+	color: var(--color-foreground);
+	background-color: var(--color-background);
+	border: 1px solid var(--color-border);
+	border-bottom-color: var(--color-background);
+}
+
+.tabs-panel {
+	padding: var(--spacing-md);
+}
+
+/* ========== Select ========== */
+.select-trigger {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--spacing-sm);
+	padding: var(--spacing-sm) var(--spacing-md);
+	border: 1px solid var(--color-input);
+	border-radius: var(--radius);
+	background-color: var(--color-background);
+	color: var(--color-foreground);
+	cursor: pointer;
+}
+
+.select-trigger[data-open] {
+	border-color: var(--color-primary);
+}
+
+.select-popover {
+	background-color: var(--color-background);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	box-shadow: var(--shadow-lg);
+	max-height: 250px;
+	overflow: auto;
+}
+
+.select-option {
+	padding: var(--spacing-sm) var(--spacing-md);
+	cursor: pointer;
+	transition: background-color 100ms ease-out;
+}
+
+.select-option[data-selected] {
+	background-color: var(--color-highlight);
+}
+
+.select-option[data-highlighted] {
+	background-color: var(--color-highlight);
+}
