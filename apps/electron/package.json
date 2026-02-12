@@ -2,7 +2,7 @@
 	"name": "@xiaoa/electron",
 	"version": "0.1.0",
 	"private": true,
-	"main": ".vite/build/index.js",
+	"main": ".vite/build/main.js",
 	"scripts": {
 		"dev": "electron-forge start",
 		"build": "electron-forge package",
