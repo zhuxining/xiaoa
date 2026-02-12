@@ -14,14 +14,11 @@
 			"@types/react": "^19.1.5",
 			"@types/react-dom": "^19.1.5",
 			"typescript": "^6.0.0-beta",
-			"clsx": "^2.1.1",
-			"tailwind-merge": "^3.3.1",
 			"tailwindcss": "^4.1.7",
 			"@tailwindcss/vite": "^4.1.7",
 			"vite": "^8.0.0-beta.14",
 			"@vitejs/plugin-react": "^5.1.4",
 			"jotai": "^2.12.3",
-			"class-variance-authority": "^0.7.1",
 			"lucide-react": "^0.563.0",
 			"@radix-ui/react-slot": "^1.2.3"
 		}
@@ -36,6 +33,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.3.14",
+		"lefthook": "^2.1.1",
 		"@typescript/native-preview": "^7.0.0-dev.20260212.1",
 		"typescript": "^6.0.0-dev.20260212"
 	}

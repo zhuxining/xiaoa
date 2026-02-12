@@ -1,9 +1,7 @@
 {
 	"extends": "../../tsconfig.json",
 	"compilerOptions": {
-		"rootDir": "src",
-		"jsx": "react-jsx",
-		"lib": ["ESNext", "DOM", "DOM.Iterable"]
+		"rootDir": "src"
 	},
 	"include": ["src"]
 }
