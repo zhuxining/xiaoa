@@ -7,7 +7,7 @@
       "devDependencies": {
         "@biomejs/biome": "^2.3.14",
         "@typescript/native-preview": "^7.0.0-dev.20260212.1",
-        "typescript": "catalog:",
+        "typescript": "^6.0.0-dev.20260212",
       },
     },
     "apps/electron": {

@@ -30,6 +30,7 @@
 		"dev": "bun run --filter '@xiaoa/electron' dev",
 		"build": "bun run --filter '@xiaoa/electron' build",
 		"make": "bun run --filter '@xiaoa/electron' make",
+		"clean": "git clean -xdf",
 		"check": "biome check --write --unsafe",
 		"check-types": "bun run --filter '*' typecheck"
 	},
