@@ -6,7 +6,7 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "bun run check && bun run check-types",
+						"command": "bun run check && bun run check-types && bunx markdownlint-cli2 --fix .",
 						"timeout": 30
 					}
 				]
@@ -17,7 +17,6 @@
 		"security-guidance@claude-plugins-official": true,
 		"feature-dev@claude-plugins-official": true,
 		"code-simplifier@claude-plugins-official": true,
-		"react-best-practices@cc-practice": true,
 		"code-review@claude-plugins-official": true
 	},
 	"permissions": {
