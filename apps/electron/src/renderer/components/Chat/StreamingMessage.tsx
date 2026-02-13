@@ -26,14 +26,18 @@ export function StreamingMessage({ sessionId }: StreamingMessageProps) {
 							<ReactMarkdown
 								remarkPlugins={[remarkGfm]}
 								components={{
-									code({ node, inline, className, children, ...props }) {
+									code(props) {
+										const { inline, className, children } = props as {
+											inline?: boolean;
+											className?: string;
+											children?: unknown;
+										};
 										const match = /language-(\w+)/.exec(className || "");
 										return !inline ? (
 											<SyntaxHighlighter
 												style={oneDark}
 												language={match?.[1] || "text"}
 												PreTag="div"
-												{...props}
 											>
 												{String(children).replace(/\n$/, "")}
 											</SyntaxHighlighter>
@@ -43,9 +47,8 @@ export function StreamingMessage({ sessionId }: StreamingMessageProps) {
 													"px-1 py-0.5 rounded bg-muted text-muted-foreground text-sm",
 													className,
 												)}
-												{...props}
 											>
-												{children}
+												{String(children)}
 											</code>
 										);
 									},

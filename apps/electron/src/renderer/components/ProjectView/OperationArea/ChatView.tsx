@@ -1,4 +1,4 @@
-import { useAtomValue, useSetAtom } from "jotai";
+import { useAtomValue } from "jotai";
 import { useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -14,7 +14,12 @@ import { MessageInput, StreamingMessage } from "../../../components/Chat";
 export function ChatView() {
 	const messages = useAtomValue(messagesAtom);
 	const activeWorkspaceId = useAtomValue(activeWorkspaceIdAtom);
-	const updateStreamingStatus = useSetAtom(updateStreamingStatusAtom);
+	const updateStreamingStatus = useAtomValue(
+		updateStreamingStatusAtom,
+	) as unknown as (
+		sessionId: string,
+		event: import("@xiaoa/types").StreamEvent,
+	) => void;
 
 	useEffect(() => {
 		const cleanup = window.electronAPI.chat.onStreamEvent((event) => {
@@ -60,7 +65,11 @@ export function ChatView() {
 									<ReactMarkdown
 										remarkPlugins={[remarkGfm]}
 										components={{
-											code({ className, children, ...props }) {
+											code(props) {
+												const { className, children } = props as {
+													className?: string;
+													children?: unknown;
+												};
 												const language =
 													className?.replace("language-", "") || "text";
 												return (
@@ -68,7 +77,6 @@ export function ChatView() {
 														style={oneDark}
 														language={language}
 														PreTag="div"
-														{...props}
 													>
 														{String(children).replace(/\n$/, "")}
 													</SyntaxHighlighter>

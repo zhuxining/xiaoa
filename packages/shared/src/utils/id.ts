@@ -1,68 +1,29 @@
 /**
  * ID generation utilities
- * Provides consistent ID generation across the application
  */
 
-/**
- * Generate a generic unique ID with prefix
- * Format: {prefix}-{timestamp}
- */
-export function generateId(prefix: string): string {
-	return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+import { nanoid } from "nanoid";
+
+const ID_PREFIXES = {
+	workspace: "ws",
+	session: "session",
+	message: "msg",
+	project: "proj",
+	memory: "mem",
+	knowledge: "know",
+	skill: "skill",
+} as const;
+
+type EntityType = keyof typeof ID_PREFIXES;
+
+export function generateId(type: EntityType): string {
+	return `${ID_PREFIXES[type]}_${nanoid(12)}`;
 }
 
-/**
- * Generate a workspace ID
- * Format: ws-{timestamp}
- */
-export function generateWorkspaceId(): string {
-	return generateId("ws");
-}
-
-/**
- * Generate a session ID
- * Format: session-{timestamp}
- */
-export function generateSessionId(): string {
-	return generateId("session");
-}
-
-/**
- * Generate a message ID
- * Format: msg-{timestamp}
- */
-export function generateMessageId(): string {
-	return generateId("msg");
-}
-
-/**
- * Generate a project ID
- * Format: proj-{timestamp}
- */
-export function generateProjectId(): string {
-	return generateId("proj");
-}
-
-/**
- * Generate a memory ID
- * Format: mem-{timestamp}
- */
-export function generateMemoryId(): string {
-	return generateId("mem");
-}
-
-/**
- * Generate a knowledge ID
- * Format: kn-{timestamp}
- */
-export function generateKnowledgeId(): string {
-	return generateId("kn");
-}
-
-/**
- * Generate a skill ID
- * Format: sk-{timestamp}
- */
-export function generateSkillId(): string {
-	return generateId("sk");
-}
+export const generateWorkspaceId = () => generateId("workspace");
+export const generateSessionId = () => generateId("session");
+export const generateMessageId = () => generateId("message");
+export const generateProjectId = () => generateId("project");
+export const generateMemoryId = () => generateId("memory");
+export const generateKnowledgeId = () => generateId("knowledge");
+export const generateSkillId = () => generateId("skill");

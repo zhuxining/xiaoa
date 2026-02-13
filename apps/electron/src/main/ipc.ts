@@ -1,6 +1,7 @@
 import { generateId } from "@xiaoa/shared/utils";
 import type {
 	Knowledge,
+	LLMConfig,
 	Memory,
 	Message,
 	Project,
@@ -30,7 +31,7 @@ export function registerIpcHandlers() {
 
 	ipcMain.handle(
 		IPC_CHANNELS.LLM_GET_MODELS,
-		async (_event, provider: typeof config.provider) => {
+		async (_event, provider: LLMConfig["provider"]) => {
 			return getAvailableModels(provider);
 		},
 	);

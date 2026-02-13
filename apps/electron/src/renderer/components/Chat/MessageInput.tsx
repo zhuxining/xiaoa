@@ -58,7 +58,7 @@ export function MessageInput({ onSend }: MessageInputProps) {
 						placeholder="输入消息... (/@ 引用文件, / 调用技能)"
 						className="input-base w-full resize-none"
 						rows={1}
-						disabled={isStreaming}
+						disabled={!!isStreaming}
 					/>
 
 					{showSkillMenu && (
@@ -69,7 +69,6 @@ export function MessageInput({ onSend }: MessageInputProps) {
 								setShowSkillMenu(false);
 								inputRef.current?.focus();
 							}}
-							onClose={() => setShowSkillMenu(false)}
 						/>
 					)}
 				</div>

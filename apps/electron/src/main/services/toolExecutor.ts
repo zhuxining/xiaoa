@@ -27,7 +27,7 @@ export function parseSkillInvocation(message: string): {
 } {
 	const match = message.match(/^\/(\w+)(?:\s+(.*))?$/);
 	if (match) {
-		return { skillName: match[1], args: match[2] || "" };
+		return { skillName: match[1] ?? "", args: match[2] ?? "" };
 	}
 	return { skillName: null, args: message };
 }

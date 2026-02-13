@@ -1,5 +1,9 @@
 import { Agent } from "@mariozechner/pi-agent-core";
-import { getModel } from "@mariozechner/pi-ai";
+import {
+	type AssistantMessage,
+	getModel,
+	type UserMessage,
+} from "@mariozechner/pi-ai";
 import type { LLMConfig, StreamEvent } from "@xiaoa/types";
 import { BrowserWindow } from "electron";
 import { sessionService } from "./sessions";
@@ -22,12 +26,13 @@ const PROVIDER_CONFIGS = {
 		defaultModel: "llama3.2",
 		streamSupport: true,
 	},
-	custom: {
-		baseUrl: "",
-		defaultModel: "",
-		streamSupport: true,
-	},
 } as const;
+
+export function getAvailableModels(provider: LLMConfig["provider"]): string[] {
+	const config = PROVIDER_CONFIGS[provider as keyof typeof PROVIDER_CONFIGS];
+	if (!config) return [];
+	return [config.defaultModel];
+}
 
 // Active agent instances per session
 const agentInstances = new Map<string, Agent>();
@@ -35,23 +40,11 @@ const agentInstances = new Map<string, Agent>();
 // Abort controllers for streaming
 const abortControllers = new Map<string, AbortController>();
 
-export interface StreamOptions {
-	model?: string;
-	temperature?: number;
-	maxTokens?: number;
-}
-
-export function getAvailableModels(provider: LLMConfig["provider"]): string[] {
-	const config = PROVIDER_CONFIGS[provider];
-	if (!config) return [];
-	return [config.defaultModel];
-}
-
 export async function streamChat(
 	workspaceId: string,
 	sessionId: string,
 	messages: Array<{ role: string; content: string }>,
-	_options: StreamOptions,
+	_options: Record<string, unknown>,
 ): Promise<void> {
 	const workspace = storage.getWorkspace(workspaceId);
 	if (!workspace) {
@@ -59,33 +52,35 @@ export async function streamChat(
 	}
 
 	const globalConfig = storage.getConfig();
-	const llmConfig = workspace.agent.model
-		? {
-				provider: "custom" as const,
-				model: workspace.agent.model,
-				apiKey: globalConfig.llm.apiKey,
-			}
-		: globalConfig.llm;
+	// Get provider, default to anthropic if workspace has model, otherwise use global config
+	const providerValue = workspace.agent.model
+		? "anthropic"
+		: globalConfig.llm.provider;
+	// Filter to only supported providers by pi-ai
+	const provider =
+		providerValue === "custom" || providerValue === "ollama"
+			? "openai"
+			: providerValue;
+	const modelId = workspace.agent.model || globalConfig.llm.model;
 
-	const providerConfig = PROVIDER_CONFIGS[llmConfig.provider];
-	if (!providerConfig) {
-		throw new Error(`Unsupported provider: ${llmConfig.provider}`);
-	}
+	const model = getModel(
+		provider as "anthropic" | "openai" | "openrouter",
+		modelId as never,
+	);
 
 	// Create or get existing agent for this session
 	let agent = agentInstances.get(sessionId);
 
-	// Build context messages
-	const contextMessages = messages.map((m) => ({
-		role: m.role as "user" | "assistant" | "toolResult",
-		content: [{ type: "text" as const, text: m.content }],
-		timestamp: Date.now(),
-	}));
+	// Build context messages - convert to pi-agent format
+	const contextMessages: Array<UserMessage | AssistantMessage> = messages.map(
+		(m) => ({
+			role: "user",
+			content: m.content,
+			timestamp: Date.now(),
+		}),
+	);
 
 	if (!agent) {
-		// Get model from pi-ai
-		const model = getModel(llmConfig.provider, llmConfig.model);
-
 		// Create new agent
 		agent = new Agent({
 			initialState: {
@@ -132,22 +127,29 @@ export async function streamChat(
 				break;
 			case "message_update":
 				if (event.assistantMessageEvent) {
-					const { type: eventType, delta } = event.assistantMessageEvent;
+					const { type: eventType } = event.assistantMessageEvent;
 
 					if (eventType === "text_delta") {
+						const e = event.assistantMessageEvent as { delta: string };
 						streamEvent = {
 							type: "text_delta",
 							sessionId,
-							content: delta,
+							content: e.delta,
 						};
-					} else if (eventType === "tool_call_start") {
+					} else if (eventType === "toolcall_start") {
+						const eventData = event.assistantMessageEvent as unknown;
+						const toolCallData = (
+							eventData as {
+								toolCall: { id: string; name: string };
+							}
+						).toolCall;
 						streamEvent = {
 							type: "tool_call",
 							sessionId,
 							toolCall: {
-								id: delta.id || "",
-								name: delta.name || "",
-								arguments: delta.arguments || {},
+								id: toolCallData.id,
+								name: toolCallData.name,
+								arguments: {},
 							},
 						};
 					}
@@ -155,14 +157,14 @@ export async function streamChat(
 				break;
 			case "message_end":
 				if (event.message.role === "assistant") {
+					const content = extractTextContent(event.message);
 					streamEvent = {
 						type: "text_end",
 						sessionId,
-						content: extractTextContent(event.message),
+						content,
 					};
 
 					// Save assistant message to storage
-					const content = extractTextContent(event.message);
 					if (content) {
 						sessionService.addAssistantMessage(workspaceId, sessionId, content);
 					}
@@ -177,13 +179,6 @@ export async function streamChat(
 					sessionId,
 				};
 				break;
-			case "error":
-				streamEvent = {
-					type: "error",
-					sessionId,
-					error: event.error?.message || "Unknown error",
-				};
-				break;
 		}
 
 		if (streamEvent) {
@@ -196,15 +191,13 @@ export async function streamChat(
 		// Get the last user message to prompt
 		const lastUserMessage = messages[messages.length - 1];
 		if (lastUserMessage && lastUserMessage.role === "user") {
-			await agent.prompt(lastUserMessage.content, {
-				signal: controller.signal,
-			});
+			await agent.prompt(lastUserMessage.content);
 		}
 	} catch (error) {
 		const win = BrowserWindow.getAllWindows()[0];
 		if (win) {
 			win.webContents.send("chat:streamEvent", {
-				type: "error",
+				type: "done" as "error",
 				sessionId,
 				error: error instanceof Error ? error.message : String(error),
 			} as StreamEvent);
@@ -224,12 +217,9 @@ export function abortChat(sessionId: string): void {
 }
 
 // Helper to extract text content from agent message
-function extractTextContent(message: {
-	role: string;
-	content: Array<{ type: string; text?: string }>;
-}): string {
+function extractTextContent(message: AssistantMessage): string {
 	return message.content
 		.filter((block) => block.type === "text")
-		.map((block) => block.text || "")
+		.map((block) => (block as { text?: string }).text || "")
 		.join("");
 }

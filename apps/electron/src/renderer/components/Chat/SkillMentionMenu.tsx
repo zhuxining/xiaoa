@@ -4,6 +4,7 @@ import { skillsAtom } from "../../atoms";
 interface SkillMentionMenuProps {
 	query: string;
 	onSelect: (skill: { name: string; description: string }) => void;
+	onClose?: () => void;
 }
 
 export function SkillMentionMenu({ query, onSelect }: SkillMentionMenuProps) {

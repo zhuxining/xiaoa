@@ -50,7 +50,8 @@ export class StorageService {
 	}
 
 	updateConfig(updates: Partial<GlobalConfig>): void {
-		this.globalConfigCache = { ...this.globalConfigCache, ...updates };
+		const current = this.globalConfigCache || defaultGlobalConfig();
+		this.globalConfigCache = { ...current, ...updates };
 		this.saveGlobalConfig();
 	}
 

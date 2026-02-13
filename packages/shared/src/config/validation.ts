@@ -1,14 +1,18 @@
-/** 验证工作区名称 */
-export function validateWorkspaceName(name: string): boolean {
-	return name.length > 0 && name.length <= 50;
-}
+/**
+ * Config validation utilities (zod wrappers)
+ */
 
-/** 验证 API Key 格式 */
-export function validateApiKey(apiKey: string): boolean {
-	return apiKey.length >= 20;
-}
+import {
+	apiKeySchema,
+	modelNameSchema,
+	workspaceNameSchema,
+} from "../validation/schemas";
 
-/** 验证模型名称 */
-export function validateModelName(model: string): boolean {
-	return model.length > 0;
-}
+export const validateWorkspaceName = (name: string) =>
+	workspaceNameSchema.safeParse(name).success;
+
+export const validateApiKey = (apiKey: string) =>
+	apiKeySchema.safeParse(apiKey).success;
+
+export const validateModelName = (model: string) =>
+	modelNameSchema.safeParse(model).success;

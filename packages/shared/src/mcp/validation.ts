@@ -2,54 +2,55 @@
  * MCP validation utilities
  */
 
-import type { McpServerConfig, McpTransport } from "./types";
+import { z } from "zod";
+import type { McpTransport } from "./types";
+
+const mcpTransportSchema = z.enum(["http", "sse", "stdio"]);
+
+const baseMcpConfigSchema = z.object({
+	name: z.string().min(1).trim(),
+	transport: mcpTransportSchema,
+	endpoint: z.url().optional(),
+	command: z.string().optional(),
+	args: z.array(z.string()).optional(),
+	env: z.record(z.string(), z.string()).optional(),
+	enabled: z.boolean().optional(),
+});
+
+const mcpConfigSchema = baseMcpConfigSchema.superRefine((config, ctx) => {
+	if (config.transport === "http" || config.transport === "sse") {
+		if (!config.endpoint) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: "endpoint is required for http/sse transport",
+				path: ["endpoint"],
+			});
+		}
+	}
+	if (config.transport === "stdio") {
+		if (!config.command) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: "command is required for stdio transport",
+				path: ["command"],
+			});
+		}
+	}
+});
 
 /**
  * Validate MCP server configuration
  */
-export function validateMcpConfig(config: McpServerConfig): boolean {
-	// Name is required
-	if (!config.name || config.name.trim().length === 0) {
-		return false;
-	}
-
-	// Transport is required
-	if (!config.transport) {
-		return false;
-	}
-
-	// Validate transport-specific requirements
-	switch (config.transport) {
-		case "http":
-		case "sse":
-			// endpoint is required for http/sse
-			if (!config.endpoint) {
-				return false;
-			}
-			// Validate URL format
-			try {
-				new URL(config.endpoint);
-			} catch {
-				return false;
-			}
-			break;
-
-		case "stdio":
-			// command is required for stdio
-			if (!config.command) {
-				return false;
-			}
-			break;
-	}
-
-	return true;
+export function validateMcpConfig(
+	config: z.input<typeof baseMcpConfigSchema>,
+): boolean {
+	return mcpConfigSchema.safeParse(config).success;
 }
 
 /**
  * Generate MCP server unique ID from name
  */
 export function generateMcpServerId(name: string): string {
-	// Remove special characters and spaces, convert to lowercase
 	const sanitized = name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 	return `mcp-${sanitized}-${Date.now()}`;
 }
@@ -60,5 +61,5 @@ export function generateMcpServerId(name: string): string {
 export function isValidMcpTransport(
 	transport: string,
 ): transport is McpTransport {
-	return ["http", "sse", "stdio"].includes(transport);
+	return mcpTransportSchema.safeParse(transport).success;
 }
