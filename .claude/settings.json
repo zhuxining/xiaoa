@@ -18,8 +18,7 @@
 		"feature-dev@claude-plugins-official": true,
 		"code-simplifier@claude-plugins-official": true,
 		"react-best-practices@cc-practice": true,
-		"code-review@claude-plugins-official": true,
-		"commit-commands@claude-plugins-official": true
+		"code-review@claude-plugins-official": true
 	},
 	"permissions": {
 		"allow": ["Bash(bun)", "Bash(git)", "Bash(cd)", "Bash(ls)", "Bash(cat)"]
