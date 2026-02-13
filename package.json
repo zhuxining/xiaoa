@@ -47,7 +47,8 @@
 		"gitignore": true,
 		"ignores": [
 			".agents/**",
-			".claude/skills/**"
+			".claude/skills/**",
+			"references/**"
 		]
 	}
 }

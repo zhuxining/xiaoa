@@ -6,7 +6,8 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"ignoreUnknown": false
+		"ignoreUnknown": false,
+		"includes": ["**", "!references/*"]
 	},
 	"formatter": {
 		"enabled": true,
@@ -16,6 +17,9 @@
 		"enabled": true,
 		"rules": {
 			"recommended": true
+		},
+		"domains": {
+			"react": "recommended"
 		}
 	},
 	"javascript": {
