@@ -4,9 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 项目概述
 
-小 A 是一个为非Coding群体打造的Agent工作站。基于[@mariozechner/pi-agent-core](https://github.com/badlogic/pi-mono.git)的基础能力与设计原则，参考[craft-agents-oss](https://github.com/lukilabs/craft-agents-oss.git)项目架构设计。
+小 A 是一个为非Coding群体打造的Agent工作站。基于`@mariozechner/pi-agent-core`的基础能力与设计原则，参考 [craft-agents-oss](references/craft-agents-oss) 项目架构设计。
 
 **技术栈**: Electron + React 19 | TailwindCSS 4 + Base UI | Jotai | Bun monorepos
+**设计文档**: 架构设计文档位于 `docs/design/Architecture.md`，包含详细的设计决策和架构图。
 
 ## 子包文档
 
@@ -80,5 +81,5 @@ bun run check-types  # TypeScript 类型检查
 
 ## 相关资源
 
-- [craft-agents-oss](https://github.com/lukilabs/craft-agents-oss.git)
-- [pi](https://github.com/badlogic/pi-mono.git)
+- [craft-agents-oss](references/craft-agents-oss) — 项目架构参考
+- [pi-agent](references/pi-mono) — 基础能力参考
