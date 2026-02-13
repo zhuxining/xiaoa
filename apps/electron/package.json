@@ -10,6 +10,7 @@
 		"typecheck": "tsgo --noEmit"
 	},
 	"dependencies": {
+		"@mariozechner/pi-agent-core": "^0.52.9",
 		"@xiaoa/shared": "workspace:*",
 		"@xiaoa/types": "workspace:*",
 		"@xiaoa/ui": "workspace:*",
