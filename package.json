@@ -32,7 +32,7 @@
 		"check-types": "bun run --filter '*' typecheck"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.3.14",
+		"@biomejs/biome": "^2.3.15",
 		"markdownlint-cli2": "^0.20.0",
 		"lefthook": "^2.1.1",
 		"@typescript/native-preview": "^7.0.0-dev.20260212.1",
