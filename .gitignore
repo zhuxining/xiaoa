@@ -1,24 +1,30 @@
 # dependencies (bun install)
+
 node_modules
 
 # output
+
 out
 dist
 *.tgz
 
 # code coverage
+
 coverage
 *.lcov
 
 # Vite
+
 .vite/
 
 # logs
+
 logs
 _.log
 report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # dotenv environment variable files
+
 .env
 .env.development.local
 .env.test.local
@@ -26,17 +32,21 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .env.local
 
 # caches
+
 .eslintcache
 .cache
 *.tsbuildinfo
 
 # IntelliJ based IDEs
+
 .idea
 
 # Finder (MacOS) folder config
+
 .DS_Store
 
 # Electron
+
 *.dmg
 *.snap
 *.AppImage

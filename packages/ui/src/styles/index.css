@@ -1,9 +1,10 @@
 /**
- * @xiaoa/ui 主题入口
- *
- * 导入顺序很重要：
- * 1. tokens.css - CSS 变量定义
- * 2. components.css - 组件样式类
+
+* @xiaoa/ui 主题入口
+*
+* 导入顺序很重要：
+* 1. tokens.css - CSS 变量定义
+* 1. components.css - 组件样式类
  */
 
 @import "tailwindcss";

@@ -1,19 +1,20 @@
 /**
- * Base UI 主题 Tokens
- *
- * Base UI 组件通过 data 属性暴露状态，配合 TailwindCSS 4 实现主题化。
- *
- * 使用方式：
- * import { Dialog } from "@base-ui/react/dialog";
- *
- * <Dialog.Popup className="popup-bg popup-shadow popup-rounded">
- *   <Dialog.Title className="text-foreground font-semibold">标题</Dialog.Title>
- * </Dialog.Popup>
+
+* Base UI 主题 Tokens
+*
+* Base UI 组件通过 data 属性暴露状态，配合 TailwindCSS 4 实现主题化。
+*
+* 使用方式：
+* import { Dialog } from "@base-ui/react/dialog";
+*
+* <Dialog.Popup className="popup-bg popup-shadow popup-rounded">
+* <Dialog.Title className="text-foreground font-semibold">标题</Dialog.Title>
+* </Dialog.Popup>
  */
 
-/* ========== 色彩系统 ========== */
+/*========== 色彩系统 ========== */
 @theme {
-	/* 基础色彩 (OKLCH 空间 - 感知均匀) */
+	/* 基础色彩 (OKLCH 空间 - 感知均匀)*/
 	--color-background: oklch(1 0 0);
 	--color-foreground: oklch(0.145 0 0);
 
@@ -75,7 +76,7 @@
 	--spacing-xl: 32px;
 }
 
-/* ========== 暗色模式 ========== */
+/*========== 暗色模式 ==========*/
 @media (prefers-color-scheme: dark) {
 	@theme {
 		--color-background: oklch(0.145 0 0);
@@ -108,7 +109,7 @@
 	}
 }
 
-/* ========== Base UI Portal 堆叠上下文 ========== */
+/*========== Base UI Portal 堆叠上下文 ==========*/
 #root {
 	isolation: isolate;
 }

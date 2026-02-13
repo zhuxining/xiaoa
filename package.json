@@ -42,19 +42,8 @@
 		"config": {
 			"MD013": false,
 			"MD033": false,
-			"MD041": false,
-			"MD046": {
-				"style": "consistent"
-			},
-			"MD048": {
-				"style": "consistent"
-			}
+			"MD041": false
 		},
-		"ignores": [
-			"**/node_modules/**",
-			"**/dist/**",
-			"**/build/**",
-			"**/.git/**"
-		]
+		"gitignore": true
 	}
 }

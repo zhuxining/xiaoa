@@ -1,13 +1,14 @@
 /**
- * Base UI 组件通用样式类
- *
- * 这些类配合 TailwindCSS 4 使用，提供统一的组件外观。
- * 使用时直接在 className 中引用，如：
- *
- * <Dialog.Popup className="popup-bg popup-shadow popup-rounded">
+
+* Base UI 组件通用样式类
+*
+* 这些类配合 TailwindCSS 4 使用，提供统一的组件外观。
+* 使用时直接在 className 中引用，如：
+*
+* <Dialog.Popup className="popup-bg popup-shadow popup-rounded">
  */
 
-/* ========== 通用 ========== */
+/*========== 通用 ==========*/
 .popup-bg {
 	background-color: var(--color-background);
 }
@@ -24,7 +25,7 @@
 	background-color: var(--color-overlay);
 }
 
-/* ========== Button ========== */
+/*========== Button ==========*/
 .btn-base {
 	display: inline-flex;
 	align-items: center;
@@ -73,7 +74,7 @@
 	cursor: not-allowed;
 }
 
-/* ========== Input ========== */
+/*========== Input ==========*/
 .input-base {
 	width: 100%;
 	padding: var(--spacing-sm) var(--spacing-md);
@@ -96,7 +97,7 @@
 	cursor: not-allowed;
 }
 
-/* ========== Dialog ========== */
+/*========== Dialog ==========*/
 .dialog-backdrop {
 	background-color: var(--color-overlay);
 }
@@ -121,7 +122,7 @@
 	font-size: 0.875rem;
 }
 
-/* ========== Menu ========== */
+/*========== Menu ==========*/
 .menu-popover {
 	background-color: var(--color-background);
 	border: 1px solid var(--color-border);
@@ -157,7 +158,7 @@
 	margin: var(--spacing-xs) 0;
 }
 
-/* ========== Tooltip ========== */
+/*========== Tooltip ==========*/
 .tooltip-popup {
 	background-color: var(--color-foreground);
 	color: var(--color-background);
@@ -168,7 +169,7 @@
 	box-shadow: var(--shadow-md);
 }
 
-/* ========== Toast ========== */
+/*========== Toast ==========*/
 .toast-root {
 	display: flex;
 	align-items: flex-start;
@@ -200,7 +201,7 @@
 	border-color: var(--color-destructive);
 }
 
-/* ========== Tabs ========== */
+/*========== Tabs ==========*/
 .tabs-list {
 	display: flex;
 	gap: var(--spacing-xs);
@@ -227,7 +228,7 @@
 	padding: var(--spacing-md);
 }
 
-/* ========== Select ========== */
+/*========== Select ==========*/
 .select-trigger {
 	display: flex;
 	align-items: center;
