@@ -21,7 +21,23 @@
         └── 会话 (Sessions)
 ```
 
-### 1.2 用户画像
+### 1.2 技术栈
+
+| 层 | 技术 |
+| --- | --- |
+| 框架 | Electron Forge + React 19 |
+| 样式 | TailwindCSS 4 + shadcn/ui |
+| 路由 | TanStack Router（文件路由） |
+| 状态管理 | TanStack Query（服务端状态） + useState（局部状态） |
+| IPC | oRPC（类型安全，MessagePort 通信） |
+| Schema | Zod 4 |
+| 国际化 | i18next |
+| 动画 | Motion |
+| Agent SDK | @mariozechner/pi-agent-core（Agent 循环 + 工具执行 + 事件流） |
+| LLM 抽象 | @mariozechner/pi-ai（多 Provider 统一接口：Anthropic / OpenAI / Google 等） |
+| 代码质量 | Biome（lint/format） + tsgo（类型检查） + React Compiler |
+
+### 1.3 用户画像
 
 - 非技术用户（写作者、研究员、运营、产品经理等）
 - 需要 AI 辅助处理本地文件（文档整理、内容生成、信息提取）
@@ -48,11 +64,11 @@ Session    1:N Message
 
 | 实体 | 说明 | 关键属性 |
 | ----- | ---- | ---------- |
-| **GlobalConfig** | 应用级全局配置（独立于工作区） | activeWorkspaceId, llm, preferences, memoryLimit |
+| **GlobalConfig** | 应用级全局配置（独立于工作区） | activeWorkspaceId, llm, preferences |
 | **Workspace** | 顶层容器，定义一个完整的 Agent 工作环境 | id, name, agentConfig, createdAt |
 | **Agent** | 工作区的 AI 助手配置（内嵌于 Workspace） | name, avatar, systemPrompt, model, temperature |
 | **Skill** | 遵循 Agent Skills 标准的指令包，含 SKILL.md 入口 + 参考资料 | name, description, icon, instructions, references/ |
-| **Memory** | 持久化上下文（用户手动或 Agent 自动总结），支持自动清理 | id, category, origin, priority, refs, content |
+| **Memory** | 两层持久化记忆：Daily Log（Agent 自动追加）+ MEMORY.md（长期知识） | MEMORY.md, daily/YYYY-MM-DD.md, FTS5 索引 |
 | **Knowledge** | 知识库条目，含 description 摘要供 Agent 按需检索 | id, name, description, source, status, parsedFile |
 | **Project** | 打开的本地文件夹 | id, name, path, workspaceId |
 | **Session** | 一次对话 | id, title, projectId, createdAt, updatedAt |
@@ -218,22 +234,35 @@ argument-hint: "[风格] [文本]"
 
 ```text
 ┌────────────────────────────────────────────────┐
-│  记忆                              [+ 添加记忆] │
+│  记忆                                           │
 ├────────────────────────────────────────────────┤
+│                                                 │
 │  ┌──────────────────────────────────────────┐  │
-│  │ 偏好  │ 用户偏好中文回复，正式语气        │  │
-│  │ 领域  │ 用户从事教育行业，关注 K12        │  │
-│  │ 习惯  │ 文档格式偏好 Markdown             │  │
+│  │                                          │  │
+│  │  # 长期记忆                              │  │
+│  │                                          │  │
+│  │  ## 用户偏好                             │  │
+│  │  - 偏好中文回复，正式语气                 │  │
+│  │  - 文档格式偏好 Markdown                 │  │
+│  │                                          │  │
+│  │  ## 重要决策                             │  │
+│  │  - 2026-02-10: 项目报告采用季度汇总      │  │
+│  │  ...                                     │  │
+│  │                                          │  │
+│  │  （Markdown 编辑器，所见即所得）           │  │
 │  └──────────────────────────────────────────┘  │
 │                                                 │
-│  ── 编辑区域 ──                                  │
-│  分类     [偏好______]                          │
-│  内容     [                          ]          │
-│           [    多行文本编辑器         ]          │
-│           [__________________________]          │
+│  提示：Agent 会自动将重要信息保存到这里。        │
+│  你也可以直接编辑来调整 Agent 的记忆。           │
 │                                                 │
 └────────────────────────────────────────────────┘
 ```
+
+核心变化：
+
+- 不再是分类标签列表（偏好/领域/习惯），而是单个 Markdown 文件的编辑器
+- 用户直接编辑 MEMORY.md，所见即所得
+- 更符合 Clawdbot 的 "透明可编辑" 原则
 
 #### 知识库管理页
 
@@ -345,9 +374,6 @@ argument-hint: "[风格] [文本]"
 │  主题     [● 跟随系统  ○ 浅色  ○ 深色]           │
 │  语言     [简体中文 ▾]                           │
 │                                                 │
-│  ── 记忆管理 ──                                  │
-│  自动清理阈值  [5000] 字                         │
-│                                                 │
 │  ── 关于 ──                                     │
 │  版本     v0.1.0                                │
 │                                                 │
@@ -361,9 +387,6 @@ GlobalConfig.llm.model = "claude-sonnet-4-5"     ← 全局默认
     ↓ 工作区可覆盖
 Workspace.agent.model = "claude-opus-4-6"         ← 优先使用
 
-GlobalConfig.memoryLimit = 5000                    ← 全局默认
-    ↓ 工作区可覆盖
-Workspace.memoryLimit = 3000                       ← 优先使用
 ```
 
 ### 3.6 主内容区 — 项目工作视图
@@ -449,7 +472,6 @@ interface GlobalConfig {
   activeWorkspaceId: string | null;       // 当前活跃工作区（null = 使用内置小A）
   llm: LLMConfig;                         // LLM 服务配置
   preferences: AppPreferences;            // 应用偏好
-  memoryLimit: number;                    // 记忆自动清理字数阈值（全局默认，工作区可覆盖）
 }
 
 interface LLMConfig {
@@ -511,28 +533,36 @@ interface SkillReference {
 }
 
 // ============================================
-// Memory — 持久化上下文
-// 磁盘格式: memories/{id}.md (YAML frontmatter + Markdown body)
-// 支持自动清理：当总字数超过阈值时，根据引用次数/重要性/时间自动淘汰
+// Memory — 两层持久化记忆（参考 Clawdbot）
+//
+// Layer 1: Daily Log — Agent 自动追加的临时笔记
+//   磁盘: memories/daily/YYYY-MM-DD.md（对用户隐藏）
+//   内容: 每日对话中的关键信息，带时间戳的追加式日志
+//
+// Layer 2: Long-term Memory — 持久知识
+//   磁盘: memories/MEMORY.md（用户可在记忆管理页查看/编辑）
+//   内容: 用户偏好、重要决策、事实、经验教训等
+//
+// 检索: Agent 通过 memory_search 工具按需搜索
+//       FTS5 全文索引，后续可扩展向量搜索
+// 写入: Agent 使用标准 write 工具写入记忆文件
+//       写入目标由 prompt 指引（临时→Daily Log, 持久→MEMORY.md）
 // ============================================
 
-/** 记忆来源 */
-type MemoryOrigin = "user" | "auto";
+/** 记忆搜索结果 */
+interface MemorySearchResult {
+  path: string;                    // 文件路径（相对于工作区）
+  startLine: number;
+  endLine: number;
+  score: number;                   // 匹配分数
+  snippet: string;                 // 匹配片段
+}
 
-/** 重要性等级 */
-type MemoryPriority = "low" | "normal" | "high" | "pinned";
-
-interface Memory {
-  id: string;
+/** 记忆索引状态（SQLite FTS5） */
+interface MemoryIndex {
   workspaceId: string;
-  category: string;              // 分类标签（偏好、领域、习惯、经验教训等）
-  origin: MemoryOrigin;          // 来源：用户手动添加 or Agent 自动总结
-  priority: MemoryPriority;      // 重要性（pinned 永不自动清理）
-  refs: number;                  // 被 Agent 引用的次数（对话中实际使用时递增）
-  content: string;               // Markdown 正文（运行时从 .md body 读取）
-  createdAt: number;
-  updatedAt: number;
-  lastReferencedAt?: number;     // 最近一次被 Agent 引用的时间
+  dbPath: string;                  // SQLite 数据库路径
+  lastIndexedAt: number;
 }
 
 // ============================================
@@ -614,8 +644,9 @@ interface Attachment {
 ├── credentials.enc                # 加密的 API 密钥（AES-256-GCM）
 ├── xiaoa/                         # 内置小A Agent 的数据目录（结构同工作区，但无 workspace.json）
 │   ├── memories/
-│   │   ├── index.json
-│   │   └── {id}.md
+│   │   ├── MEMORY.md              # Layer 2: 长期记忆（用户可编辑）
+│   │   └── daily/                 # Layer 1: 每日日志（对用户隐藏）
+│   │       └── YYYY-MM-DD.md
 │   └── sessions/
 │       └── {session-id}.jsonl
 └── workspaces/
@@ -630,9 +661,10 @@ interface Attachment {
         │   │   └── SKILL.md
         │   └── translate/
         │       └── SKILL.md
-        ├── memories/              # 记忆（每条一个 .md，支持自动清理）
-        │   ├── index.json         # 索引：[{id, category, origin, priority, refs, timestamps}]
-        │   └── {id}.md            # frontmatter(category/origin/priority) + 正文
+        ├── memories/              # 两层记忆（参考 Clawdbot）
+        │   ├── MEMORY.md         # Layer 2: 长期记忆（用户可编辑）
+        │   └── daily/            # Layer 1: 每日日志（对用户隐藏）
+        │       └── YYYY-MM-DD.md
         ├── knowledge/             # 知识库（索引 + 解析后的 Markdown）
         │   ├── index.json         # 索引：[{id, name, description, source, status, ...}]
         │   └── {id}.md            # frontmatter(name/description) + 解析后的正文
@@ -645,24 +677,46 @@ interface Attachment {
 
 - **技能采用目录格式**（Agent Skills 开放标准），每个技能是独立目录，包含 `SKILL.md` 入口文件和可选的 `references/` 子目录。好处：可导入/导出/分享整个技能目录，与生态兼容
 - **知识库解析后的 `.md` 文件含 frontmatter**（`name` + `description`），`description` 在解析时由 LLM 自动生成摘要。Agent 在 L0 层仅加载 `name + description` 列表，按需读取全文
-- **记忆采用 index.json + 独立 .md 模式**，每条记忆的元数据（`priority`、`refs`、`origin` 等）存于 index.json，内容存为独立 `.md` 文件（含 frontmatter）。支持用户手动添加和 Agent 自动总结两种来源
-- **记忆自动清理**：当记忆总字数超过配置阈值时，触发清理任务。清理评分公式综合考虑：引用频次（`refs`）、最近引用时间（`lastReferencedAt`）、创建时间（`createdAt`）、重要性（`priority`）。`priority: "pinned"` 的记忆永不自动清理
+- **记忆即 Markdown**：记忆是纯 Markdown 文件，用户可直接阅读和编辑（MEMORY.md）。Agent 自动写入的 Daily Log 对用户隐藏，仅通过搜索被间接使用
+- **搜索优于注入**：Agent 不将全部记忆加载到 context。每次对话开始时 Agent 自动读取 MEMORY.md，需要更多上下文时通过 `memory_search` 搜索 Daily Log
+- **FTS5 全文索引**：使用 SQLite FTS5 实现关键词搜索。文件保存时自动分块（~400 token，80 token overlap）并建立索引。后续可扩展 sqlite-vec 向量搜索
+- **Pre-compaction flush**：对话 context 接近上限时，Agent 自动将重要信息写入 `memories/daily/YYYY-MM-DD.md`，然后再压缩对话历史。防止 compaction 丢失关键信息
+- **会话结束钩子**：会话结束时（手动 `/new` 或空闲超时），自动提取最近 N 条消息的摘要写入 Daily Log
 - 会话消息使用 JSONL 格式（参考 craft-agents），支持追加写入，避免大文件重写
 - 工作区配置使用 JSON 文件，结构清晰，方便人工检查
 - 每个工作区完全隔离，删除工作区只需删除整个目录
+- **theme / language 使用 localStorage**：主题模式和界面语言存储在 Renderer 端的 `localStorage` 中，避免启动时闪烁（FOUC）。Main 进程通过 oRPC `theme.get()` 同步 nativeTheme 设置
 
-**记忆 `.md` 文件格式示例**：
+**MEMORY.md 文件格式示例**：
 
-```yaml
-# memories/{id}.md
----
-category: 经验教训
-origin: auto
-priority: normal
----
+```markdown
+# 长期记忆
 
-用户在处理 PDF 批量翻译任务时发现，先提取目录结构再逐章翻译的效果远优于全文直译。
-应优先识别文档结构，保持章节编号一致性。
+## 用户偏好
+- 偏好中文回复，正式语气
+- 文档格式偏好 Markdown
+- 从事教育行业，关注 K12
+
+## 重要决策
+- 2026-02-10: 项目报告采用季度汇总模式
+- 2026-02-12: 数据分析优先使用表格呈现
+
+## 经验教训
+- PDF 批量翻译：先提取目录结构再逐章翻译效果更好
+```
+
+**Daily Log 文件格式示例**（`daily/2026-02-14.md`）：
+
+```markdown
+# 2026-02-14
+
+## 10:30 - 文档整理
+用户要求整理项目报告，偏好简洁的三段式摘要。
+文件: report-q4.pdf，输出到 summary-q4.md。
+
+## 14:15 - 翻译任务
+翻译 API 文档（英→中），保留代码块不翻译。
+用户确认术语表：endpoint=端点, authentication=认证。
 ```
 
 **知识库 `.md` 文件格式示例**：
@@ -679,16 +733,13 @@ description: 小A桌面应用的产品需求规格，包含功能列表、用户
 ...（解析后的完整 Markdown 内容）
 ```
 
-**记忆清理评分算法**：
+**索引数据库存放位置**：
 
 ```text
-score = w1 × normalize(refs)
-      + w2 × normalize(daysSinceLastRef, inverse)
-      + w3 × normalize(daysSinceCreated, inverse)
-      + w4 × priorityWeight
-
-其中 priorityWeight: pinned=∞, high=3, normal=1, low=0.3
-清理时按 score 升序排列，从最低分开始删除直到总字数低于阈值
+~/.xiaoa/
+├── indexes/                       # 记忆搜索索引（派生数据）
+│   ├── xiaoa.sqlite               # 内置小A的记忆索引
+│   └── {workspace-id}.sqlite      # 各工作区的记忆索引
 ```
 
 ---
@@ -743,7 +794,7 @@ type ActionRisk = "safe" | "moderate" | "dangerous";
  *
  * moderate（中等）— Review 模式需确认，Auto 模式自动通过
  *   - 创建/修改文件
- *   - 添加/编辑记忆
+ *   - Agent 写入 Daily Log / 更新 MEMORY.md
  *   - 添加知识库条目
  *   - 执行技能指令
  *
@@ -751,8 +802,8 @@ type ActionRisk = "safe" | "moderate" | "dangerous";
  *   - 删除文件
  *   - 移动/重命名文件
  *   - 批量文件操作
- *   - 删除记忆/知识库条目
- *   - 清理记忆（自动清理不受此限制，走独立策略）
+ *   - 删除知识库条目
+ *   - 清空 Daily Log
  */
 ```
 
@@ -845,7 +896,7 @@ interface WorkspacePermissions {
 | 模块 | safe 操作 | moderate 操作 | dangerous 操作 |
 | ---- | ---------- | -------------- | --------------- |
 | **项目文件** | 读取、预览 | 创建、修改 | 删除、移动、重命名 |
-| **记忆** | 读取所有记忆 | 添加、编辑记忆 | 删除记忆 |
+| **记忆** | 读取 MEMORY.md, 搜索记忆 | Agent 写入 Daily Log, Agent 更新 MEMORY.md | 用户清空 Daily Log |
 | **知识库** | 读取已解析内容 | 添加新条目、触发解析 | 删除条目 |
 | **技能** | 查看技能列表/描述 | 执行技能指令 | — |
 | **会话** | 读取历史消息 | — | 删除会话 |
@@ -857,339 +908,548 @@ interface WorkspacePermissions {
 ### 6.1 目录结构
 
 ```text
-apps/electron/src/renderer/
-├── main.tsx                       # 入口
-├── App.tsx                        # 根组件 + Provider
-├── index.css                      # 全局样式
+src/
+├── main.ts                        # Electron Main 进程入口
+├── preload.ts                     # Preload 脚本
+├── renderer.ts                    # Renderer 进程入口
+├── app.tsx                        # React 根组件
 │
-├── atoms/                         # Jotai 状态原子
-│   ├── workspace.ts               # 工作区相关状态
-│   ├── config.ts                  # 全局配置状态（GlobalConfig）
-│   ├── navigation.ts              # 导航/路由状态
-│   ├── project.ts                 # 项目与文件浏览状态
-│   └── session.ts                 # 会话与消息状态
+├── actions/                       # 客户端 IPC 调用封装（Renderer → Main）
+│   ├── language.ts                # 语言切换
+│   ├── shell.ts                   # Shell 操作（打开外部链接等）
+│   ├── theme.ts                   # 主题切换
+│   └── window.ts                  # 窗口控制（最小化/最大化/关闭）
 │
-├── components/                    # 通用组件
-│   ├── Sidebar/                   # 左侧栏
-│   │   ├── Sidebar.tsx
-│   │   ├── XiaoAEntry.tsx         # 小A入口项
-│   │   ├── WorkspaceSwitcher.tsx
-│   │   ├── NavSection.tsx         # 配置导航区（Agent/技能/记忆/知识库）
-│   │   ├── ProjectList.tsx        # 项目列表区
-│   │   └── SettingsEntry.tsx      # 设置入口项
-│   │
-│   ├── XiaoAView/                 # 小A对话视图
-│   │   ├── XiaoAView.tsx          # 小A主视图（会话列表 + 对话区）
-│   │   └── XiaoASessionList.tsx   # 小A的会话列表
-│   │
-│   ├── Settings/                  # 全局设置页面
-│   │   └── SettingsPage.tsx       # LLM配置、外观、记忆管理、关于
-│   │
-│   ├── Config/                    # 工作区配置页面
-│   │   ├── AgentConfig.tsx
-│   │   ├── SkillsManager.tsx
-│   │   ├── MemoriesManager.tsx
-│   │   └── KnowledgeManager.tsx
-│   │
-│   ├── ProjectView/               # 项目工作视图
-│   │   ├── ProjectView.tsx        # 三栏布局容器
-│   │   ├── FileExplorer.tsx       # 文件浏览器
-│   │   ├── SessionList.tsx        # 会话列表
-│   │   └── OperationArea/         # 右侧操作区
-│   │       ├── OperationArea.tsx
-│   │       ├── ChatView.tsx       # 对话视图
-│   │       ├── FilePreview.tsx    # 文件预览
-│   │       └── MessageInput.tsx   # 消息输入框 + 技能栏
-│   │
-│   └── common/                    # 通用基础组件
-│       ├── TitleBar.tsx           # 自定义标题栏
-│       └── EmptyState.tsx         # 空状态占位
+├── ipc/                           # oRPC handlers（Main 进程）
+│   ├── router.ts                  # 聚合所有 domain router
+│   ├── handler.ts                 # IPC handler 注册
+│   ├── context.ts                 # oRPC 上下文
+│   ├── manager.ts                 # IPC 管理器
+│   ├── app/                       # 应用信息
+│   ├── shell/                     # Shell 操作
+│   ├── theme/                     # 主题管理
+│   └── window/                    # 窗口控制
 │
-└── lib/
-    ├── utils.ts                   # 工具函数
-    └── storage.ts                 # IPC 存储封装
+├── components/                    # React 组件
+│   ├── ui/                        # shadcn/ui 基础组件
+│   ├── drag-window-region.tsx     # 窗口拖拽区域
+│   ├── external-link.tsx          # 外部链接
+│   ├── lang-toggle.tsx            # 语言切换
+│   ├── navigation-menu.tsx        # 导航菜单
+│   └── toggle-theme.tsx           # 主题切换
+│
+├── layouts/                       # 布局组件
+│   └── base-layout.tsx            # 基础布局
+│
+├── routes/                        # TanStack Router 文件路由
+│   ├── __root.tsx                 # 根路由（Provider + Layout）
+│   ├── index.tsx                  # 首页路由
+│   └── second.tsx                 # 示例路由
+│
+├── localization/                  # i18n 国际化
+│   ├── i18n.ts                    # i18next 初始化
+│   ├── langs.ts                   # 语言资源
+│   └── language.ts                # 语言工具
+│
+├── constants/                     # 常量定义
+├── styles/                        # 全局样式
+├── types/                         # 类型定义
+├── utils/                         # 工具函数
+└── tests/                         # 测试
 ```
 
 ### 6.2 组件层级
 
 ```text
-App
-├── TitleBar
-└── MainLayout
-    ├── Sidebar
-    │   ├── XiaoAEntry
-    │   ├── WorkspaceSwitcher
-    │   ├── NavSection
-    │   │   ├── NavItem (Agent)
-    │   │   ├── NavItem (技能)
-    │   │   ├── NavItem (记忆)
-    │   │   └── NavItem (知识库)
-    │   ├── ProjectList
-    │   │   ├── ProjectItem × N
-    │   │   └── AddProjectButton
-    │   └── SettingsEntry
-    │
-    └── MainContent (根据 activeView 切换)
-        │
-        ├── [activeView = "xiaoa"]     → XiaoAView
-        │                                 ├── XiaoASessionList
-        │                                 ├── ChatView
-        │                                 └── MessageInput
-        │
-        ├── [activeView = "agent"]     → AgentConfig
-        ├── [activeView = "skills"]    → SkillsManager
-        ├── [activeView = "memories"]  → MemoriesManager
-        ├── [activeView = "knowledge"] → KnowledgeManager
-        │
-        ├── [activeView = "project"]   → ProjectView
-        │                                 ├── MiddleColumn
-        │                                 │   ├── FileExplorer
-        │                                 │   └── SessionList
-        │                                 └── OperationArea
-        │                                     ├── ChatView / FilePreview
-        │                                     └── MessageInput
-        │
-        └── [activeView = "settings"]  → SettingsPage
+__root.tsx (TanStack Router 根路由)
+├── QueryClientProvider (TanStack Query)
+├── BaseLayout
+│   ├── DragWindowRegion          # 窗口拖拽 + 标题栏
+│   └── <Outlet />                # 路由出口
+│
+├── /  (index.tsx)                → 首页
+├── /second  (second.tsx)         → 示例页
+│
+│  ── 规划中的路由 ──
+├── /xiaoa                        → 小A对话视图
+├── /settings                     → 全局设置页
+├── /workspace/:id/agent          → Agent 配置页
+├── /workspace/:id/skills         → 技能管理页
+├── /workspace/:id/memories       → 记忆管理页
+├── /workspace/:id/knowledge      → 知识库管理页
+└── /workspace/:id/project/:pid   → 项目工作视图
 ```
+
+**路由说明**：导航状态完全由 TanStack Router URL 驱动，不再使用 `activeView` atom。页面切换即路由切换。
 
 ---
 
-## 7. 状态管理（Jotai）
+## 7. 状态管理（TanStack Query + Router）
 
-### 7.1 核心 Atoms
+项目不使用全局状态库（Jotai / Redux / Zustand），而是采用以下策略：
 
-```typescript
-// atoms/config.ts
-import { atom } from "jotai";
+- **服务端状态**（工作区、技能、记忆、知识库、会话、消息、配置）→ TanStack Query（`useQuery` / `useMutation`）
+- **导航状态**（当前页面、活跃工作区、活跃项目）→ TanStack Router 路由参数
+- **UI 局部状态**（选中文件、操作模式、表单输入）→ `useState` / URL search params
 
-// 全局配置（从 ~/.xiaoa/config.json 加载）
-const globalConfigAtom = atom<GlobalConfig>({
-  activeWorkspaceId: null,
-  llm: {
-    provider: "anthropic",
-    model: "claude-sonnet-4-5",
-  },
-  preferences: {
-    theme: "system",
-    language: "zh-CN",
-  },
-  memoryLimit: 5000,
-});
-```
+### 7.1 服务端状态（TanStack Query）
 
 ```typescript
-// atoms/workspace.ts
-import { atom } from "jotai";
+// 全局配置
+function useGlobalConfig() {
+  return useQuery({
+    queryKey: ["config"],
+    queryFn: () => client.config.get(),
+  });
+}
 
-// 所有工作区列表
-const workspacesAtom = atom<Workspace[]>([]);
+function useUpdateConfig() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<GlobalConfig>) => client.config.update(data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["config"] }),
+  });
+}
 
-// 当前活跃工作区 ID（从 globalConfigAtom 派生）
-const activeWorkspaceIdAtom = atom<string | null>(null);
+// 工作区列表
+function useWorkspaces() {
+  return useQuery({
+    queryKey: ["workspaces"],
+    queryFn: () => client.workspace.list(),
+  });
+}
 
-// 当前工作区（派生，null 表示小A模式）
-const activeWorkspaceAtom = atom((get) => {
-  const id = get(activeWorkspaceIdAtom);
-  return get(workspacesAtom).find((w) => w.id === id) ?? null;
-});
+// 当前工作区的技能（按 workspaceId 区分缓存）
+function useSkills(workspaceId: string) {
+  return useQuery({
+    queryKey: ["skills", workspaceId],
+    queryFn: () => client.skill.list({ workspaceId }),
+  });
+}
 
-// 当前工作区的技能/记忆/知识库
-// skillsAtom 存储解析后的 Skill 元数据（name + description + icon），用于列表展示和 / 菜单
-// 完整 instructions 按需通过 SKILL_GET 加载
-const skillsAtom = atom<Skill[]>([]);
-const memoriesAtom = atom<Memory[]>([]);
-const knowledgeAtom = atom<Knowledge[]>([]);
+// 会话消息
+function useMessages(sessionId: string) {
+  return useQuery({
+    queryKey: ["messages", sessionId],
+    queryFn: () => client.session.messages({ sessionId }),
+  });
+}
 ```
 
-```typescript
-// atoms/navigation.ts
+### 7.2 导航状态（TanStack Router）
 
-// 左侧栏选中项类型
-type ActiveView =
-  | { type: "xiaoa" }                          // 小A对话
-  | { type: "agent" }
-  | { type: "skills" }
-  | { type: "memories" }
-  | { type: "knowledge" }
-  | { type: "project"; projectId: string }
-  | { type: "settings" };                      // 全局设置
+```text
+URL 即状态，不需要额外的 navigation atom：
 
-const activeViewAtom = atom<ActiveView>({ type: "xiaoa" });  // 默认进入小A
+/                                → 首页（小A对话）
+/settings                        → 全局设置
+/workspace/:workspaceId/agent    → Agent 配置
+/workspace/:workspaceId/skills   → 技能管理
+/workspace/:workspaceId/memories → 记忆管理
+/workspace/:workspaceId/knowledge → 知识库管理
+/workspace/:workspaceId/project/:projectId → 项目工作视图
+
+URL search params 承载 UI 状态：
+?session=xxx                     → 当前活跃会话
+?file=path/to/file               → 当前预览的文件
+?mode=chat|preview               → 操作区模式
 ```
 
-```typescript
-// atoms/project.ts
-
-// 当前工作区的项目列表
-const projectsAtom = atom<Project[]>([]);
-
-// 当前项目中选中的文件路径（用于文件预览）
-const selectedFilePathAtom = atom<string | null>(null);
-```
-
-```typescript
-// atoms/session.ts
-
-// 当前项目的会话列表
-const sessionsAtom = atom<Session[]>([]);
-
-// 当前活跃会话 ID
-const activeSessionIdAtom = atom<string | null>(null);
-
-// 当前会话的消息列表
-const messagesAtom = atom<Message[]>([]);
-
-// 操作区显示模式
-type OperationMode = "chat" | "preview";
-const operationModeAtom = atom<OperationMode>("chat");
-```
-
-### 7.2 状态流转
+### 7.3 状态流转
 
 ```text
 首次打开应用
-  → 读取 globalConfigAtom
-  → activeWorkspaceId = null → activeViewAtom = { type: "xiaoa" }
-  → 加载小A的 sessions/memories
+  → 路由进入 / → 首页（小A对话）
+  → useGlobalConfig() 从 Main 进程读取配置
+  → 配置中的 theme/language 已由 localStorage 预加载
 
 用户点击"小A"
-  → 更新 activeViewAtom = { type: "xiaoa" }
-  → 加载小A的 sessions（从 ~/.xiaoa/xiaoa/sessions/）
+  → navigate("/")
+  → useMessages(xiaoaSessionId) 自动加载会话
 
 用户点击"设置"
-  → 更新 activeViewAtom = { type: "settings" }
+  → navigate("/settings")
 
 用户切换工作区
-  → 更新 activeWorkspaceIdAtom（同步到 globalConfigAtom）
-  → 加载该工作区的 skills/memories/knowledge/projects
-  → 重置 activeViewAtom 为首个项目或 agent
+  → navigate("/workspace/:newId/agent")
+  → useSkills(newId)、useMemories(newId) 等自动触发
+  → 旧工作区数据在 Query 缓存中保留，切回时秒开
 
 用户点击左侧栏项目
-  → 更新 activeViewAtom = { type: "project", projectId }
-  → 加载该项目的 sessions
-  → 加载该项目的文件树
+  → navigate("/workspace/:wid/project/:pid")
+  → useSessions(pid) 自动加载该项目的会话列表
 
 用户选择会话
-  → 更新 activeSessionIdAtom
-  → 加载该会话的 messages
-  → operationModeAtom = "chat"
+  → 更新 URL search params: ?session=xxx&mode=chat
+  → useMessages(xxx) 自动加载消息
 
 用户点击文件
-  → 更新 selectedFilePathAtom
-  → operationModeAtom = "preview"
+  → 更新 URL search params: ?file=path&mode=preview
+
+缓存失效
+  → mutation 成功后调用 queryClient.invalidateQueries()
+  → 相关 useQuery 自动重新拉取数据
 ```
 
 ---
 
-## 8. IPC 通道设计
+## 8. IPC 通信设计（oRPC）
 
-### 8.1 通道常量（@xiaoa/types）
+使用 [oRPC](https://orpc.dev) 实现 Main ↔ Renderer 类型安全通信，取代传统的 `ipcMain.handle` / `ipcRenderer.invoke` 字符串通道模式。
+
+### 8.1 oRPC Router 结构
+
+IPC handlers 按领域组织为嵌套 router，所有 procedure 的输入通过 Zod schema 验证：
 
 ```typescript
-export const IPC_CHANNELS = {
-  // 全局配置
-  CONFIG_GET: "config:get",                    // 读取 GlobalConfig
-  CONFIG_UPDATE: "config:update",              // 更新 GlobalConfig（部分更新）
+// src/ipc/router.ts — 聚合所有 domain router
+export const router = {
+  theme,    // 主题管理：get / set
+  window,   // 窗口控制：minimize / maximize / close
+  app,      // 应用信息：getVersion / getName
+  shell,    // Shell 操作：openExternal
 
-  // LLM 密钥（单独通道，走加密存储 credentials.enc）
-  LLM_SET_KEY: "llm:setKey",                  // 设置 API 密钥（加密后写入）
-  LLM_TEST: "llm:test",                       // 测试 API 连接是否正常
+  // ── 以下为规划中的 domain router ──
+  config,      // 全局配置：get / update
+  llm,         // LLM 密钥：setKey / test
+  workspace,   // 工作区 CRUD：list / get / create / update / delete
+  skill,       // 技能管理：list / get / create / update / delete / import
+  memory,      // 记忆管理：read / write / search / get / reindex
+  knowledge,   // 知识库：list / add / remove / reparse / read
+  project,     // 项目管理：list / open / close / readDir
+  session,     // 会话管理：list / create / delete / messages
+  file,        // 文件操作：read
+  permission,  // 权限管理：get / set / request / respond
+  chat,        // 对话：send / abort
+};
+```
 
-  // 工作区
-  WORKSPACE_LIST: "workspace:list",
-  WORKSPACE_GET: "workspace:get",
-  WORKSPACE_CREATE: "workspace:create",
-  WORKSPACE_UPDATE: "workspace:update",
-  WORKSPACE_DELETE: "workspace:delete",
+**调用方式**（Renderer 端）：
 
-  // 技能（Agent Skills 标准格式，操作磁盘上的技能目录）
-  SKILL_LIST: "skill:list",           // 扫描 skills/ 目录，返回所有技能元数据
-  SKILL_GET: "skill:get",             // 读取并解析单个 SKILL.md，返回完整 Skill 对象
-  SKILL_CREATE: "skill:create",       // 创建技能目录 + 生成 SKILL.md
-  SKILL_UPDATE: "skill:update",       // 重写 SKILL.md（从 Skill 对象序列化为 frontmatter + body）
-  SKILL_DELETE: "skill:delete",       // 删除整个技能目录
-  SKILL_IMPORT: "skill:import",       // 从外部路径导入技能目录（复制到 skills/）
+```typescript
+// src/actions/ 中的封装函数通过 oRPC client 调用
+import { client } from "@/ipc/client";
 
-  // 记忆（index.json + 独立 .md 文件，支持自动清理）
-  MEMORY_LIST: "memory:list",             // 读取 index.json，返回所有记忆元数据
-  MEMORY_GET: "memory:get",              // 读取单条记忆的 .md 内容
-  MEMORY_CREATE: "memory:create",        // 创建 .md 文件 + 更新 index.json
-  MEMORY_UPDATE: "memory:update",        // 更新 .md 内容和/或 index.json 元数据
-  MEMORY_DELETE: "memory:delete",        // 删除 .md 文件 + 从 index.json 移除
-  MEMORY_REF: "memory:ref",             // Agent 引用记忆时调用，递增 refs 和 lastReferencedAt
-  MEMORY_CLEANUP: "memory:cleanup",     // 触发自动清理（可由系统定时或手动触发）
-
-  // 知识库（导入 → 后台解析 → Markdown）
-  KNOWLEDGE_LIST: "knowledge:list",
-  KNOWLEDGE_ADD: "knowledge:add",           // 添加来源，自动触发后台解析任务
-  KNOWLEDGE_REMOVE: "knowledge:remove",     // 删除条目 + 对应的解析文件
-  KNOWLEDGE_REPARSE: "knowledge:reparse",   // 重新解析（解析失败或源文件更新时）
-  KNOWLEDGE_READ: "knowledge:read",         // 读取解析后的 Markdown 内容
-  KNOWLEDGE_STATUS: "knowledge:status",     // Main → Renderer 推送解析进度/状态变更
-
-  // 项目
-  PROJECT_LIST: "project:list",
-  PROJECT_OPEN: "project:open",       // 打开文件夹选择器
-  PROJECT_CLOSE: "project:close",
-  PROJECT_READ_DIR: "project:readDir", // 读取目录树
-
-  // 会话
-  SESSION_LIST: "session:list",
-  SESSION_CREATE: "session:create",
-  SESSION_DELETE: "session:delete",
-  SESSION_MESSAGES: "session:messages",
-
-  // 文件
-  FILE_READ: "file:read",             // 读取文件内容（预览）
-
-  // 权限
-  PERMISSION_GET: "permission:get",           // 获取当前权限模式
-  PERMISSION_SET: "permission:set",           // 切换权限模式
-  PERMISSION_REQUEST: "permission:request",   // Main → Renderer 请求用户确认操作
-  PERMISSION_RESPOND: "permission:respond",   // Renderer → Main 用户确认/拒绝结果
-
-  // 对话（流式）
-  CHAT_SEND: "chat:send",
-  CHAT_STREAM: "chat:stream",         // Main → Renderer 流式推送
-  CHAT_ABORT: "chat:abort",
-} as const;
+// 类型安全、自动补全、编译时检查
+const workspaces = await client.workspace.list();
+const config = await client.config.get();
+await client.theme.set({ mode: "dark" });
 ```
 
 ### 8.2 通信模式
 
 ```text
-[Renderer]                    [Main]
-    │                           │
-    │── workspace:list ────────►│  invoke/handle (请求-响应)
-    │◄──── Workspace[] ────────│
-    │                           │
-    │── knowledge:add ─────────►│  invoke (添加知识来源)
-    │◄──── Knowledge ─────────│  返回 pending 状态的条目
-    │                           │  ┌─────────────────────┐
-    │◄── knowledge:status ─────│  │ 后台解析任务         │
-    │    { status: "parsing" }  │  │ PDF/DOCX/URL → .md  │
-    │◄── knowledge:status ─────│  └─────────────────────┘
-    │    { status: "ready" }    │
-    │                           │
-    │── chat:send ─────────────►│  invoke (发起对话)
-    │                           │
-    │◄── chat:stream ──────────│  send (流式推送，Main → Renderer)
-    │◄── chat:stream ──────────│
-    │                           │
-    │◄── permission:request ───│  Agent 请求写入文件（Review 模式）
-    │    { action, target }     │  流式暂停，等待用户确认
-    │── permission:respond ────►│  用户点击 [允许] / [拒绝]
-    │                           │  流式恢复
-    │                           │
-    │◄── chat:stream ──────────│
-    │◄── chat:stream [done] ───│
-    │                           │
-    │── chat:abort ────────────►│  invoke (中断对话)
+[Renderer]                         [Main]
+    │                                │
+    │── client.workspace.list() ───►│  oRPC 请求-响应（通过 MessagePort）
+    │◄──── Workspace[] ────────────│  端到端类型安全
+    │                                │
+    │── client.knowledge.add() ────►│  添加知识来源
+    │◄──── Knowledge (pending) ────│
+    │                                │  ┌─────────────────────┐
+    │◄── Query invalidation ───────│  │ 后台解析任务         │
+    │    （轮询或事件推送）            │  │ PDF/DOCX/URL → .md  │
+    │                                │  └─────────────────────┘
+    │                                │
+    │── client.chat.send() ────────►│  发起对话
+    │◄── 流式响应 ─────────────────│  流式推送（Main → Renderer）
+    │                                │
+    │── client.chat.abort() ───────►│  中断对话
+    │                                │
+    │◄── permission:request ───────│  Agent 请求写入文件（Review 模式）
+    │── permission:respond ────────►│  用户确认/拒绝
+    │                                │
+```
+
+**关键区别**：
+
+- 不再使用字符串通道名（如 `"workspace:list"`），而是 `client.workspace.list()` 方法调用
+- 输入/输出类型由 Zod schema 定义，编译时即可发现类型错误
+- Renderer 端通过 `src/actions/` 封装调用逻辑，组件不直接访问 client
+
+---
+
+## 9. Agent 集成架构（pi-agent-core）
+
+基于 `@mariozechner/pi-agent-core`（来自 [pi-mono](https://github.com/badlogic/pi-mono) 仓库）实现 Agent 能力。该 SDK 提供 Agent 循环、工具执行、事件流等核心机制，小A在此之上实现记忆、知识库、权限等业务逻辑。
+
+### 9.1 依赖关系
+
+```text
+@mariozechner/pi-ai              ← 多 Provider LLM 统一接口（Model, Message, streamSimple）
+  └── @mariozechner/pi-agent-core ← Agent 循环 + 工具执行 + 事件流
+        └── 小A                    ← 业务层：记忆、知识库、权限、UI
+```
+
+`pi-ai` 提供 Provider 无关的 LLM 抽象（Anthropic / OpenAI / Google / Bedrock 等），`pi-agent-core` 在此之上封装了有状态的 Agent 类。
+
+### 9.2 核心消息流
+
+```text
+用户输入
+    │
+    ▼
+agent.prompt("你好")
+    │
+    ▼
+AgentMessage[]（含自定义消息类型）
+    │
+    ▼  transformContext() — 上下文裁剪、记忆注入、Pre-compaction flush
+AgentMessage[]（变换后）
+    │
+    ▼  convertToLlm() — 过滤自定义消息，转为 LLM 可消费的 Message[]
+Message[]（user / assistant / toolResult）
+    │
+    ▼  streamFn() — streamSimple() 直调 或 streamProxy() 代理
+LLM Provider
+    │
+    ▼  SSE 事件流
+AgentEvent stream
+    │
+    ▼  agent.subscribe(callback)
+UI 更新（Renderer 进程）
+```
+
+### 9.3 Agent 实例化
+
+Agent 在 Main 进程中创建，通过 oRPC 的 `chat.send` / `chat.abort` 暴露给 Renderer。
+
+```typescript
+import { Agent } from "@mariozechner/pi-agent-core";
+import { getModel } from "@mariozechner/pi-ai";
+
+const agent = new Agent({
+  initialState: {
+    systemPrompt: buildSystemPrompt(workspace, memoryContent),
+    model: getModel(provider, modelId),
+    thinkingLevel: "off",
+    tools: buildTools(workspace, project),
+    messages: [],
+  },
+  convertToLlm: xiaoaConvertToLlm,
+  transformContext: xiaoaTransformContext,
+  getApiKey: async (provider) => getDecryptedKey(provider),
+});
+```
+
+**关键回调**：
+
+| 回调 | 职责 | 小A 实现 |
+| --- | --- | --- |
+| `convertToLlm` | 将 AgentMessage（含自定义类型）转为 LLM Message | 过滤 notification / artifact 等自定义消息 |
+| `transformContext` | 每次 LLM 调用前变换上下文 | Pre-compaction flush（写入 Daily Log）+ 上下文裁剪 |
+| `getApiKey` | 按 Provider 获取 API Key | 从 credentials.enc 解密读取 |
+
+### 9.4 工具定义
+
+工具使用 `AgentTool` 接口，参数 schema 使用 TypeBox（非 Zod）：
+
+```typescript
+import type { AgentTool } from "@mariozechner/pi-agent-core";
+import { Type } from "@sinclair/typebox";
+
+// 记忆搜索工具
+const memorySearchSchema = Type.Object({
+  query: Type.String({ description: "搜索关键词" }),
+  limit: Type.Optional(Type.Number({ description: "最大结果数，默认 5" })),
+});
+
+export function createMemorySearchTool(workspaceId: string): AgentTool<typeof memorySearchSchema> {
+  return {
+    name: "memory_search",
+    label: "搜索记忆",
+    description: "搜索 Daily Log 和 MEMORY.md 中的历史记忆，返回匹配片段",
+    parameters: memorySearchSchema,
+    execute: async (_toolCallId, { query, limit }, signal) => {
+      const results = await fts5Search(workspaceId, query, limit ?? 5);
+      return {
+        content: [{ type: "text", text: formatSearchResults(results) }],
+        details: { resultCount: results.length },
+      };
+    },
+  };
+}
+```
+
+**小A 内置工具规划**：
+
+| 工具 | 说明 | 风险等级 |
+| --- | --- | --- |
+| `file_read` | 读取项目文件 | safe |
+| `file_write` | 创建/修改文件 | moderate |
+| `file_list` | 列出目录结构 | safe |
+| `memory_search` | FTS5 搜索记忆（MEMORY.md + Daily Log） | safe |
+| `memory_write` | 写入 Daily Log 或更新 MEMORY.md | moderate |
+| `knowledge_read` | 读取知识库解析后的内容 | safe |
+
+工具的风险等级与 Section 5 权限模型联动：Agent 执行 moderate/dangerous 工具时，在 Review 模式下需用户确认。
+
+### 9.5 自定义消息类型（Declaration Merging）
+
+通过 TypeScript declaration merging 扩展 `AgentMessage`，携带小A特有的消息类型：
+
+```typescript
+declare module "@mariozechner/pi-agent-core" {
+  interface CustomAgentMessages {
+    /** 权限请求：Agent 需要用户确认操作 */
+    permissionRequest: {
+      role: "permission-request";
+      action: string;
+      risk: ActionRisk;
+      details: string;
+      timestamp: number;
+    };
+    /** 压缩摘要：替代被裁剪的历史消息 */
+    compactionSummary: {
+      role: "compaction-summary";
+      summary: string;
+      timestamp: number;
+    };
+  }
+}
+```
+
+这些自定义消息在 `convertToLlm` 中被转换或过滤：
+
+```typescript
+function xiaoaConvertToLlm(messages: AgentMessage[]): Message[] {
+  return messages
+    .map((m) => {
+      switch (m.role) {
+        case "compaction-summary":
+          return { role: "user", content: `<context-summary>${m.summary}</context-summary>`, timestamp: m.timestamp };
+        case "permission-request":
+          return undefined; // UI-only，不发给 LLM
+        case "user":
+        case "assistant":
+        case "toolResult":
+          return m;
+        default:
+          return undefined;
+      }
+    })
+    .filter(Boolean);
+}
+```
+
+### 9.6 System Prompt 组装
+
+```typescript
+function buildSystemPrompt(workspace: Workspace, memoryContent: string): string {
+  const parts: string[] = [];
+
+  // 1. Agent 人设
+  parts.push(workspace.agent.systemPrompt);
+
+  // 2. 长期记忆（MEMORY.md 全文注入）
+  if (memoryContent) {
+    parts.push(`# 你的记忆\n\n${memoryContent}`);
+  }
+
+  // 3. 知识库摘要（L0: name + description 列表，按需用工具读取全文）
+  const knowledgeList = getKnowledgeSummaries(workspace.id);
+  if (knowledgeList.length > 0) {
+    parts.push(`# 知识库\n\n${knowledgeList.map(k => `- ${k.name}: ${k.description}`).join("\n")}`);
+  }
+
+  // 4. 技能列表（仅 model-invocable 的技能，L0: name + description）
+  const skills = getModelInvocableSkills(workspace.id);
+  if (skills.length > 0) {
+    parts.push(`# 可用技能\n\n${skills.map(s => `- /${s.name}: ${s.description}`).join("\n")}`);
+  }
+
+  // 5. 行为规则（权限提示、记忆写入指引等）
+  parts.push(BEHAVIOR_RULES);
+
+  // 6. 时间和环境
+  parts.push(`当前时间: ${new Date().toLocaleString("zh-CN")}`);
+
+  return parts.join("\n\n");
+}
+```
+
+### 9.7 事件流与 UI 集成
+
+Agent 事件通过 oRPC 流式推送到 Renderer：
+
+```text
+AgentEvent 类型：
+├── agent_start / agent_end       — Agent 生命周期
+├── turn_start / turn_end         — 每轮 LLM 调用
+├── message_start / message_end   — 消息边界
+├── message_update                — 流式文本增量（text_delta）
+├── tool_execution_start          — 工具开始执行
+├── tool_execution_update         — 工具执行进度（流式输出）
+└── tool_execution_end            — 工具执行完成
+```
+
+Renderer 端通过 `agent.subscribe()` 监听事件更新 UI：
+
+```typescript
+agent.subscribe((event: AgentEvent) => {
+  switch (event.type) {
+    case "message_update":
+      // event.assistantMessageEvent.type === "text_delta"
+      // 追加文本到对话气泡
+      break;
+    case "tool_execution_start":
+      // 显示工具执行状态
+      break;
+    case "agent_end":
+      // 流式结束，最终渲染
+      break;
+  }
+});
+```
+
+### 9.8 上下文管理与 Compaction
+
+当对话 context 接近模型上限时，执行 Pre-compaction flush + 消息压缩：
+
+```text
+transformContext() 被调用
+    │
+    ▼
+1. 估算 token 用量（chars / 4 启发式）
+    │
+    ▼
+2. 是否超过阈值？ contextTokens > contextWindow - reserveTokens
+    │ 否 → 直接返回
+    │ 是 ↓
+    ▼
+3. Pre-compaction flush
+   → 提取近期对话中的关键信息
+   → 写入 memories/daily/YYYY-MM-DD.md
+    │
+    ▼
+4. 找到裁剪点（从最新消息往回累计，保留 keepRecentTokens）
+    │
+    ▼
+5. 裁剪点之前的消息 → LLM 生成摘要
+    │
+    ▼
+6. 替换为 CompactionSummaryMessage
+   → convertToLlm 时转为 <context-summary>...</context-summary>
+```
+
+### 9.9 Steering 与 Follow-up
+
+`pi-agent-core` 提供两种队列机制用于对话中的用户干预：
+
+- **Steering（转向）**：工具执行期间打断 Agent，注入新指令。剩余未执行的工具会被跳过
+- **Follow-up（追问）**：Agent 完成当前回复后自动追加新任务，无需用户手动发送
+
+```typescript
+// 用户在 Agent 执行文件写入时中途打断
+agent.steer({ role: "user", content: "等一下，先不要写入", timestamp: Date.now() });
+
+// Agent 完成后自动追问（如自动保存记忆）
+agent.followUp({ role: "user", content: "[auto] 请总结本轮对话要点到 Daily Log", timestamp: Date.now() });
 ```
 
 ---
 
-## 9. 实现路线图
+## 10. 实现路线图
 
 ### Phase 1 — 基础骨架
 
@@ -1198,7 +1458,7 @@ export const IPC_CHANNELS = {
 - **内置小A基础对话**（小A入口 + 对话视图 + 会话管理）
 - 工作区 CRUD 和切换
 - 本地存储层（JSON 文件读写 + credentials.enc 加密存储）
-- IPC 通道注册（含 CONFIG_*和 LLM_* 通道）
+- oRPC router 注册（config / llm domain）
 
 ### Phase 2 — Agent 配置
 
@@ -1221,8 +1481,14 @@ export const IPC_CHANNELS = {
 - `@` 引用文件作为上下文
 - 技能快捷调用（`/` 菜单触发，`$ARGUMENTS` 参数传递）
 
-### Phase 5 — Agent 集成
+### Phase 5 — Agent 集成（pi-agent-core）
 
-- 接入 LLM（通过 pi-agent-core 或直接 API）
-- System Prompt 组装（Agent 人设 + 记忆 + 知识库内容 + 文件上下文）
-- 工具调用（文件读写等内置能力）
+- 集成 `@mariozechner/pi-agent-core`，在 Main 进程创建 Agent 实例
+- 集成 `@mariozechner/pi-ai`，通过 `getModel()` 对接多 LLM Provider
+- System Prompt 组装（Agent 人设 + MEMORY.md + 知识库摘要 + 技能列表）
+- 实现 `convertToLlm`（自定义消息类型转换）和 `transformContext`（上下文管理）
+- 内置工具：`file_read` / `file_write` / `file_list` / `memory_search` / `memory_write` / `knowledge_read`
+- 通过 oRPC `chat.send` / `chat.abort` 将 AgentEvent 流式推送到 Renderer
+- Compaction：Pre-compaction flush 到 Daily Log + LLM 摘要压缩
+- 会话结束钩子：`/new` 或空闲超时时自动写入 Daily Log
+- Declaration merging 扩展 `AgentMessage`（权限请求、压缩摘要等自定义消息）
