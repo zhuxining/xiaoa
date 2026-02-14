@@ -1,0 +1,80 @@
+---
+title: Drag Window Region
+description: A cross-platform draggable title bar component with window controls for Electron applications
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+import { Callout } from "fumadocs-ui/components/callout";
+import { TypeTable } from "fumadocs-ui/components/type-table";
+
+The `DragWindowRegion` component provides a native-like draggable title bar area for your Electron application. It automatically adapts to the current operating system, showing window controls (minimize, maximize, close) on Windows/Linux while respecting macOS conventions where these controls are handled by the system.
+
+## Features
+
+- **Cross-platform support**: Automatically detects the OS and adjusts behavior
+- **Draggable region**: Allows users to drag the window by clicking and holding the title bar
+- **Window controls**: Built-in minimize, maximize, and close buttons
+- **Customizable title**: Supports any ReactNode as the title content
+
+## Usage
+
+```tsx
+import DragWindowRegion from "@/components/drag-window-region";
+
+export default function App() {
+  return (
+    <div>
+      <DragWindowRegion title="My Application" />
+      {/* Your app content */}
+    </div>
+  );
+}
+```
+
+## Props
+
+<TypeTable
+  type={{
+    title: {
+      description: "Optional title to display in the title bar. Can be a string or any React element.",
+      type: "ReactNode",
+      required: false,
+    },
+  }}
+/>
+
+## Examples
+
+### Basic Usage
+
+```tsx
+import DragWindowRegion from "@/components/drag-window-region";
+
+export default function MainWindow() {
+  return (
+    <div className="flex flex-col h-screen">
+      <DragWindowRegion title="electron-shadcn" />
+      <main className="flex-1 p-4">
+        {/* Your content here */}
+      </main>
+    </div>
+  );
+}
+```
+
+### Without Title
+
+If you don't need a title, simply omit the prop:
+
+```tsx
+import DragWindowRegion from "@/components/drag-window-region";
+
+export default function MainWindow() {
+  return (
+    <div>
+      <DragWindowRegion />
+      {/* Your content */}
+    </div>
+  );
+}
+```

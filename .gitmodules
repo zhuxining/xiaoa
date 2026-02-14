@@ -1,0 +1,6 @@
+[submodule "references/pi-mono"]
+	path = references/pi-mono
+	url = https://github.com/badlogic/pi-mono.git
+[submodule "references/craft-agents-oss"]
+	path = references/craft-agents-oss
+	url = https://github.com/lukilabs/craft-agents-oss.git

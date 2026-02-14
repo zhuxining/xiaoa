@@ -1,0 +1,76 @@
+---
+title: Language Toggle
+description: A toggle group component for switching between available languages in your Electron application
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+import { TypeTable } from "fumadocs-ui/components/type-table";
+
+The `LangToggle` component provides a visual toggle group for switching between available languages in your Electron application. It integrates with `react-i18next` for internationalization and persists the selected language preference.
+
+## Features
+
+- **Visual language switcher**: Displays available languages as a toggle group
+- **i18next integration**: Seamlessly works with `react-i18next` for translations
+- **Persistent selection**: Saves language preference through the IPC layer
+- **Dynamic language list**: Automatically renders options from your configured languages
+
+## Usage
+
+```tsx
+import LangToggle from "@/components/lang-toggle";
+
+export default function Settings() {
+  return (
+    <div>
+      <h2>Language Settings</h2>
+      <LangToggle />
+    </div>
+  );
+}
+```
+
+## How It Works
+
+1. The component retrieves the current language from `i18n.language` using the `useTranslation` hook
+2. Available languages are loaded from the `@/localization/langs` configuration file
+3. When a user selects a language, `setAppLanguage` is called to:
+   - Update the i18next instance with the new language
+   - Persist the preference through the IPC layer
+
+## Examples
+
+### Basic Usage
+
+```tsx
+import LangToggle from "@/components/lang-toggle";
+
+export default function SettingsPage() {
+  return (
+    <div className="space-y-6">
+      <section>
+        <h3 className="text-lg font-medium mb-2">Language</h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          Select your preferred language
+        </p>
+        <LangToggle />
+      </section>
+    </div>
+  );
+}
+```
+
+## Configuring Languages
+
+Go to [Inernationalization](/electron-shadcn/docs/internationalization) to learn how to set up and configure available languages for your application.
+
+## Related Components
+
+<Cards>
+  <Card
+    href="/docs/components/theme-toggle"
+    title="Theme Toggle"
+  >
+    Toggle between light and dark themes
+  </Card>
+</Cards>

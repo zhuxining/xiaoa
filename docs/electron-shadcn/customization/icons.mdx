@@ -1,0 +1,24 @@
+---
+title: Icons
+---
+
+electron-shadcn includes [Lucide React](https://lucide.dev) for icons:
+
+```tsx
+import { Button } from "@/components/ui/button";
+import { Download, Settings, User } from "lucide-react";
+
+export default function IconButtons() {
+  return (
+    <div className="flex gap-2">
+      <Button>
+        <Download className="mr-2 h-4 w-4" />
+        Download
+      </Button>
+      <Button variant="outline" size="icon">
+        <Settings className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+```

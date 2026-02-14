@@ -1,0 +1,161 @@
+---
+title: Updating Components
+description: How to update shadcn/ui components in your electron-shadcn application
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+import { Callout } from "fumadocs-ui/components/callout";
+import { Step, Steps } from "fumadocs-ui/components/steps";
+
+electron-shadcn includes a convenient script to update all your shadcn/ui components at once. This ensures you always have the latest versions with bug fixes and improvements.
+
+## Why Update Components?
+
+Since shadcn/ui components are copied into your project (not installed as dependencies), they won't automatically update when new versions are released. Regular updates give you:
+
+- **Bug fixes**: Resolved issues and improved stability
+- **New features**: Enhanced functionality and variants
+- **Accessibility improvements**: Better ARIA attributes and keyboard navigation
+- **Performance optimizations**: Faster rendering and reduced bundle size
+
+<Callout type="warn">
+Updating components will overwrite your local changes. If you've customized any components in `src/components/ui`, make sure to back them up or use version control before updating.
+</Callout>
+
+## Updating All Components
+
+The easiest way to update all components is using the `bump-ui` script:
+
+```bash
+npm run bump-ui
+```
+
+This script will:
+1. Scan your `src/components/ui` directory
+2. Identify all installed shadcn/ui components
+3. Reinstall each component with the latest version
+4. Overwrite existing files with the `-o` flag
+
+### How It Works
+
+The script automatically detects all `.tsx` files in your components directory and updates them:
+
+```bash
+# Equivalent to running:
+npx shadcn@latest add -y -o button card dialog dropdown-menu ...
+```
+
+The flags used are:
+- `-y`: Automatically confirm the installation
+- `-o`: Overwrite existing files
+
+## Updating Specific Components
+
+If you only want to update specific components, you can do it manually:
+
+```bash
+npx shadcn@latest add -o <component-name>
+```
+
+For example, to update just the Button component:
+
+```bash
+npx shadcn@latest add -o button
+```
+
+### Updating Multiple Specific Components
+
+```bash
+npx shadcn@latest add -o button card dialog
+```
+
+## Custom Component Directory
+
+If you've configured a custom path for your UI components, you can pass it to the script:
+
+```bash
+npm run bump-ui src/custom/ui/path
+```
+
+The script will look for components in the specified directory instead of the default `src/components/ui`.
+
+## Best Practices
+
+<Steps>
+<Step>
+### Commit Your Changes
+
+Before updating, make sure all your changes are committed to version control:
+
+```bash
+git add .
+git commit -m "Save work before updating components"
+```
+</Step>
+
+<Step>
+### Backup Custom Components
+
+If you've customized components, create a backup:
+
+```bash
+# Create a backup of customized components
+cp src/components/ui/button.tsx src/components/ui/button.backup.tsx
+```
+</Step>
+
+<Step>
+### Run the Update
+
+```bash
+npm run bump-ui
+```
+</Step>
+
+<Step>
+### Review Changes
+
+Check what changed using git:
+
+```bash
+git diff src/components/ui
+```
+</Step>
+
+<Step>
+### Restore Customizations
+
+If you had customizations, carefully merge them back into the updated components:
+
+```tsx
+// Restore your custom variants or modifications
+const buttonVariants = cva(
+  "inline-flex items-center justify-center...",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        // Your custom variant
+        brand: "bg-blue-600 text-white hover:bg-blue-700",
+      },
+    },
+  }
+);
+```
+</Step>
+
+<Step>
+### Test Your Application
+
+Run your tests and manually test affected components:
+
+```bash
+npm run test
+npm run start
+```
+</Step>
+</Steps>
+
+### Checking for Updates
+
+To check if updates are available, visit the [shadcn/ui changelog](https://ui.shadcn.com/docs/changelog) or the component pages on the shadcn/ui website.

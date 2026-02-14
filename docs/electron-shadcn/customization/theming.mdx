@@ -1,0 +1,31 @@
+---
+title: Theming
+---
+
+Components automatically use your theme colors defined in `src/styles/globals.css`. The theme supports light and dark modes out of the box.
+
+### CSS Variables
+
+Theme colors are defined as CSS variables:
+
+```css
+:root {
+  --background: 0 0% 100%;
+  --foreground: 0 0% 3.9%;
+  --primary: 0 0% 9%;
+  --primary-foreground: 0 0% 98%;
+  /* ... */
+}
+
+.dark {
+  --background: 0 0% 3.9%;
+  --foreground: 0 0% 98%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 0 0% 9%;
+  /* ... */
+}
+```
+
+### Customizing the Theme
+
+Modify the CSS variables to match your brand colors. You can use the [shadcn/ui themes](https://ui.shadcn.com/themes) page to generate a custom theme.

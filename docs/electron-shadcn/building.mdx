@@ -1,0 +1,68 @@
+---
+title: Building
+description: How to build and package your electron-shadcn application for distribution
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+import { Callout } from "fumadocs-ui/components/callout";
+
+electron-shadcn uses [Electron Forge](https://www.electronforge.io) for building, packaging, and distributing your application. This guide covers the different build options available.
+
+## Build Commands
+
+There are three main commands for building your application, each serving a different purpose:
+
+| Command | Description | Output |
+| --- | --- | --- |
+| `npm run package` | Creates an executable bundle | `out/` folder |
+| `npm run make` | Creates platform-specific distributables | `.exe`, `.dmg`, `.deb`, etc. |
+| `npm run publish` | Creates and publishes to GitHub Releases | GitHub Release |
+
+## Packaging
+
+The `package` command bundles your application into a platform-specific executable without creating an installer.
+
+```bash
+npm run package
+```
+
+This is useful for:
+- Quick testing of the production build
+- Running end-to-end tests with Playwright
+- Development verification before creating distributables
+
+The output will be in the `out/` directory.
+
+## Creating Distributables
+
+The `make` command generates platform-specific installers and distributables.
+
+```bash
+npm run make
+```
+
+<Tabs items={["Windows", "macOS", "Linux"]}>
+<Tab value="Windows">
+Generates:
+- `.exe` installer (Squirrel.Windows)
+- Portable executable
+
+The installer includes automatic updates support and creates Start Menu shortcuts.
+</Tab>
+<Tab value="macOS">
+Generates:
+- `.dmg` disk image
+- `.zip` archive
+
+<Callout type="warn">
+To sign your macOS app for distribution, you'll need an Apple Developer certificate. Without signing, users will see security warnings when opening the app.
+</Callout>
+</Tab>
+<Tab value="Linux">
+Generates:
+- `.deb` package (Debian/Ubuntu)
+- `.rpm` package (Fedora/RHEL)
+
+These packages can be installed using the system package manager.
+</Tab>
+</Tabs>

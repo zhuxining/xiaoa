@@ -1,0 +1,201 @@
+---
+title: CI/CD
+description: How to set up continuous integration and deployment for your electron-shadcn application
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+import { Callout } from "fumadocs-ui/components/callout";
+import { Step, Steps } from "fumadocs-ui/components/steps";
+
+electron-shadcn comes with pre-configured GitHub Actions workflows for testing, linting, formatting, and publishing your Electron application. This guide covers how to use and customize these workflows for your needs.
+
+## Overview
+
+The template includes the following workflows:
+
+| Workflow | File | Purpose |
+| --- | --- | --- |
+| Tests | `.github/workflows/tests.yml` | Runs Playwright e2e tests on pull requests |
+| Lint | `.github/workflows/lint.yml` | Runs ESLint to check code quality |
+| Check formatting | `.github/workflows/format.yml` | Checks code formatting with Prettier |
+| Publish Release | `.github/workflows/publish.yml` | Builds and publishes releases to GitHub |
+
+## Tests Workflow
+
+The tests workflow automatically runs Playwright end-to-end tests when you open a pull request or push to the main branch.
+
+### What It Does
+
+1. Checks out the repository
+2. Sets up Node.js
+3. Installs dependencies
+4. Builds the application
+5. Runs Playwright tests
+6. Reports test results
+
+## Cross-Platform Considerations
+
+### Testing
+
+The test workflow only runs on Ubuntu, the E2E tests runs on Windows. If you need to target other platforms, you can modify the workflow to include additional OSes.
+
+### Publishing
+
+The publish workflow builds the application only for Windows by default. To build for macOS and Linux, you need to run the workflow on those respective OS runners.
+
+## Lint Workflow
+
+The lint workflow runs ESLint to check your code for potential issues and enforce code standards.
+
+### When It Runs
+
+- On every pull request to `main`
+- On every push to `main`
+
+This ensures all code merged into the main branch follows consistent coding standards.
+
+## Check Formatting Workflow
+
+The formatting workflow uses Prettier to verify that all code follows consistent formatting rules.
+
+### When It Runs
+
+- On every pull request to `main`
+- On every push to `main`
+
+<Callout type="warn">
+If formatting checks fail, run `npm run format:write` locally to fix formatting issues before pushing. Some issues need to be resolved manually.
+</Callout>
+
+## Publish Workflow
+
+The publish workflow builds your application for Windows and creates a GitHub Release with the built artifacts.
+
+### Triggering the Workflow
+
+The publish workflow is triggered manually from the GitHub Actions tab:
+
+<Steps>
+<Step>
+### Navigate to Actions
+
+Go to your repository on GitHub and click the **Actions** tab.
+</Step>
+
+<Step>
+### Select the Workflow
+
+Click on **Publish Release** in the workflows list.
+</Step>
+
+<Step>
+### Run the Workflow
+
+Click **Run workflow**, select the branch, and confirm.
+</Step>
+</Steps>
+
+## Setting Up for Publishing
+
+### Configure Repository Information
+
+Before publishing, update `forge.config.ts` with your repository details:
+
+```ts
+publishers: [
+  {
+    name: "@electron-forge/publisher-github",
+    config: {
+      repository: {
+        owner: "your-username",
+        name: "your-repository",
+      },
+      draft: true,
+      prerelease: false,
+    },
+  },
+],
+```
+
+### GITHUB_TOKEN
+
+The `GITHUB_TOKEN` is automatically provided by GitHub Actions. It has permission to:
+
+- Create releases
+- Upload release assets
+- Read repository contents
+
+<Callout type="warn">
+The default `GITHUB_TOKEN` only has access to the current repository. For cross-repository operations, you'll need a Personal Access Token.
+</Callout>
+
+## Release Management
+
+### Semantic Versioning
+
+Follow [semantic versioning](https://semver.org) for your releases:
+
+- **Major** (1.0.0 → 2.0.0): Breaking changes
+- **Minor** (1.0.0 → 1.1.0): New features, backwards compatible
+- **Patch** (1.0.0 → 1.0.1): Bug fixes
+
+Update the version in `package.json` before publishing:
+
+```json
+{
+  "version": "1.2.0"
+}
+```
+
+### Draft Releases
+
+By default, releases are created as drafts. This allows you to:
+
+1. Review the release before making it public
+2. Edit the release notes
+3. Verify all artifacts are correct
+
+To publish the release:
+
+1. Go to **Releases** in your repository
+2. Find the draft release
+3. Click **Edit**
+4. Add release notes
+5. Click **Publish release**
+
+## Troubleshooting
+
+### Windows Build Fails
+
+Common issues on Windows:
+
+- **Long path names**: Enable long paths in Git
+- **Missing Visual Studio Build Tools**: The runner includes them by default
+
+```yaml
+- name: Configure Git
+  run: git config --global core.longpaths true
+```
+
+### Lint or Format Checks Fail
+
+If lint or formatting checks fail:
+
+```bash
+# Fix linting issues
+npm run lint -- --fix
+
+# Fix formatting issues
+npm run format:write
+```
+
+Then commit and push the changes.
+
+## Best Practices
+
+- **Run checks locally first**: Use `npm run lint` and `npm run format` before pushing
+- **Test before publishing**: Ensure all workflows pass before triggering a publish
+- **Use draft releases**: Review releases before making them public
+- **Keep secrets secure**: Never commit secrets to your repository
+- **Pin action versions**: Use specific versions of actions (e.g., `actions/checkout@v4`)
+- **Monitor workflow runs**: Check the Actions tab regularly for failed runs

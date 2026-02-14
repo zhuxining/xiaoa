@@ -1,0 +1,108 @@
+---
+title: Adding Components
+description: How to add and customize shadcn/ui components in your electron-shadcn application
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+import { Callout } from "fumadocs-ui/components/callout";
+import { Step, Steps } from "fumadocs-ui/components/steps";
+
+electron-shadcn comes pre-configured with [shadcn/ui](https://ui.shadcn.com), a collection of beautifully designed, accessible components that you can copy and paste into your app.
+
+## Adding shadcn/ui Components
+
+shadcn/ui components are not installed as dependencies. Instead, they are copied into your project, giving you full control over their code and styling.
+
+### Using the CLI
+
+The easiest way to add components is using the shadcn CLI:
+
+```bash
+npx shadcn@latest add <component-name>
+```
+
+For example, to add the Button component:
+
+```bash
+npx shadcn@latest add button
+```
+
+### Adding Multiple Components
+
+You can add multiple components at once:
+
+```bash
+npx shadcn@latest add button card dialog dropdown-menu
+```
+
+### Interactive Mode
+
+Run the CLI without arguments to enter interactive mode:
+
+```bash
+npx shadcn@latest add
+```
+
+This will show you a list of all available components to choose from.
+
+## Component Location
+
+All shadcn/ui components are stored in the `src/components/ui` directory. This is configured in the `components.json` file at the root of the project.
+
+```
+src/
+├── components/
+│   ├── ui/           # shadcn/ui components
+│   │   ├── button.tsx
+│   │   ├── card.tsx
+│   │   └── ...
+│   └── ...           # Your custom components
+```
+
+<Callout type="info">
+Keep shadcn/ui components in `src/components/ui` and your custom components in `src/components` to maintain a clean project structure.
+</Callout>
+
+## Customizing Components
+
+Since components are copied into your project, you can freely customize them.
+
+### Modifying Styles
+
+Edit the component file directly in `src/components/ui`:
+
+```tsx
+// src/components/ui/button.tsx
+const buttonVariants = cva(
+  "inline-flex items-center justify-center...",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        // Add your custom variant
+        brand: "bg-blue-600 text-white hover:bg-blue-700",
+      },
+      // ...
+    },
+  }
+);
+```
+
+### Creating Custom Variants
+
+Add new variants to existing components:
+
+```tsx
+<Button variant="brand">Brand Button</Button>
+```
+
+## Best Practices
+
+- **Keep ui components separate**: Don't modify files in `src/components/ui` unless you're customizing the component itself
+- **Use composition**: Build complex UIs by composing smaller shadcn/ui components
+- **Follow the path alias**: Always import from `@/components/ui` for consistency
+- **Check for updates**: Occasionally check [shadcn/ui](https://ui.shadcn.com) for component updates and new additions
+
+## Components Catalog
+
+electron-shadcn includes some components to provide common functionality in Electron apps. Check out the [Components](/electron-shadcn/docs/components/drag-window-region) section.

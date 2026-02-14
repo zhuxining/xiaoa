@@ -1,0 +1,177 @@
+---
+title: External Link
+description: A secure component for opening external URLs in the user's default browser from Electron applications
+---
+
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
+import { Callout } from "fumadocs-ui/components/callout";
+import { TypeTable } from "fumadocs-ui/components/type-table";
+
+The `ExternalLink` component provides a secure way to open external URLs in the user's default browser from within your Electron application. It wraps the standard anchor (`<a>`) element and uses Electron's shell API to safely open links externally, rather than navigating within the app.
+
+## Features
+
+- **Secure external navigation**: Opens links in the system's default browser instead of within the Electron app
+- **Familiar API**: Extends the standard HTML anchor element props
+- **Customizable styling**: Supports className merging with default styles
+- **Accessible**: Maintains standard anchor element semantics
+
+## Usage
+
+```tsx
+import ExternalLink from "@/components/external-link";
+
+export default function App() {
+  return (
+    <ExternalLink href="https://github.com">
+      Visit GitHub
+    </ExternalLink>
+  );
+}
+```
+
+## Props
+
+The component extends all standard HTML anchor (`<a>`) element props through `ComponentProps<"a">`.
+
+<TypeTable
+  type={{
+    href: {
+      description: "The URL to open in the external browser when clicked.",
+      type: "string",
+      required: false,
+    },
+    className: {
+      description: "Additional CSS classes to apply to the link. Merged with default styles.",
+      type: "string",
+      required: false,
+    },
+    children: {
+      description: "The content to display inside the link.",
+      type: "ReactNode",
+      required: false,
+    },
+  }}
+/>
+
+<Callout type="info">
+All other standard anchor element props (like `title`, `aria-label`, etc.) are also supported and passed through to the underlying `<a>` element.
+</Callout>
+
+## Examples
+
+### Basic Usage
+
+```tsx
+import ExternalLink from "@/components/external-link";
+
+export default function Footer() {
+  return (
+    <footer>
+      <p>
+        Built with{" "}
+        <ExternalLink href="https://www.electronjs.org/">
+          Electron
+        </ExternalLink>
+      </p>
+    </footer>
+  );
+}
+```
+
+### With Custom Styling
+
+```tsx
+import ExternalLink from "@/components/external-link";
+
+export default function Links() {
+  return (
+    <ExternalLink
+      href="https://github.com/LuanRoger/electron-shadcn"
+      className="text-blue-500 hover:text-blue-700 font-semibold"
+    >
+      View on GitHub
+    </ExternalLink>
+  );
+}
+```
+
+### With Icon
+
+```tsx
+import ExternalLink from "@/components/external-link";
+import { ExternalLinkIcon } from "lucide-react";
+
+export default function DocumentationLink() {
+  return (
+    <ExternalLink
+      href="https://ui.shadcn.com/"
+      className="inline-flex items-center gap-1"
+    >
+      shadcn/ui Documentation
+      <ExternalLinkIcon className="w-4 h-4" />
+    </ExternalLink>
+  );
+}
+```
+
+### In a Navigation Menu
+
+```tsx
+import ExternalLink from "@/components/external-link";
+
+export default function HelpMenu() {
+  return (
+    <nav className="flex flex-col gap-2">
+      <ExternalLink href="https://github.com/LuanRoger/electron-shadcn/issues">
+        Report an Issue
+      </ExternalLink>
+      <ExternalLink href="https://github.com/LuanRoger/electron-shadcn/discussions">
+        Community Discussions
+      </ExternalLink>
+      <ExternalLink href="https://github.com/LuanRoger/electron-shadcn/wiki">
+        Documentation
+      </ExternalLink>
+    </nav>
+  );
+}
+```
+
+## Why Use This Component?
+
+In Electron applications, you should avoid using standard anchor tags with `target="_blank"` for external links because:
+
+1. **Security**: Opening external content in new Electron windows can pose security risks
+2. **User Experience**: Users expect external links to open in their default browser, not in a new app window
+3. **Consistency**: Using the system browser maintains consistent behavior with other desktop applications
+
+The `ExternalLink` component handles all of this automatically by using Electron's `shell.openExternal()` API, which safely opens URLs in the user's default browser.
+
+## Comparison with Standard Anchor
+
+<Tabs items={["ExternalLink", "Standard Anchor"]}>
+<Tab value="ExternalLink">
+```tsx
+// ✅ Recommended for Electron
+<ExternalLink href="https://example.com">
+  Visit Example
+</ExternalLink>
+```
+
+- Opens in default system browser
+- Secure and follows Electron best practices
+- Consistent desktop application behavior
+</Tab>
+<Tab value="Standard Anchor">
+```tsx
+// ❌ Not recommended in Electron
+<a href="https://example.com" target="_blank" rel="noopener noreferrer">
+  Visit Example
+</a>
+```
+
+- May open in a new Electron window (security risk)
+- Inconsistent behavior depending on configuration
+- Not following desktop application conventions
+</Tab>
+</Tabs>
