@@ -1,7 +1,3 @@
 {
-  "pages": [
-    "adding-components",
-    "updating-components",
-    "..."
-  ]
+  "pages": ["adding-components", "updating-components", "..."]
 }

@@ -15,7 +15,7 @@ function NavigationMenu({
   return (
     <NavigationMenuPrimitive.Root
       className={cn(
-        "group/navigation-menu relative flex max-w-max max-w-max flex-1 items-center justify-center",
+        "group/navigation-menu relative flex max-w-max flex-1 items-center justify-center",
         className
       )}
       data-slot="navigation-menu"
@@ -75,7 +75,7 @@ function NavigationMenuTrigger({
       {children}{" "}
       <ChevronDownIcon
         aria-hidden="true"
-        className="relative top-[1px] ml-1 size-3 transition duration-300 group-data-open/navigation-menu-trigger:rotate-180 group-data-popup-open/navigation-menu-trigger:rotate-180"
+        className="relative top-px ml-1 size-3 transition duration-300 group-data-open/navigation-menu-trigger:rotate-180 group-data-popup-open/navigation-menu-trigger:rotate-180"
       />
     </NavigationMenuPrimitive.Trigger>
   );
@@ -109,7 +109,7 @@ function NavigationMenuViewport({
     >
       <NavigationMenuPrimitive.Viewport
         className={cn(
-          "data-closed:zoom-out-95 data-open:zoom-in-90 relative mt-1.5 h-[var(--radix-navigation-menu-viewport-height)] w-full origin-top-center overflow-hidden rounded-xl bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-closed:animate-out data-open:animate-in md:w-[var(--radix-navigation-menu-viewport-width)]",
+          "data-closed:zoom-out-95 data-open:zoom-in-90 relative mt-1.5 h-(--radix-navigation-menu-viewport-height) w-full origin-top-center overflow-hidden rounded-xl bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-closed:animate-out data-open:animate-in md:w-(--radix-navigation-menu-viewport-width)",
           className
         )}
         data-slot="navigation-menu-viewport"
@@ -126,7 +126,7 @@ function NavigationMenuLink({
   return (
     <NavigationMenuPrimitive.Link
       className={cn(
-        "flex items-center gap-1.5 rounded-lg p-2 text-xs/relaxed outline-none transition-all hover:bg-muted focus:bg-muted focus-visible:outline-1 focus-visible:ring-[2px] focus-visible:ring-ring/30 data-[active=true]:bg-muted/50 data-[active=true]:focus:bg-muted data-[active=true]:hover:bg-muted [&_svg:not([class*='size-'])]:size-4",
+        "flex items-center gap-1.5 rounded-lg p-2 text-xs/relaxed outline-none transition-all hover:bg-muted focus:bg-muted focus-visible:outline-1 focus-visible:ring-2 focus-visible:ring-ring/30 data-[active=true]:bg-muted/50 data-[active=true]:focus:bg-muted data-[active=true]:hover:bg-muted [&_svg:not([class*='size-'])]:size-4",
         className
       )}
       data-slot="navigation-menu-link"
@@ -142,7 +142,7 @@ function NavigationMenuIndicator({
   return (
     <NavigationMenuPrimitive.Indicator
       className={cn(
-        "data-[state=hidden]:fade-out data-[state=visible]:fade-in top-full z-[1] flex h-1.5 items-end justify-center overflow-hidden data-[state=hidden]:animate-out data-[state=visible]:animate-in",
+        "data-[state=hidden]:fade-out data-[state=visible]:fade-in top-full z-1 flex h-1.5 items-end justify-center overflow-hidden data-[state=hidden]:animate-out data-[state=visible]:animate-in",
         className
       )}
       data-slot="navigation-menu-indicator"
