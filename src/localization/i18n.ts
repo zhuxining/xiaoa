@@ -2,8 +2,17 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 
 i18n.use(initReactI18next).init({
-  fallbackLng: "en",
+  fallbackLng: "zh-CN",
   resources: {
+    "zh-CN": {
+      translation: {
+        appName: "小A",
+        titleHomePage: "首页",
+        titleSecondPage: "第二页",
+        documentation: "文档",
+        madeBy: "某人",
+      },
+    },
     en: {
       translation: {
         appName: "xiaoa",
@@ -11,15 +20,6 @@ i18n.use(initReactI18next).init({
         titleSecondPage: "Second Page",
         documentation: "Documentation",
         madeBy: "Made by LuanRoger",
-      },
-    },
-    "pt-BR": {
-      translation: {
-        appName: "xiaoa",
-        titleHomePage: "Página Inicial",
-        titleSecondPage: "Segunda Página",
-        documentation: "Documentação",
-        madeBy: "Feito por LuanRoger",
       },
     },
   },
