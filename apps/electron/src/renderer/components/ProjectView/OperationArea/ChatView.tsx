@@ -1,9 +1,6 @@
+import { Markdown } from "@xiaoa/ui";
 import { useAtomValue } from "jotai";
 import { useEffect } from "react";
-import ReactMarkdown from "react-markdown";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
-import remarkGfm from "remark-gfm";
 import {
 	activeWorkspaceIdAtom,
 	messagesAtom,
@@ -61,32 +58,7 @@ export function ChatView() {
 							}`}
 						>
 							{msg.role === "assistant" ? (
-								<div className="prose prose-sm dark:prose-invert max-w-none">
-									<ReactMarkdown
-										remarkPlugins={[remarkGfm]}
-										components={{
-											code(props) {
-												const { className, children } = props as {
-													className?: string;
-													children?: unknown;
-												};
-												const language =
-													className?.replace("language-", "") || "text";
-												return (
-													<SyntaxHighlighter
-														style={oneDark}
-														language={language}
-														PreTag="div"
-													>
-														{String(children).replace(/\n$/, "")}
-													</SyntaxHighlighter>
-												);
-											},
-										}}
-									>
-										{msg.content}
-									</ReactMarkdown>
-								</div>
+								<Markdown>{msg.content}</Markdown>
 							) : (
 								msg.content
 							)}

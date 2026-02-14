@@ -1,9 +1,9 @@
-import { Agent } from "@mariozechner/pi-agent-core";
 import {
+	Agent,
 	type AssistantMessage,
 	getModel,
 	type UserMessage,
-} from "@mariozechner/pi-ai";
+} from "@xiaoa/shared";
 import type { LLMConfig, StreamEvent } from "@xiaoa/types";
 import { BrowserWindow } from "electron";
 import { sessionService } from "./sessions";

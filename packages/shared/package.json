@@ -4,21 +4,23 @@
 	"private": true,
 	"type": "module",
 	"exports": {
-		".": "./src/index.ts"
+		".": "./src/index.ts",
+		"./utils": "./src/utils/index.ts"
 	},
 	"scripts": {
 		"typecheck": "tsgo --noEmit"
 	},
-	"devDependencies": {
-		"typescript": "catalog:"
-	},
 	"dependencies": {
-		"@mariozechner/pi-agent-core": "^0.52.9",
-		"@mariozechner/pi-ai": "^0.52.9",
+		"@mariozechner/pi-agent-core": "^0.52.12",
+		"@mariozechner/pi-ai": "^0.52.12",
+		"@modelcontextprotocol/sdk": "^1.26.0",
 		"@xiaoa/types": "workspace:*",
 		"date-fns": "^4.1.0",
 		"defu": "^6.1.4",
 		"nanoid": "^5.1.6",
-		"zod": "^4.3.6"
+		"zod": "catalog:"
+	},
+	"devDependencies": {
+		"typescript": "catalog:"
 	}
 }

@@ -20,7 +20,17 @@
 			"@vitejs/plugin-react": "^5.1.4",
 			"jotai": "^2.12.3",
 			"lucide-react": "^0.563.0",
-			"@base-ui/react": "^1.1.0"
+			"@base-ui/react": "^1.2.0",
+			"zod": "^4.3.6",
+			"class-variance-authority": "^0.7.1",
+			"react-markdown": "^10.1.0",
+			"remark-gfm": "^4.0.1",
+			"rehype-raw": "^7.0.0",
+			"shiki": "^3.7.0",
+			"motion": "^12.12.1",
+			"sonner": "^2.0.3",
+			"cmdk": "^1.1.1",
+			"electron-log": "^5.3.4"
 		}
 	},
 	"scripts": {
@@ -33,22 +43,8 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.3.15",
-		"markdownlint-cli2": "^0.20.0",
-		"lefthook": "^2.1.1",
 		"@typescript/native-preview": "^7.0.0-dev.20260212.1",
+		"lefthook": "^2.1.1",
 		"typescript": "^6.0.0-dev.20260212"
-	},
-	"markdownlint-cli2": {
-		"config": {
-			"MD013": false,
-			"MD033": false,
-			"MD041": false
-		},
-		"gitignore": true,
-		"ignores": [
-			".agents/**",
-			".claude/skills/**",
-			"references/**"
-		]
 	}
 }

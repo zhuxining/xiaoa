@@ -1,5 +1,7 @@
 // Utilities
 
+// Components
+export { Markdown } from "./components/markdown";
 // Style utilities for Base UI
 export type { BaseUIState, DataSelector } from "./lib/styles";
 export {

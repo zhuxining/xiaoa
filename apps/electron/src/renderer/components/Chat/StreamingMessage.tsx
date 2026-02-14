@@ -1,9 +1,5 @@
-import { cn } from "@xiaoa/ui";
+import { Markdown } from "@xiaoa/ui";
 import { useAtomValue } from "jotai";
-import ReactMarkdown from "react-markdown";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
-import remarkGfm from "remark-gfm";
 import { streamingStatusAtom } from "../../atoms";
 
 interface StreamingMessageProps {
@@ -22,41 +18,7 @@ export function StreamingMessage({ sessionId }: StreamingMessageProps) {
 				<div className="flex items-start gap-2">
 					<span className="text-xs text-muted-foreground">Assistant</span>
 					<div className="flex-1 space-y-1">
-						<div className="prose prose-sm dark:prose-invert max-w-none">
-							<ReactMarkdown
-								remarkPlugins={[remarkGfm]}
-								components={{
-									code(props) {
-										const { inline, className, children } = props as {
-											inline?: boolean;
-											className?: string;
-											children?: unknown;
-										};
-										const match = /language-(\w+)/.exec(className || "");
-										return !inline ? (
-											<SyntaxHighlighter
-												style={oneDark}
-												language={match?.[1] || "text"}
-												PreTag="div"
-											>
-												{String(children).replace(/\n$/, "")}
-											</SyntaxHighlighter>
-										) : (
-											<code
-												className={cn(
-													"px-1 py-0.5 rounded bg-muted text-muted-foreground text-sm",
-													className,
-												)}
-											>
-												{String(children)}
-											</code>
-										);
-									},
-								}}
-							>
-								{status.currentContent}
-							</ReactMarkdown>
-						</div>
+						<Markdown>{status.currentContent}</Markdown>
 						<span className="inline-block w-2 h-4 animate-pulse" />
 					</div>
 				</div>
