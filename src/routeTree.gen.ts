@@ -9,12 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SecondRouteImport } from './routes/second'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WorkspaceWorkspaceIdSkillsRouteImport } from './routes/workspace/$workspaceId/skills'
+import { Route as WorkspaceWorkspaceIdMemoriesRouteImport } from './routes/workspace/$workspaceId/memories'
+import { Route as WorkspaceWorkspaceIdKnowledgeRouteImport } from './routes/workspace/$workspaceId/knowledge'
+import { Route as WorkspaceWorkspaceIdAgentRouteImport } from './routes/workspace/$workspaceId/agent'
+import { Route as WorkspaceWorkspaceIdProjectProjectIdRouteImport } from './routes/workspace/$workspaceId/project/$projectId'
 
-const SecondRoute = SecondRouteImport.update({
-  id: '/second',
-  path: '/second',
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -22,40 +27,112 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkspaceWorkspaceIdSkillsRoute =
+  WorkspaceWorkspaceIdSkillsRouteImport.update({
+    id: '/workspace/$workspaceId/skills',
+    path: '/workspace/$workspaceId/skills',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const WorkspaceWorkspaceIdMemoriesRoute =
+  WorkspaceWorkspaceIdMemoriesRouteImport.update({
+    id: '/workspace/$workspaceId/memories',
+    path: '/workspace/$workspaceId/memories',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const WorkspaceWorkspaceIdKnowledgeRoute =
+  WorkspaceWorkspaceIdKnowledgeRouteImport.update({
+    id: '/workspace/$workspaceId/knowledge',
+    path: '/workspace/$workspaceId/knowledge',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const WorkspaceWorkspaceIdAgentRoute =
+  WorkspaceWorkspaceIdAgentRouteImport.update({
+    id: '/workspace/$workspaceId/agent',
+    path: '/workspace/$workspaceId/agent',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const WorkspaceWorkspaceIdProjectProjectIdRoute =
+  WorkspaceWorkspaceIdProjectProjectIdRouteImport.update({
+    id: '/workspace/$workspaceId/project/$projectId',
+    path: '/workspace/$workspaceId/project/$projectId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/second': typeof SecondRoute
+  '/settings': typeof SettingsRoute
+  '/workspace/$workspaceId/agent': typeof WorkspaceWorkspaceIdAgentRoute
+  '/workspace/$workspaceId/knowledge': typeof WorkspaceWorkspaceIdKnowledgeRoute
+  '/workspace/$workspaceId/memories': typeof WorkspaceWorkspaceIdMemoriesRoute
+  '/workspace/$workspaceId/skills': typeof WorkspaceWorkspaceIdSkillsRoute
+  '/workspace/$workspaceId/project/$projectId': typeof WorkspaceWorkspaceIdProjectProjectIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/second': typeof SecondRoute
+  '/settings': typeof SettingsRoute
+  '/workspace/$workspaceId/agent': typeof WorkspaceWorkspaceIdAgentRoute
+  '/workspace/$workspaceId/knowledge': typeof WorkspaceWorkspaceIdKnowledgeRoute
+  '/workspace/$workspaceId/memories': typeof WorkspaceWorkspaceIdMemoriesRoute
+  '/workspace/$workspaceId/skills': typeof WorkspaceWorkspaceIdSkillsRoute
+  '/workspace/$workspaceId/project/$projectId': typeof WorkspaceWorkspaceIdProjectProjectIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/second': typeof SecondRoute
+  '/settings': typeof SettingsRoute
+  '/workspace/$workspaceId/agent': typeof WorkspaceWorkspaceIdAgentRoute
+  '/workspace/$workspaceId/knowledge': typeof WorkspaceWorkspaceIdKnowledgeRoute
+  '/workspace/$workspaceId/memories': typeof WorkspaceWorkspaceIdMemoriesRoute
+  '/workspace/$workspaceId/skills': typeof WorkspaceWorkspaceIdSkillsRoute
+  '/workspace/$workspaceId/project/$projectId': typeof WorkspaceWorkspaceIdProjectProjectIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/second'
+  fullPaths:
+    | '/'
+    | '/settings'
+    | '/workspace/$workspaceId/agent'
+    | '/workspace/$workspaceId/knowledge'
+    | '/workspace/$workspaceId/memories'
+    | '/workspace/$workspaceId/skills'
+    | '/workspace/$workspaceId/project/$projectId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/second'
-  id: '__root__' | '/' | '/second'
+  to:
+    | '/'
+    | '/settings'
+    | '/workspace/$workspaceId/agent'
+    | '/workspace/$workspaceId/knowledge'
+    | '/workspace/$workspaceId/memories'
+    | '/workspace/$workspaceId/skills'
+    | '/workspace/$workspaceId/project/$projectId'
+  id:
+    | '__root__'
+    | '/'
+    | '/settings'
+    | '/workspace/$workspaceId/agent'
+    | '/workspace/$workspaceId/knowledge'
+    | '/workspace/$workspaceId/memories'
+    | '/workspace/$workspaceId/skills'
+    | '/workspace/$workspaceId/project/$projectId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  SecondRoute: typeof SecondRoute
+  SettingsRoute: typeof SettingsRoute
+  WorkspaceWorkspaceIdAgentRoute: typeof WorkspaceWorkspaceIdAgentRoute
+  WorkspaceWorkspaceIdKnowledgeRoute: typeof WorkspaceWorkspaceIdKnowledgeRoute
+  WorkspaceWorkspaceIdMemoriesRoute: typeof WorkspaceWorkspaceIdMemoriesRoute
+  WorkspaceWorkspaceIdSkillsRoute: typeof WorkspaceWorkspaceIdSkillsRoute
+  WorkspaceWorkspaceIdProjectProjectIdRoute: typeof WorkspaceWorkspaceIdProjectProjectIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/second': {
-      id: '/second'
-      path: '/second'
-      fullPath: '/second'
-      preLoaderRoute: typeof SecondRouteImport
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -65,12 +142,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/workspace/$workspaceId/skills': {
+      id: '/workspace/$workspaceId/skills'
+      path: '/workspace/$workspaceId/skills'
+      fullPath: '/workspace/$workspaceId/skills'
+      preLoaderRoute: typeof WorkspaceWorkspaceIdSkillsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workspace/$workspaceId/memories': {
+      id: '/workspace/$workspaceId/memories'
+      path: '/workspace/$workspaceId/memories'
+      fullPath: '/workspace/$workspaceId/memories'
+      preLoaderRoute: typeof WorkspaceWorkspaceIdMemoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workspace/$workspaceId/knowledge': {
+      id: '/workspace/$workspaceId/knowledge'
+      path: '/workspace/$workspaceId/knowledge'
+      fullPath: '/workspace/$workspaceId/knowledge'
+      preLoaderRoute: typeof WorkspaceWorkspaceIdKnowledgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workspace/$workspaceId/agent': {
+      id: '/workspace/$workspaceId/agent'
+      path: '/workspace/$workspaceId/agent'
+      fullPath: '/workspace/$workspaceId/agent'
+      preLoaderRoute: typeof WorkspaceWorkspaceIdAgentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workspace/$workspaceId/project/$projectId': {
+      id: '/workspace/$workspaceId/project/$projectId'
+      path: '/workspace/$workspaceId/project/$projectId'
+      fullPath: '/workspace/$workspaceId/project/$projectId'
+      preLoaderRoute: typeof WorkspaceWorkspaceIdProjectProjectIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  SecondRoute: SecondRoute,
+  SettingsRoute: SettingsRoute,
+  WorkspaceWorkspaceIdAgentRoute: WorkspaceWorkspaceIdAgentRoute,
+  WorkspaceWorkspaceIdKnowledgeRoute: WorkspaceWorkspaceIdKnowledgeRoute,
+  WorkspaceWorkspaceIdMemoriesRoute: WorkspaceWorkspaceIdMemoriesRoute,
+  WorkspaceWorkspaceIdSkillsRoute: WorkspaceWorkspaceIdSkillsRoute,
+  WorkspaceWorkspaceIdProjectProjectIdRoute:
+    WorkspaceWorkspaceIdProjectProjectIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
