@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 小 A 是一个为非Coding群体打造的Agent工作站。基于`@mariozechner/pi-agent-core`sdk的Agent基础集成能力，参考 `craft-agents-oss` 的产品设计。
 
 **技术栈**: Electron Forge + React 19 | TailwindCSS 4 + shadcn/ui | TanStack Router + Query | oRPC | pi-agent-core + pi-ai
+**Schema 说明**: oRPC IPC 输入验证使用 **Zod 4**；Agent 工具参数（`AgentTool`）使用 **TypeBox**（`@sinclair/typebox`，pi-agent-core SDK 接口强制要求，作为传递依赖自动安装，无需显式安装）
 **设计文档**: 架构设计文档位于 `docs/design/architecture.md`，包含详细的设计决策和架构图。
 
 ## 项目结构

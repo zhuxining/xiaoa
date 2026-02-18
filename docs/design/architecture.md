@@ -30,7 +30,7 @@
 | 路由 | TanStack Router（文件路由） |
 | 状态管理 | TanStack Query（服务端状态） + useState（局部状态） |
 | IPC | oRPC（类型安全，MessagePort 通信） |
-| Schema | Zod 4 |
+| Schema | Zod 4（oRPC IPC 输入验证）+ TypeBox（AgentTool 参数，SDK 强制要求） |
 | 国际化 | i18next |
 | 动画 | Motion |
 | Agent SDK | @mariozechner/pi-agent-core（Agent 循环 + 工具执行 + 事件流） |
