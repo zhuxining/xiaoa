@@ -12,12 +12,14 @@ import {
   FileText,
   FolderOpen,
   Loader2,
+  Plus,
   Settings,
   Wrench,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { getConfig, setActiveWorkspace } from "@/actions/config";
+import { addProject, getProjects, selectFolder } from "@/actions/project";
 import { createWorkspace, getWorkspaces } from "@/actions/workspace";
 import { AppLayout } from "@/components/layout/app-layout";
 import {
@@ -68,6 +70,13 @@ function Root() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
 
+  // 加载项目列表
+  const { data: projects = [] } = useQuery({
+    queryKey: ["projects", currentWorkspaceId],
+    queryFn: () => getProjects(currentWorkspaceId ?? ""),
+    enabled: !!currentWorkspaceId,
+  });
+
   // 创建工作区
   const createMutation = useMutation({
     mutationFn: (name: string) => createWorkspace({ name }),
@@ -88,6 +97,40 @@ function Root() {
       toast.error(`创建失败: ${error.message}`);
     },
   });
+
+  // 添加项目
+  const addProjectMutation = useMutation({
+    mutationFn: ({
+      workspaceId,
+      path,
+    }: {
+      workspaceId: string;
+      path: string;
+    }) => addProject({ workspaceId, path }),
+    onSuccess: (project) => {
+      queryClient.invalidateQueries({
+        queryKey: ["projects", currentWorkspaceId],
+      });
+      navigate({
+        to: `/workspace/${currentWorkspaceId}/project/${project.id}`,
+      });
+    },
+    onError: (error) => {
+      toast.error(`添加项目失败: ${error.message}`);
+    },
+  });
+
+  // 打开文件夹
+  const handleOpenFolder = async () => {
+    if (!currentWorkspaceId) {
+      return;
+    }
+    const path = await selectFolder();
+    if (!path) {
+      return;
+    }
+    addProjectMutation.mutate({ workspaceId: currentWorkspaceId, path });
+  };
 
   // 切换工作区
   const handleWorkspaceChange = async (id: string) => {
@@ -141,9 +184,6 @@ function Root() {
     }
     createMutation.mutate(newWorkspaceName.trim());
   };
-
-  // 项目列表（后续从状态管理获取）
-  const projects: { id: string; name: string }[] = [];
 
   return (
     <>
@@ -204,6 +244,16 @@ function Root() {
                     title="工作区"
                   />
                   <SidebarNav
+                    action={
+                      <button
+                        className="rounded p-0.5 hover:bg-muted"
+                        onClick={handleOpenFolder}
+                        title="打开文件夹"
+                        type="button"
+                      >
+                        <Plus className="size-3.5" />
+                      </button>
+                    }
                     items={projects.map((p) => ({
                       to: `/workspace/${currentWorkspaceId}/project/${p.id}`,
                       icon: <FolderOpen className="size-4" />,

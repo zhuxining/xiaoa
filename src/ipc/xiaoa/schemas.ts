@@ -22,6 +22,7 @@ export const messageSchema = z.object({
 // 会话
 export const sessionSchema = z.object({
   id: z.string(),
+  projectId: z.string().nullable(),
   title: z.string(),
   createdAt: z.number(),
   updatedAt: z.number(),
@@ -30,6 +31,7 @@ export const sessionSchema = z.object({
 // 创建会话输入
 export const createSessionInputSchema = z.object({
   title: z.string().min(1).max(200).optional(),
+  projectId: z.string().nullable().optional(),
 });
 
 // 获取会话输入

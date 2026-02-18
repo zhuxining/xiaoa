@@ -1,6 +1,8 @@
 import { app } from "./app";
 import { config } from "./config";
+import { knowledge } from "./knowledge";
 import { memory } from "./memory";
+import { project } from "./project";
 import { shell } from "./shell";
 import { skill } from "./skill";
 import { theme } from "./theme";
@@ -18,4 +20,6 @@ export const router = {
   xiaoa,
   skill,
   memory,
+  knowledge,
+  project,
 };

@@ -48,7 +48,7 @@ function generateId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-// 读取会话索引
+// 读取会话索引（兼容旧数据：projectId 缺失时 fallback 为 null）
 function readSessionsIndex(): Session[] {
   const indexPath = getSessionsIndexPath();
   if (!existsSync(indexPath)) {
@@ -57,7 +57,10 @@ function readSessionsIndex(): Session[] {
 
   try {
     const content = readFileSync(indexPath, "utf-8");
-    return JSON.parse(content) as Session[];
+    const raw = JSON.parse(content) as (Session & {
+      projectId?: string | null;
+    })[];
+    return raw.map((s) => ({ ...s, projectId: s.projectId ?? null }));
   } catch {
     return [];
   }
@@ -83,13 +86,17 @@ export function getSession(id: string): Session | null {
 }
 
 // 创建会话
-export function createSession(title?: string): Session {
+export function createSession(
+  title?: string,
+  projectId?: string | null
+): Session {
   ensureSessionsDir();
 
   const id = generateId();
   const now = Date.now();
   const session: Session = {
     id,
+    projectId: projectId ?? null,
     title: title ?? "新会话",
     createdAt: now,
     updatedAt: now,

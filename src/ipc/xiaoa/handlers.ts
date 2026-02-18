@@ -47,7 +47,7 @@ export const getSession = os
 export const createSession = os
   .input(createSessionInputSchema)
   .handler(({ input }) => {
-    const session = createSessionStore(input.title);
+    const session = createSessionStore(input.title, input.projectId);
     return {
       ...session,
       messageCount: 0,

@@ -31,8 +31,8 @@ export function KnowledgeDetail({
     switch (status) {
       case "ready":
         return "就绪";
-      case "processing":
-        return "处理中";
+      case "pending":
+        return "待处理";
       case "error":
         return "错误";
       default:
@@ -46,7 +46,7 @@ export function KnowledgeDetail({
     switch (status) {
       case "ready":
         return "success";
-      case "processing":
+      case "pending":
         return "processing";
       case "error":
         return "error";
@@ -89,7 +89,7 @@ export function KnowledgeDetail({
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">添加时间</span>
-            <span>{knowledge.createdAt.toLocaleString()}</span>
+            <span>{new Date(knowledge.addedAt).toLocaleString()}</span>
           </div>
         </div>
       </div>

@@ -5,11 +5,13 @@ import { cn } from "@/utils/tailwind";
 
 export interface Knowledge {
   id: string;
+  workspaceId: string;
   name: string;
   type: "file" | "url";
   source: string;
-  status: "ready" | "processing" | "error";
-  createdAt: Date;
+  status: "pending" | "ready" | "error";
+  error?: string;
+  addedAt: number;
 }
 
 interface KnowledgeCardProps {
@@ -29,8 +31,8 @@ export function KnowledgeCard({
     switch (status) {
       case "ready":
         return "就绪";
-      case "processing":
-        return "处理中";
+      case "pending":
+        return "待处理";
       case "error":
         return "错误";
       default:
@@ -44,7 +46,7 @@ export function KnowledgeCard({
     switch (status) {
       case "ready":
         return "success";
-      case "processing":
+      case "pending":
         return "processing";
       case "error":
         return "error";

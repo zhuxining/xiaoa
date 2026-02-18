@@ -19,6 +19,7 @@ export interface Message {
 
 export interface Session {
   id: string;
+  projectId: string | null;
   title: string;
   createdAt: number;
   updatedAt: number;
@@ -27,6 +28,7 @@ export interface Session {
 
 export interface CreateSessionInput {
   title?: string;
+  projectId?: string | null;
 }
 
 export interface UpdateSessionInput {

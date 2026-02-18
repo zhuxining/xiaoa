@@ -1,185 +1,132 @@
 // biome-ignore lint/style/useFilenamingConvention: TanStack Router requires $paramName format for route params
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
-import type { Message, Session } from "@/components/chat/chat-view";
+import { toast } from "sonner";
+import { getProjects, readDir, readFile } from "@/actions/project";
+import { createSession, getSessions } from "@/actions/xiaoa";
 import type { FileInfo } from "@/components/project/file-preview";
 import type { FileNode } from "@/components/project/file-tree";
 import { ProjectView } from "@/components/project/project-view";
 import { PageHeader } from "@/components/shared/page-header";
 
-// Mock data
-const MOCK_FILES: FileNode[] = [
-  {
-    id: "src",
-    name: "src",
-    type: "folder",
-    children: [
-      {
-        id: "components",
-        name: "components",
-        type: "folder",
-        children: [
-          { id: "App.tsx", name: "App.tsx", type: "file" },
-          { id: "Header.tsx", name: "Header.tsx", type: "file" },
-        ],
-      },
-      {
-        id: "utils",
-        name: "utils",
-        type: "folder",
-        children: [{ id: "helpers.ts", name: "helpers.ts", type: "file" }],
-      },
-      { id: "index.tsx", name: "index.tsx", type: "file" },
-    ],
-  },
-  {
-    id: "docs",
-    name: "docs",
-    type: "folder",
-    children: [
-      { id: "README.md", name: "README.md", type: "file" },
-      { id: "API.md", name: "API.md", type: "file" },
-    ],
-  },
-  { id: "package.json", name: "package.json", type: "file" },
-  { id: "tsconfig.json", name: "tsconfig.json", type: "file" },
-];
-
-const MOCK_SESSIONS: Session[] = [
-  { id: "1", title: "实现登录功能", updatedAt: new Date(), messageCount: 8 },
-  { id: "2", title: "优化性能", updatedAt: new Date(), messageCount: 3 },
-];
-
-const MOCK_MESSAGES: Message[] = [
-  {
-    id: "1",
-    role: "user",
-    content: "帮我实现一个登录表单",
-    createdAt: new Date(),
-  },
-  {
-    id: "2",
-    role: "assistant",
-    content: "好的，我来帮你实现登录表单。首先需要创建一个表单组件...",
-    createdAt: new Date(),
-  },
-];
-
-const MOCK_FILE_CONTENTS: Record<string, FileInfo> = {
-  "index.tsx": {
-    id: "index.tsx",
-    name: "index.tsx",
-    path: "/src/index.tsx",
-    type: "code",
-    content: `import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
-
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);`,
-    size: 245,
-    lastModified: new Date(),
-  },
-  "package.json": {
-    id: "package.json",
-    name: "package.json",
-    path: "/package.json",
-    type: "code",
-    content: `{
-  "name": "my-app",
-  "version": "1.0.0",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build"
+// 从文件扩展名推断 FileInfo type
+function inferFileType(name: string): "text" | "code" | "image" | "binary" {
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  if (["png", "jpg", "jpeg", "gif", "svg", "webp"].includes(ext)) {
+    return "image";
   }
-}`,
-    size: 180,
-    lastModified: new Date(),
-  },
-  "README.md": {
-    id: "README.md",
-    name: "README.md",
-    path: "/docs/README.md",
-    type: "text",
-    content:
-      "# 项目说明\n\n这是一个示例项目。\n\n## 快速开始\n\n```bash\nnpm install\nnpm run dev\n```",
-    size: 120,
-    lastModified: new Date(),
-  },
-};
+  if (["md", "txt", "log", "csv", "env"].includes(ext)) {
+    return "text";
+  }
+  if (ext === "") {
+    return "text";
+  }
+  return "code";
+}
 
 function ProjectPage() {
   const { workspaceId, projectId } = Route.useParams();
+  const queryClient = useQueryClient();
   const search = useSearch({
     from: "/workspace/$workspaceId/project/$projectId",
   });
   const viewMode =
     (search as { mode?: string })?.mode === "preview" ? "preview" : "chat";
 
-  const [sessions] = useState(MOCK_SESSIONS);
-  const [currentSessionId, setCurrentSessionId] = useState("1");
-  const [messages, setMessages] = useState(MOCK_MESSAGES);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(
+    undefined
+  );
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
   const [fileInfo, setFileInfo] = useState<FileInfo | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  const handleFileSelect = (node: FileNode) => {
-    if (node.type === "file") {
-      setSelectedFileId(node.id);
-      setFileInfo(
-        MOCK_FILE_CONTENTS[node.name] ?? {
-          id: node.id,
-          name: node.name,
-          path: node.name,
-          type: "text" as const,
-          content: `// ${node.name} 的内容`,
-          size: 100,
-          lastModified: new Date(),
-        }
-      );
+  // 加载当前工作区的项目列表，找到目标项目
+  const { data: projects = [] } = useQuery({
+    queryKey: ["projects", workspaceId],
+    queryFn: () => getProjects(workspaceId),
+  });
+  const project = projects.find((p) => p.id === projectId);
+
+  // 加载文件树（当项目路径可用时）
+  const { data: files = [] } = useQuery({
+    queryKey: ["readDir", project?.path],
+    queryFn: () => readDir(project?.path ?? ""),
+    enabled: !!project?.path,
+  });
+
+  // 加载会话列表（过滤当前项目）
+  const { data: allSessions = [] } = useQuery({
+    queryKey: ["sessions"],
+    queryFn: getSessions,
+  });
+  const sessions = allSessions
+    .filter((s) => s.projectId === projectId)
+    .map((s) => ({
+      id: s.id,
+      title: s.title,
+      updatedAt: new Date(s.updatedAt),
+      messageCount: s.messageCount,
+    }));
+
+  // 创建会话
+  const createSessionMutation = useMutation({
+    mutationFn: () => createSession({ projectId }),
+    onSuccess: (session) => {
+      queryClient.invalidateQueries({ queryKey: ["sessions"] });
+      setCurrentSessionId(session.id);
+    },
+    onError: (error) => {
+      toast.error(`创建会话失败: ${error.message}`);
+    },
+  });
+
+  // 文件选择
+  const handleFileSelect = async (node: FileNode) => {
+    if (node.type !== "file") {
+      return;
+    }
+    setSelectedFileId(node.id);
+    try {
+      // node.id 是绝对路径（IPC store 中 id = fullPath）
+      const result = await readFile(node.id);
+      setFileInfo({
+        id: result.path,
+        name: result.name,
+        path: result.path,
+        content: result.content,
+        type: inferFileType(result.name),
+        size: result.size,
+        lastModified: new Date(result.lastModified),
+      });
+    } catch {
+      toast.error(`无法读取文件: ${node.name}`);
     }
   };
 
-  const handleMessageSend = (content: string) => {
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content,
-      createdAt: new Date(),
-    };
-    setMessages((prev) => [...prev, newMessage]);
+  // 消息发送（占位，待 Agent 集成）
+  const handleMessageSend = (_content: string) => {
     setIsGenerating(true);
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: "收到你的请求，正在处理中...",
-        createdAt: new Date(),
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-      setIsGenerating(false);
-    }, 1000);
+    setTimeout(() => setIsGenerating(false), 500);
   };
 
   return (
     <div className="flex h-full flex-col">
       <PageHeader
-        description={`工作区: ${workspaceId}`}
-        title={`项目: ${projectId}`}
+        description={project ? project.path : `工作区: ${workspaceId}`}
+        title={project ? project.name : projectId}
       />
       <ProjectView
         className="flex-1"
         currentSessionId={currentSessionId}
         fileInfo={fileInfo}
-        files={MOCK_FILES}
+        files={files}
         isGenerating={isGenerating}
-        messages={messages}
+        messages={[]}
         onAbort={() => setIsGenerating(false)}
         onFileSelect={handleFileSelect}
         onMessageSend={handleMessageSend}
+        onSessionCreate={() => createSessionMutation.mutate()}
         onSessionSelect={setCurrentSessionId}
         selectedFileId={selectedFileId}
         sessions={sessions}

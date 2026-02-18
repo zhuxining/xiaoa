@@ -17,16 +17,20 @@ interface NavItem {
 interface SidebarNavProps {
   items: NavItem[];
   title?: string;
+  action?: ReactNode;
 }
 
-export function SidebarNav({ items, title }: SidebarNavProps) {
+export function SidebarNav({ items, title, action }: SidebarNavProps) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
     <nav className="flex flex-col gap-1" data-slot="sidebar-nav">
       {title && (
-        <div className="px-2 py-1.5 font-medium text-muted-foreground text-xs">
-          {title}
+        <div className="flex items-center px-2 py-1.5">
+          <span className="flex-1 font-medium text-muted-foreground text-xs">
+            {title}
+          </span>
+          {action}
         </div>
       )}
       {items.map((item) => {

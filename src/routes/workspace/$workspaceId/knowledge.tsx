@@ -1,6 +1,13 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
+import {
+  addKnowledge,
+  deleteKnowledge,
+  getKnowledge,
+} from "@/actions/knowledge";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,82 +15,70 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import type { Knowledge } from "@/components/workspace/knowledge-card";
 import { KnowledgeDetail } from "@/components/workspace/knowledge-detail";
 import { KnowledgeList } from "@/components/workspace/knowledge-list";
 import { KnowledgeUploader } from "@/components/workspace/knowledge-uploader";
 
-const MOCK_KNOWLEDGE: Knowledge[] = [
-  {
-    id: "1",
-    name: "产品文档.pdf",
-    type: "file",
-    source: "/documents/product.pdf",
-    status: "ready",
-    createdAt: new Date(),
-  },
-  {
-    id: "2",
-    name: "API 文档",
-    type: "url",
-    source: "https://api.example.com/docs",
-    status: "ready",
-    createdAt: new Date(),
-  },
-  {
-    id: "3",
-    name: "用户手册.docx",
-    type: "file",
-    source: "/documents/manual.docx",
-    status: "processing",
-    createdAt: new Date(),
-  },
-];
-
 function KnowledgePage() {
   const { workspaceId } = Route.useParams();
-  const [knowledge, setKnowledge] = useState<Knowledge[]>(MOCK_KNOWLEDGE);
-  const [selectedId, setSelectedId] = useState<string | null>(
-    knowledge[0]?.id || null
-  );
+  const queryClient = useQueryClient();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const { data: knowledge = [] } = useQuery({
+    queryKey: ["knowledge", workspaceId],
+    queryFn: () => getKnowledge(workspaceId),
+  });
 
   const selectedKnowledge = knowledge.find((k) => k.id === selectedId) ?? null;
+
+  const addMutation = useMutation({
+    mutationFn: addKnowledge,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["knowledge", workspaceId] });
+    },
+    onError: () => {
+      toast.error("添加知识失败");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: ({ id }: { id: string }) => deleteKnowledge(workspaceId, id),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ["knowledge", workspaceId] });
+      if (selectedId === id) {
+        setSelectedId(null);
+      }
+    },
+    onError: () => {
+      toast.error("删除知识失败");
+    },
+  });
+
+  const handleFileSelect = (files: FileList) => {
+    for (const file of Array.from(files)) {
+      addMutation.mutate({
+        workspaceId,
+        name: file.name,
+        type: "file",
+        source: file.name,
+      });
+    }
+  };
+
+  const handleUrlSubmit = (url: string) => {
+    addMutation.mutate({
+      workspaceId,
+      name: url.split("/").pop() || url,
+      type: "url",
+      source: url,
+    });
+  };
 
   const handleDelete = () => {
     if (!selectedId) {
       return;
     }
-    setKnowledge((prev) => prev.filter((k) => k.id !== selectedId));
-    setSelectedId(knowledge[0]?.id ?? null);
-  };
-
-  const handleFileSelect = (files: FileList) => {
-    const newKnowledge: Knowledge[] = Array.from(files).map((file) => ({
-      id: `${Date.now()}-${file.name}`,
-      name: file.name,
-      type: "file" as const,
-      source: file.name,
-      status: "processing" as const,
-      createdAt: new Date(),
-    }));
-    setKnowledge((prev) => [...prev, ...newKnowledge]);
-    console.log("Uploading files:", {
-      workspaceId,
-      files: Array.from(files).map((f) => f.name),
-    });
-  };
-
-  const handleUrlSubmit = (url: string) => {
-    const newKnowledge: Knowledge = {
-      id: Date.now().toString(),
-      name: url.split("/").pop() || url,
-      type: "url",
-      source: url,
-      status: "processing",
-      createdAt: new Date(),
-    };
-    setKnowledge((prev) => [...prev, newKnowledge]);
-    console.log("Adding URL:", { workspaceId, url });
+    deleteMutation.mutate({ id: selectedId });
   };
 
   const handleOpenUrl = () => {
