@@ -51,12 +51,14 @@
 
 ```text
 GlobalConfig 1:1 应用
-Workspace 1:1 Agent
+GlobalAssistant 1:N Session(scope=global)
+Workspace 1:1 WorkspaceAgent
 Workspace 1:N Project
 Workspace 1:N Skill
 Workspace 1:N Memory
 Workspace 1:N Knowledge
-Project    1:N Session
+Workspace 1:N Session(scope=workspace)
+Project    1:N Session(scope=workspace, projectId=project.id)
 Session    1:N Message
 ```
 
@@ -66,12 +68,13 @@ Session    1:N Message
 | ----- | ---- | ---------- |
 | **GlobalConfig** | 应用级全局配置（独立于工作区） | activeWorkspaceId, llm, preferences |
 | **Workspace** | 顶层容器，定义一个完整的 Agent 工作环境 | id, name, agentConfig, createdAt |
-| **Agent** | 工作区的 AI 助手配置（内嵌于 Workspace） | name, avatar, systemPrompt, model, temperature |
+| **GlobalAssistant** | 内置全局小A（常驻，不依赖工作区） | sessions, memories, defaultPermissions |
+| **WorkspaceAgent** | 工作区的 AI 助手配置（内嵌于 Workspace） | name, avatar, systemPrompt, model, temperature |
 | **Skill** | 遵循 Agent Skills 标准的指令包，含 SKILL.md 入口 + 参考资料 | name, description, icon, instructions, references/ |
 | **Memory** | 两层持久化记忆：Daily Log（Agent 自动追加）+ MEMORY.md（长期知识） | MEMORY.md, daily/YYYY-MM-DD.md, FTS5 索引 |
 | **Knowledge** | 知识库条目，含 description 摘要供 Agent 按需检索 | id, name, description, source, status, parsedFile |
 | **Project** | 打开的本地文件夹 | id, name, path, workspaceId |
-| **Session** | 一次对话 | id, title, projectId, createdAt, updatedAt |
+| **Session** | 一次对话 | id, scope, workspaceId, projectId, title, createdAt, updatedAt |
 | **Message** | 对话中的单条消息 | id, role, content, sessionId, timestamp |
 
 ---
@@ -341,7 +344,7 @@ argument-hint: "[风格] [文本]"
 - 有独立的会话列表（存储于 `~/.xiaoa/xiaoa/sessions/`）
 - 使用全局默认模型（不可在小A层面自定义模型，需去设置页修改）
 - 有独立的记忆（存储于 `~/.xiaoa/xiaoa/memories/`）
-- 复用现有的 Session/Message 类型，`activeWorkspaceId = null` 时表示当前在小A模式
+- 会话 scope 固定为 `global`，与工作区会话（scope=`workspace`）完全隔离
 - 默认使用 Review 权限模式
 
 **内置 System Prompt**（固定，不可编辑）：
@@ -469,7 +472,7 @@ Workspace.agent.model = "claude-opus-4-6"         ← 优先使用
 // ============================================
 
 interface GlobalConfig {
-  activeWorkspaceId: string | null;       // 当前活跃工作区（null = 使用内置小A）
+  activeWorkspaceId: string | null;       // 当前活跃工作区（null = 未选中工作区）
   llm: LLMConfig;                         // LLM 服务配置
   preferences: AppPreferences;            // 应用偏好
 }
@@ -607,8 +610,10 @@ interface Project {
 // ============================================
 
 interface Session {
+  scope: "global" | "workspace"; // global=小A, workspace=工作区会话
   id: string;
-  projectId: string | null;      // null = 小A全局会话
+  workspaceId: string | null;    // global 会话为 null
+  projectId: string | null;      // 仅 workspace scope 下可非空
   title: string;
   createdAt: number;
   updatedAt: number;
@@ -648,6 +653,7 @@ interface Attachment {
 │   │   └── daily/                 # Layer 1: 每日日志（对用户隐藏）
 │   │       └── YYYY-MM-DD.md
 │   └── sessions/
+│       ├── index.json             # 全局小A会话元数据（仅 scope=global）
 │       └── {session-id}.jsonl
 └── workspaces/
     └── {workspace-id}/
@@ -670,6 +676,7 @@ interface Attachment {
         │   └── {id}.md            # frontmatter(name/description) + 解析后的正文
         ├── projects.json          # Project[]（路径索引）
         └── sessions/
+            ├── index.json         # 工作区会话元数据（仅 scope=workspace）
             └── {session-id}.jsonl # 单个会话的消息流（逐行 JSON）
 ```
 

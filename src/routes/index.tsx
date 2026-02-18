@@ -3,11 +3,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { FileText, Globe, Wrench } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import {
-  addMessage,
-  createSession,
-  getMessages,
-  getSessions,
-} from "@/actions/xiaoa";
+  addSissonMessage,
+  createSisson,
+  getSissonMessages,
+  listSissons,
+} from "@/actions/sisson";
 import { ChatView } from "@/components/chat/chat-view";
 import type { PermissionRequest } from "@/components/chat/permission-dialog";
 import type { SkillMenuItem } from "@/components/chat/skill-menu";
@@ -39,8 +39,8 @@ function HomePage() {
 
   // 获取会话列表
   const { data: sessionsData = [] } = useQuery({
-    queryKey: ["xiaoa", "sessions"],
-    queryFn: getSessions,
+    queryKey: ["sisson", "global", "sessions"],
+    queryFn: () => listSissons({ scope: "global" }),
   });
 
   // 转换会话数据格式
@@ -65,8 +65,14 @@ function HomePage() {
 
   // 获取当前会话的消息
   const { data: messagesData = [] } = useQuery({
-    queryKey: ["xiaoa", "messages", currentSessionId],
-    queryFn: () => (currentSessionId ? getMessages(currentSessionId) : []),
+    queryKey: ["sisson", "global", "messages", currentSessionId],
+    queryFn: () =>
+      currentSessionId
+        ? getSissonMessages({
+            scope: "global",
+            sessionId: currentSessionId,
+          })
+        : [],
     enabled: !!currentSessionId,
   });
 
@@ -80,10 +86,12 @@ function HomePage() {
 
   // 创建会话
   const createSessionMutation = useMutation({
-    mutationFn: createSession,
+    mutationFn: () => createSisson({ scope: "global" }),
     onSuccess: (newSession) => {
       // 刷新会话列表
-      queryClient.invalidateQueries({ queryKey: ["xiaoa", "sessions"] });
+      queryClient.invalidateQueries({
+        queryKey: ["sisson", "global", "sessions"],
+      });
       // 切换到新会话
       setCurrentSessionId(newSession.id);
     },
@@ -91,13 +99,15 @@ function HomePage() {
 
   // 添加消息
   const addMessageMutation = useMutation({
-    mutationFn: addMessage,
+    mutationFn: addSissonMessage,
     onSuccess: () => {
       // 刷新消息和会话列表
       queryClient.invalidateQueries({
-        queryKey: ["xiaoa", "messages", currentSessionId],
+        queryKey: ["sisson", "global", "messages", currentSessionId],
       });
-      queryClient.invalidateQueries({ queryKey: ["xiaoa", "sessions"] });
+      queryClient.invalidateQueries({
+        queryKey: ["sisson", "global", "sessions"],
+      });
     },
   });
 
@@ -110,7 +120,7 @@ function HomePage() {
   }, []);
 
   const handleSessionCreate = useCallback(() => {
-    createSessionMutation.mutate({});
+    createSessionMutation.mutate();
   }, [createSessionMutation]);
 
   const handleMessageSend = useCallback(
@@ -121,6 +131,7 @@ function HomePage() {
 
       // 添加用户消息
       addMessageMutation.mutate({
+        scope: "global",
         sessionId: currentSessionId,
         role: "user",
         content,
@@ -148,6 +159,7 @@ function HomePage() {
       setTimeout(() => {
         // 添加助手消息
         addMessageMutation.mutate({
+          scope: "global",
           sessionId: currentSessionId,
           role: "assistant",
           content: "这是一个模拟的响应。实际的 Agent 集成将在后续实现。",
@@ -177,6 +189,7 @@ function HomePage() {
 
       // 添加助手响应
       addMessageMutation.mutate({
+        scope: "global",
         sessionId: currentSessionId,
         role: "assistant",
         content: `已获授权执行 ${request.title}。正在处理...`,
@@ -196,6 +209,7 @@ function HomePage() {
 
       // 添加助手响应
       addMessageMutation.mutate({
+        scope: "global",
         sessionId: currentSessionId,
         role: "assistant",
         content: `操作被拒绝：${request.title}`,

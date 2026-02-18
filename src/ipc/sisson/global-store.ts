@@ -8,11 +8,7 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { app } from "electron";
-import type { z } from "zod";
-import type { messageSchema, sessionSchema } from "./schemas";
-
-type Message = z.infer<typeof messageSchema>;
-type Session = z.infer<typeof sessionSchema>;
+import type { Message, GlobalSession as Session } from "./store-types";
 
 // 获取小A数据根目录
 function getXiaoaRoot(): string {
@@ -48,7 +44,7 @@ function generateId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-// 读取会话索引（兼容旧数据：projectId 缺失时 fallback 为 null）
+// 读取会话索引（兼容旧数据：projectId 会被忽略）
 function readSessionsIndex(): Session[] {
   const indexPath = getSessionsIndexPath();
   if (!existsSync(indexPath)) {
@@ -60,7 +56,12 @@ function readSessionsIndex(): Session[] {
     const raw = JSON.parse(content) as (Session & {
       projectId?: string | null;
     })[];
-    return raw.map((s) => ({ ...s, projectId: s.projectId ?? null }));
+    return raw.map((session) => ({
+      id: session.id,
+      title: session.title,
+      createdAt: session.createdAt,
+      updatedAt: session.updatedAt,
+    }));
   } catch {
     return [];
   }
@@ -86,17 +87,13 @@ export function getSession(id: string): Session | null {
 }
 
 // 创建会话
-export function createSession(
-  title?: string,
-  projectId?: string | null
-): Session {
+export function createSession(title?: string): Session {
   ensureSessionsDir();
 
   const id = generateId();
   const now = Date.now();
   const session: Session = {
     id,
-    projectId: projectId ?? null,
     title: title ?? "新会话",
     createdAt: now,
     updatedAt: now,

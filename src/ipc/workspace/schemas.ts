@@ -46,3 +46,5 @@ export const getWorkspaceInputSchema = z.object({
 export const deleteWorkspaceInputSchema = z.object({
   id: z.string(),
 });
+
+export type AgentConfig = z.infer<typeof agentConfigSchema>;

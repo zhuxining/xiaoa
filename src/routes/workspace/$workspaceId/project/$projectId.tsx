@@ -1,25 +1,27 @@
 // biome-ignore lint/style/useFilenamingConvention: TanStack Router requires $paramName format for route params
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useSearch } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { getProjects, readDir, readFile } from "@/actions/project";
-import { createSession, getSessions } from "@/actions/xiaoa";
+import {
+  addSissonMessage,
+  createSisson,
+  getSissonMessages,
+  listSissons,
+} from "@/actions/sisson";
+import { getWorkspace } from "@/actions/workspace";
 import type { FileInfo } from "@/components/project/file-preview";
 import type { FileNode } from "@/components/project/file-tree";
 import { ProjectView } from "@/components/project/project-view";
 import { PageHeader } from "@/components/shared/page-header";
 
-// 从文件扩展名推断 FileInfo type
 function inferFileType(name: string): "text" | "code" | "image" | "binary" {
   const ext = name.split(".").pop()?.toLowerCase() ?? "";
   if (["png", "jpg", "jpeg", "gif", "svg", "webp"].includes(ext)) {
     return "image";
   }
-  if (["md", "txt", "log", "csv", "env"].includes(ext)) {
-    return "text";
-  }
-  if (ext === "") {
+  if (["md", "txt", "log", "csv", "env"].includes(ext) || ext === "") {
     return "text";
   }
   return "code";
@@ -34,46 +36,90 @@ function ProjectPage() {
   const viewMode =
     (search as { mode?: string })?.mode === "preview" ? "preview" : "chat";
 
-  const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(
-    undefined
-  );
+  const [currentSessionId, setCurrentSessionId] = useState<
+    string | undefined
+  >();
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
   const [fileInfo, setFileInfo] = useState<FileInfo | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // 加载当前工作区的项目列表，找到目标项目
+  const { data: workspace } = useQuery({
+    queryKey: ["workspace", workspaceId],
+    queryFn: () => getWorkspace(workspaceId),
+  });
+
   const { data: projects = [] } = useQuery({
     queryKey: ["projects", workspaceId],
     queryFn: () => getProjects(workspaceId),
   });
   const project = projects.find((p) => p.id === projectId);
 
-  // 加载文件树（当项目路径可用时）
   const { data: files = [] } = useQuery({
     queryKey: ["readDir", project?.path],
     queryFn: () => readDir(project?.path ?? ""),
     enabled: !!project?.path,
   });
 
-  // 加载会话列表（过滤当前项目）
-  const { data: allSessions = [] } = useQuery({
-    queryKey: ["sessions"],
-    queryFn: getSessions,
+  const { data: sessionData = [] } = useQuery({
+    queryKey: ["sisson", "workspace", workspaceId, "sessions", projectId],
+    queryFn: () =>
+      listSissons({
+        scope: "workspace",
+        workspaceId,
+        projectId,
+      }),
   });
-  const sessions = allSessions
-    .filter((s) => s.projectId === projectId)
-    .map((s) => ({
-      id: s.id,
-      title: s.title,
-      updatedAt: new Date(s.updatedAt),
-      messageCount: s.messageCount,
-    }));
 
-  // 创建会话
+  const sessions = sessionData.map((session) => ({
+    id: session.id,
+    title: session.title,
+    updatedAt: new Date(session.updatedAt),
+    messageCount: session.messageCount,
+  }));
+
+  useEffect(() => {
+    if (!currentSessionId && sessions.length > 0) {
+      setCurrentSessionId(sessions[0].id);
+    }
+  }, [currentSessionId, sessions]);
+
+  const { data: messagesData = [] } = useQuery({
+    queryKey: [
+      "sisson",
+      "workspace",
+      workspaceId,
+      "messages",
+      currentSessionId,
+    ],
+    queryFn: () =>
+      currentSessionId
+        ? getSissonMessages({
+            scope: "workspace",
+            workspaceId,
+            sessionId: currentSessionId,
+          })
+        : [],
+    enabled: !!currentSessionId,
+  });
+
+  const messages = messagesData.map((message) => ({
+    id: message.id,
+    role: message.role,
+    content: message.content,
+    createdAt: new Date(message.timestamp),
+  }));
+
   const createSessionMutation = useMutation({
-    mutationFn: () => createSession({ projectId }),
+    mutationFn: () =>
+      createSisson({
+        scope: "workspace",
+        workspaceId,
+        projectId,
+      }),
     onSuccess: (session) => {
-      queryClient.invalidateQueries({ queryKey: ["sessions"] });
+      queryClient.invalidateQueries({
+        queryKey: ["sisson", "workspace", workspaceId, "sessions", projectId],
+      });
       setCurrentSessionId(session.id);
     },
     onError: (error) => {
@@ -81,14 +127,31 @@ function ProjectPage() {
     },
   });
 
-  // 文件选择
+  const addMessageMutation = useMutation({
+    mutationFn: addSissonMessage,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          "sisson",
+          "workspace",
+          workspaceId,
+          "messages",
+          currentSessionId,
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["sisson", "workspace", workspaceId, "sessions", projectId],
+      });
+    },
+  });
+
   const handleFileSelect = async (node: FileNode) => {
     if (node.type !== "file") {
       return;
     }
+
     setSelectedFileId(node.id);
     try {
-      // node.id 是绝对路径（IPC store 中 id = fullPath）
       const result = await readFile(node.id);
       setFileInfo({
         id: result.path,
@@ -104,10 +167,31 @@ function ProjectPage() {
     }
   };
 
-  // 消息发送（占位，待 Agent 集成）
-  const handleMessageSend = (_content: string) => {
+  const handleMessageSend = (content: string) => {
+    if (!currentSessionId) {
+      return;
+    }
+
+    addMessageMutation.mutate({
+      scope: "workspace",
+      workspaceId,
+      sessionId: currentSessionId,
+      role: "user",
+      content,
+    });
+
     setIsGenerating(true);
-    setTimeout(() => setIsGenerating(false), 500);
+
+    setTimeout(() => {
+      addMessageMutation.mutate({
+        scope: "workspace",
+        workspaceId,
+        sessionId: currentSessionId,
+        role: "assistant",
+        content: "这是一个模拟的响应。工作区 Agent 运行时集成将在后续实现。",
+      });
+      setIsGenerating(false);
+    }, 800);
   };
 
   return (
@@ -117,12 +201,13 @@ function ProjectPage() {
         title={project ? project.name : projectId}
       />
       <ProjectView
+        agentName={workspace?.agent?.name ?? "工作区 Agent"}
         className="flex-1"
         currentSessionId={currentSessionId}
         fileInfo={fileInfo}
         files={files}
         isGenerating={isGenerating}
-        messages={[]}
+        messages={messages}
         onAbort={() => setIsGenerating(false)}
         onFileSelect={handleFileSelect}
         onMessageSend={handleMessageSend}

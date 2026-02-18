@@ -62,9 +62,7 @@ function Root() {
   const currentWorkspaceId =
     activeWorkspaceId && workspaces.some((w) => w.id === activeWorkspaceId)
       ? activeWorkspaceId
-      : (workspaces[0]?.id ?? null);
-
-  const _currentWorkspace = workspaces.find((w) => w.id === currentWorkspaceId);
+      : null;
 
   // 新建工作区对话框状态
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -164,6 +162,8 @@ function Root() {
           if (nextWorkspace) {
             await setActiveWorkspace(nextWorkspace.id);
           }
+        } else if (currentWorkspaceId === id) {
+          await setActiveWorkspace(null);
         }
         queryClient.invalidateQueries({ queryKey: ["workspaces"] });
         queryClient.invalidateQueries({ queryKey: ["config"] });
@@ -211,15 +211,20 @@ function Root() {
               )}
             </SidebarHeader>
             <SidebarContent>
-              {currentWorkspaceId && (
+              <SidebarNav
+                items={[
+                  {
+                    to: "/",
+                    icon: <Bot className="size-4" />,
+                    label: "小A",
+                  },
+                ]}
+                title="全局"
+              />
+              {currentWorkspaceId ? (
                 <>
                   <SidebarNav
                     items={[
-                      {
-                        to: "/",
-                        icon: <Bot className="size-4" />,
-                        label: "小A",
-                      },
                       {
                         to: `/workspace/${currentWorkspaceId}/agent`,
                         icon: <Brain className="size-4" />,
@@ -262,6 +267,19 @@ function Root() {
                     title="项目"
                   />
                 </>
+              ) : (
+                <div className="rounded-md border border-dashed p-3 text-muted-foreground text-xs">
+                  <div>未选择工作区</div>
+                  <Button
+                    className="mt-2 w-full justify-start gap-2"
+                    onClick={() => setCreateDialogOpen(true)}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <Plus className="size-3.5" />
+                    新建工作区
+                  </Button>
+                </div>
               )}
             </SidebarContent>
             <SidebarFooter>

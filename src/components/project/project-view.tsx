@@ -23,6 +23,7 @@ interface ProjectViewProps {
   onSessionCreate?: () => void;
   onMessageSend: (message: string) => void;
   onAbort?: () => void;
+  agentName?: string;
   className?: string;
 }
 
@@ -40,6 +41,7 @@ export function ProjectView({
   onSessionCreate,
   onMessageSend,
   onAbort,
+  agentName,
   className,
 }: ProjectViewProps) {
   return (
@@ -103,6 +105,7 @@ export function ProjectView({
         <ResizablePanel defaultSize={75}>
           {viewMode === "chat" ? (
             <ChatView
+              agentName={agentName}
               currentSessionId={currentSessionId}
               isGenerating={isGenerating}
               messages={messages}
