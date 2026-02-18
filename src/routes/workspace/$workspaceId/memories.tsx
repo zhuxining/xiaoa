@@ -1,49 +1,78 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { getMemory, saveMemory } from "@/actions/memory";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { MemoryEditor } from "@/components/workspace/memory-editor";
 
-const DEFAULT_MEMORY = `# 记忆
-
-## 用户偏好
-- 语言：中文
-- 输出风格：简洁
-
-## 项目信息
-- 项目名称：小A
-- 技术栈：Electron + React + TailwindCSS
-
-## 重要事项
-- 定期保存工作进度
-- 注意代码规范
-`;
-
 function MemoriesPage() {
   const { workspaceId } = Route.useParams();
-  const [memory, setMemory] = useState(DEFAULT_MEMORY);
-  const [isSaving, setIsSaving] = useState(false);
+  const queryClient = useQueryClient();
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    // TODO: 实现保存逻辑
-    console.log("Saving memory:", { workspaceId, memory });
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setIsSaving(false);
+  // 加载记忆
+  const { data: memory, isLoading } = useQuery({
+    queryKey: ["memory", workspaceId],
+    queryFn: () => getMemory(workspaceId),
+  });
+
+  // 本地编辑状态
+  const [content, setContent] = useState("");
+
+  // 同步服务器数据到本地状态
+  useEffect(() => {
+    if (memory?.content) {
+      setContent(memory.content);
+    }
+  }, [memory]);
+
+  // 检查是否有更改
+  const hasChanges = memory?.content !== content;
+
+  // 保存 mutation
+  const saveMutation = useMutation({
+    mutationFn: () => saveMemory(workspaceId, content),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["memory", workspaceId] });
+      toast.success("记忆已保存");
+    },
+    onError: (error) => {
+      toast.error(`保存失败: ${(error as Error).message}`);
+    },
+  });
+
+  const handleSave = () => {
+    saveMutation.mutate();
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Loader2 className="size-6 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full flex-col">
       <PageHeader
         actions={
-          <Button disabled={isSaving} onClick={handleSave}>
-            {isSaving ? "保存中..." : "保存"}
+          <Button
+            disabled={!hasChanges || saveMutation.isPending}
+            onClick={handleSave}
+          >
+            {saveMutation.isPending && (
+              <Loader2 className="mr-2 size-4 animate-spin" />
+            )}
+            保存
           </Button>
         }
         description="Agent 会自动将重要信息保存到这里"
         title="记忆"
       />
-      <MemoryEditor className="flex-1" onChange={setMemory} value={memory} />
+      <MemoryEditor className="flex-1" onChange={setContent} value={content} />
     </div>
   );
 }
