@@ -1,5 +1,7 @@
 import type { Message, Session } from "@/components/chat/chat-view";
+import { Plus } from "lucide-react";
 import { ChatView } from "@/components/chat/chat-view";
+import { Button } from "@/components/ui/button";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -71,8 +73,18 @@ export function ProjectView({
             {/* 下部：会话列表 */}
             <ResizablePanel defaultSize={100} minSize={20}>
               <div className="flex h-full flex-col border-t border-r">
-                <div className="border-b px-2 py-1 font-medium text-xs">
-                  会话
+                <div className="flex items-center justify-between border-b px-2 py-1">
+                  <span className="font-medium text-xs">会话</span>
+                  <Button
+                    className="h-6 w-6 p-0"
+                    disabled={!onSessionCreate}
+                    onClick={onSessionCreate}
+                    size="icon-sm"
+                    title="新建会话"
+                    variant="ghost"
+                  >
+                    <Plus className="size-3.5" />
+                  </Button>
                 </div>
                 <div className="flex-1 overflow-auto">
                   <div className="flex flex-col gap-1 p-2">
@@ -90,8 +102,17 @@ export function ProjectView({
                       </button>
                     ))}
                     {sessions.length === 0 && (
-                      <div className="py-4 text-center text-muted-foreground text-xs">
-                        暂无会话
+                      <div className="flex flex-col items-center gap-2 py-4 text-center text-muted-foreground text-xs">
+                        <div>暂无会话</div>
+                        <Button
+                          disabled={!onSessionCreate}
+                          onClick={onSessionCreate}
+                          size="sm"
+                          variant="outline"
+                        >
+                          <Plus className="size-3.5" />
+                          新建会话
+                        </Button>
                       </div>
                     )}
                   </div>

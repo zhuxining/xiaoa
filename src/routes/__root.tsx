@@ -191,6 +191,15 @@ function Root() {
         sidebar={
           <Sidebar>
             <SidebarHeader>
+              <SidebarNav
+                items={[
+                  {
+                    to: "/",
+                    icon: <Bot className="size-4" />,
+                    label: "小A",
+                  },
+                ]}
+              />
               {isLoadingWorkspaces ? (
                 <div className="flex items-center justify-center p-2">
                   <Loader2 className="size-4 animate-spin" />
@@ -211,16 +220,6 @@ function Root() {
               )}
             </SidebarHeader>
             <SidebarContent>
-              <SidebarNav
-                items={[
-                  {
-                    to: "/",
-                    icon: <Bot className="size-4" />,
-                    label: "小A",
-                  },
-                ]}
-                title="全局"
-              />
               {currentWorkspaceId ? (
                 <>
                   <SidebarNav
