@@ -1,0 +1,853 @@
+{
+  "meta": {
+    "project": "小A",
+    "description": "面向非Coding群体的Agent工作站",
+    "version": "0.1.0",
+    "lastUpdated": "2026-02-18"
+  },
+  "phases": [
+    {
+      "id": "phase-1",
+      "name": "基础骨架",
+      "features": [
+        {
+          "id": "P1-001",
+          "category": "ui",
+          "priority": "high",
+          "description": "左侧栏显示小A入口、工作区切换器、配置项、项目列表、设置入口",
+          "steps": [
+            "打开应用",
+            "验证左侧栏包含：小A入口、工作区切换器、Agent/技能/记忆/知识库配置项、项目列表区域、设置入口"
+          ],
+          "passes": true
+        },
+        {
+          "id": "P1-002",
+          "category": "ui",
+          "priority": "high",
+          "description": "主内容区根据左侧栏选中项动态切换视图",
+          "steps": [
+            "点击小A入口 → 显示小A对话视图",
+            "点击设置 → 显示全局设置页",
+            "点击工作区配置项 → 显示对应配置页",
+            "点击项目 → 显示项目工作视图"
+          ],
+          "passes": true
+        },
+        {
+          "id": "P1-003",
+          "category": "global-settings",
+          "priority": "high",
+          "description": "用户可以查看和编辑全局配置（LLM服务商、API Key、默认模型）",
+          "steps": [
+            "点击设置入口",
+            "验证显示服务商选择器",
+            "验证显示 API Key 输入框",
+            "验证显示默认模型选择器"
+          ],
+          "passes": true
+        },
+        {
+          "id": "P1-004",
+          "category": "global-settings",
+          "priority": "high",
+          "description": "用户可以测试 LLM API Key 连接",
+          "steps": [
+            "在设置页输入 API Key",
+            "点击测试连接按钮",
+            "验证显示连接成功或失败提示"
+          ],
+          "passes": true
+        },
+        {
+          "id": "P1-005",
+          "category": "global-settings",
+          "priority": "medium",
+          "description": "API Key 加密存储于 credentials.enc",
+          "steps": [
+            "输入 API Key 并保存",
+            "检查 ~/.xiaoa/credentials.enc 文件存在",
+            "重启应用后验证 API Key 仍然可用"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P1-006",
+          "category": "global-settings",
+          "priority": "medium",
+          "description": "用户可以切换主题（浅色/深色/跟随系统）",
+          "steps": [
+            "打开设置页",
+            "点击浅色主题 → 验证界面变为浅色",
+            "点击深色主题 → 验证界面变为深色",
+            "点击跟随系统 → 验证与系统主题一致"
+          ],
+          "passes": true
+        },
+        {
+          "id": "P1-007",
+          "category": "global-settings",
+          "priority": "medium",
+          "description": "用户可以切换界面语言",
+          "steps": [
+            "打开设置页",
+            "切换语言为英文 → 验证界面显示英文",
+            "切换语言为中文 → 验证界面显示中文"
+          ],
+          "passes": true
+        },
+        {
+          "id": "P1-008",
+          "category": "xiaoa",
+          "priority": "high",
+          "description": "点击小A入口显示小A对话视图（开箱即用的通用助手）",
+          "steps": [
+            "点击左侧栏小A入口",
+            "验证主内容区显示对话界面",
+            "验证有输入框和发送按钮"
+          ],
+          "passes": true
+        },
+        {
+          "id": "P1-009",
+          "category": "xiaoa",
+          "priority": "high",
+          "description": "小A对话视图显示会话列表",
+          "steps": [
+            "进入小A对话视图",
+            "验证左侧显示会话列表",
+            "验证有新建会话按钮"
+          ],
+          "passes": true
+        },
+        {
+          "id": "P1-010",
+          "category": "xiaoa",
+          "priority": "high",
+          "description": "用户可以创建新的小A会话",
+          "steps": [
+            "点击新建会话按钮",
+            "验证会话列表新增一条",
+            "验证对话区清空并显示欢迎状态"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P1-011",
+          "category": "xiaoa",
+          "priority": "high",
+          "description": "小A会话数据持久化到 ~/.xiaoa/xiaoa/sessions/",
+          "steps": [
+            "创建会话并发送消息",
+            "检查 ~/.xiaoa/xiaoa/sessions/ 目录下有对应的 .jsonl 文件",
+            "重启应用后验证会话和消息仍然存在"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P1-012",
+          "category": "workspace",
+          "priority": "high",
+          "description": "用户可以创建新工作区",
+          "steps": [
+            "点击工作区切换器",
+            "点击新建工作区",
+            "输入工作区名称",
+            "验证工作区创建成功并自动切换"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P1-013",
+          "category": "workspace",
+          "priority": "high",
+          "description": "用户可以切换工作区",
+          "steps": [
+            "创建两个工作区",
+            "点击工作区切换器选择另一个工作区",
+            "验证左侧栏配置项和项目列表更新为新工作区内容"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P1-014",
+          "category": "workspace",
+          "priority": "medium",
+          "description": "用户可以重命名工作区",
+          "steps": [
+            "右键或长按工作区名称",
+            "选择重命名",
+            "输入新名称",
+            "验证工作区名称更新"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P1-015",
+          "category": "workspace",
+          "priority": "medium",
+          "description": "用户可以删除工作区",
+          "steps": [
+            "右键或长按工作区名称",
+            "选择删除",
+            "确认删除操作",
+            "验证工作区从列表中移除",
+            "验证 ~/.xiaoa/workspaces/{id}/ 目录被删除"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P1-016",
+          "category": "storage",
+          "priority": "high",
+          "description": "全局配置存储到 ~/.xiaoa/config.json",
+          "steps": [
+            "修改任意全局设置",
+            "检查 ~/.xiaoa/config.json 文件存在且内容正确"
+          ],
+          "passes": true
+        },
+        {
+          "id": "P1-017",
+          "category": "storage",
+          "priority": "high",
+          "description": "工作区配置存储到 ~/.xiaoa/workspaces/{id}/workspace.json",
+          "steps": [
+            "创建工作区并配置 Agent",
+            "检查对应目录下的 workspace.json 文件存在且内容正确"
+          ],
+          "passes": false
+        }
+      ]
+    },
+    {
+      "id": "phase-2",
+      "name": "Agent配置",
+      "features": [
+        {
+          "id": "P2-001",
+          "category": "agent",
+          "priority": "high",
+          "description": "用户可以配置 Agent 名称",
+          "steps": [
+            "进入工作区 Agent 配置页",
+            "修改 Agent 名称",
+            "验证名称更新成功"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P2-002",
+          "category": "agent",
+          "priority": "high",
+          "description": "用户可以配置 Agent 头像",
+          "steps": [
+            "进入工作区 Agent 配置页",
+            "点击头像区域选择图片",
+            "验证头像更新成功"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P2-003",
+          "category": "agent",
+          "priority": "high",
+          "description": "用户可以编辑 Agent 人设（System Prompt）",
+          "steps": [
+            "进入工作区 Agent 配置页",
+            "在人多行文本框中编辑人设",
+            "验证人设保存成功"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P2-004",
+          "category": "agent",
+          "priority": "high",
+          "description": "用户可以为工作区选择特定模型（覆盖全局默认）",
+          "steps": [
+            "进入工作区 Agent 配置页",
+            "选择与全局默认不同的模型",
+            "验证模型选择生效"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P2-005",
+          "category": "skill",
+          "priority": "high",
+          "description": "用户可以查看技能列表",
+          "steps": ["进入工作区技能管理页", "验证显示当前工作区的所有技能"],
+          "passes": false
+        },
+        {
+          "id": "P2-006",
+          "category": "skill",
+          "priority": "high",
+          "description": "用户可以创建新技能",
+          "steps": [
+            "点击新建技能按钮",
+            "填写名称、图标、描述、指令正文",
+            "验证技能创建成功并出现在列表中"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P2-007",
+          "category": "skill",
+          "priority": "high",
+          "description": "用户可以编辑已有技能",
+          "steps": [
+            "在技能列表中选择一个技能",
+            "修改技能的各个字段",
+            "验证修改保存成功"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P2-008",
+          "category": "skill",
+          "priority": "high",
+          "description": "用户可以删除技能",
+          "steps": [
+            "选择要删除的技能",
+            "点击删除按钮",
+            "确认删除",
+            "验证技能从列表中移除"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P2-009",
+          "category": "skill",
+          "priority": "medium",
+          "description": "用户可以导入技能（SKILL.md 目录）",
+          "steps": [
+            "点击导入技能按钮",
+            "选择包含 SKILL.md 的目录",
+            "验证技能导入成功"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P2-010",
+          "category": "skill",
+          "priority": "medium",
+          "description": "用户可以导出技能",
+          "steps": [
+            "选择要导出的技能",
+            "点击导出按钮",
+            "验证导出目录包含完整的 SKILL.md 和 references/"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P2-011",
+          "category": "skill",
+          "priority": "medium",
+          "description": "技能支持添加参考资料",
+          "steps": [
+            "编辑技能时点击添加参考文件",
+            "上传或选择参考文件",
+            "验证文件出现在 references 列表中"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P2-012",
+          "category": "memory",
+          "priority": "high",
+          "description": "用户可以查看和编辑长期记忆 (MEMORY.md)",
+          "steps": [
+            "进入工作区记忆管理页",
+            "验证显示 MEMORY.md 编辑器",
+            "编辑内容并保存",
+            "验证文件更新成功"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P2-013",
+          "category": "memory",
+          "priority": "medium",
+          "description": "记忆文件使用 Markdown 格式",
+          "steps": [
+            "在记忆编辑器中使用标题、列表等 Markdown 语法",
+            "验证保存后格式正确"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P2-014",
+          "category": "knowledge",
+          "priority": "high",
+          "description": "用户可以通过拖拽添加本地文件到知识库",
+          "steps": [
+            "进入知识库管理页",
+            "拖拽 PDF/Word/Markdown 文件到上传区域",
+            "验证文件出现在知识库列表中"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P2-015",
+          "category": "knowledge",
+          "priority": "high",
+          "description": "用户可以通过粘贴 URL 添加在线内容到知识库",
+          "steps": [
+            "进入知识库管理页",
+            "粘贴网页 URL",
+            "验证 URL 内容被解析并添加到知识库"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P2-016",
+          "category": "knowledge",
+          "priority": "high",
+          "description": "知识库条目显示解析状态（pending/parsing/ready/error）",
+          "steps": [
+            "添加文件到知识库",
+            "验证初始状态为 pending",
+            "等待解析完成",
+            "验证状态变为 ready 或 error"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P2-017",
+          "category": "knowledge",
+          "priority": "medium",
+          "description": "用户可以预览解析后的知识库内容",
+          "steps": [
+            "选择已就绪的知识库条目",
+            "点击预览按钮",
+            "验证显示解析后的 Markdown 内容"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P2-018",
+          "category": "knowledge",
+          "priority": "medium",
+          "description": "用户可以删除知识库条目",
+          "steps": [
+            "选择知识库条目",
+            "点击删除按钮",
+            "确认删除",
+            "验证条目从列表中移除"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P2-019",
+          "category": "knowledge",
+          "priority": "medium",
+          "description": "用户可以重新解析失败的知识库条目",
+          "steps": [
+            "选择解析失败的条目",
+            "点击重新解析按钮",
+            "验证解析流程重新开始"
+          ],
+          "passes": false
+        }
+      ]
+    },
+    {
+      "id": "phase-3",
+      "name": "项目与文件",
+      "features": [
+        {
+          "id": "P3-001",
+          "category": "project",
+          "priority": "high",
+          "description": "用户可以打开本地文件夹作为项目",
+          "steps": [
+            "点击打开文件夹按钮",
+            "在系统对话框中选择文件夹",
+            "验证项目出现在左侧栏项目列表中"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P3-002",
+          "category": "project",
+          "priority": "high",
+          "description": "项目工作视图显示文件树浏览器",
+          "steps": [
+            "点击项目进入项目工作视图",
+            "验证中间栏上方显示文件树",
+            "验证可以展开/折叠文件夹"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P3-003",
+          "category": "project",
+          "priority": "high",
+          "description": "点击文件可以在操作区预览内容",
+          "steps": [
+            "在文件树中点击文件",
+            "验证右侧操作区显示文件预览",
+            "验证文本文件正确显示内容"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P3-004",
+          "category": "project",
+          "priority": "medium",
+          "description": "支持预览图片文件",
+          "steps": ["点击图片文件", "验证操作区显示图片预览"],
+          "passes": false
+        },
+        {
+          "id": "P3-005",
+          "category": "project",
+          "priority": "medium",
+          "description": "支持预览 PDF 文件",
+          "steps": ["点击 PDF 文件", "验证操作区显示 PDF 预览"],
+          "passes": false
+        },
+        {
+          "id": "P3-006",
+          "category": "project",
+          "priority": "medium",
+          "description": "用户可以关闭项目",
+          "steps": [
+            "右键项目名称",
+            "选择关闭项目",
+            "验证项目从列表中移除（但文件保留）"
+          ],
+          "passes": false
+        }
+      ]
+    },
+    {
+      "id": "phase-4",
+      "name": "对话系统",
+      "features": [
+        {
+          "id": "P4-001",
+          "category": "chat",
+          "priority": "high",
+          "description": "项目工作视图显示会话列表",
+          "steps": [
+            "进入项目工作视图",
+            "验证中间栏下方显示会话列表",
+            "验证有新建会话按钮"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P4-002",
+          "category": "chat",
+          "priority": "high",
+          "description": "用户可以创建新会话",
+          "steps": [
+            "点击新建会话按钮",
+            "验证会话出现在列表中",
+            "验证操作区切换到对话视图"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P4-003",
+          "category": "chat",
+          "priority": "high",
+          "description": "用户可以发送消息并收到流式响应",
+          "steps": [
+            "在输入框输入消息",
+            "点击发送按钮",
+            "验证消息显示在对话区",
+            "验证 Agent 响应以流式方式逐字显示"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P4-004",
+          "category": "chat",
+          "priority": "high",
+          "description": "用户可以通过 @ 引用文件作为上下文",
+          "steps": [
+            "在输入框输入 @",
+            "验证弹出文件选择菜单",
+            "选择文件后验证文件路径添加到输入中"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P4-005",
+          "category": "chat",
+          "priority": "high",
+          "description": "用户可以通过 / 调用技能",
+          "steps": [
+            "在输入框输入 /",
+            "验证弹出技能菜单",
+            "选择技能后验证技能名添加到输入中"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P4-006",
+          "category": "chat",
+          "priority": "medium",
+          "description": "技能显示参数提示 (argument-hint)",
+          "steps": [
+            "选择带 argument-hint 的技能",
+            "验证输入框显示参数占位提示"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P4-007",
+          "category": "chat",
+          "priority": "medium",
+          "description": "用户可以删除会话",
+          "steps": ["右键会话", "选择删除", "确认删除", "验证会话从列表中移除"],
+          "passes": false
+        },
+        {
+          "id": "P4-008",
+          "category": "chat",
+          "priority": "medium",
+          "description": "会话消息持久化到 JSONL 文件",
+          "steps": [
+            "发送消息",
+            "检查 ~/.xiaoa/workspaces/{id}/sessions/{session-id}.jsonl 文件",
+            "验证文件包含消息记录"
+          ],
+          "passes": false
+        }
+      ]
+    },
+    {
+      "id": "phase-5",
+      "name": "Agent集成",
+      "features": [
+        {
+          "id": "P5-001",
+          "category": "agent-sdk",
+          "priority": "high",
+          "description": "集成 pi-agent-core，Agent 在 Main 进程运行",
+          "steps": [
+            "启动应用",
+            "检查 Main 进程日志确认 Agent 初始化成功",
+            "发送消息验证 Agent 响应正常"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P5-002",
+          "category": "agent-sdk",
+          "priority": "high",
+          "description": "集成 pi-ai，支持多 LLM Provider",
+          "steps": [
+            "在设置页选择不同服务商",
+            "验证 Agent 使用对应 Provider 的模型"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P5-003",
+          "category": "agent-sdk",
+          "priority": "high",
+          "description": "System Prompt 组装（人设 + 记忆 + 知识库 + 技能）",
+          "steps": [
+            "配置 Agent 人设",
+            "添加记忆内容",
+            "添加知识库条目",
+            "创建技能",
+            "发送消息并验证 Agent 响应包含以上上下文"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P5-004",
+          "category": "agent-sdk",
+          "priority": "high",
+          "description": "实现 file_read 工具",
+          "steps": [
+            "在对话中请求读取文件",
+            "验证 Agent 调用 file_read 工具",
+            "验证文件内容返回正确"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P5-005",
+          "category": "agent-sdk",
+          "priority": "high",
+          "description": "实现 file_write 工具",
+          "steps": [
+            "在对话中请求创建/修改文件",
+            "验证 Agent 调用 file_write 工具",
+            "验证文件创建/修改成功"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P5-006",
+          "category": "agent-sdk",
+          "priority": "high",
+          "description": "实现 file_list 工具",
+          "steps": [
+            "在对话中请求列出目录",
+            "验证 Agent 调用 file_list 工具",
+            "验证目录结构返回正确"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P5-007",
+          "category": "agent-sdk",
+          "priority": "high",
+          "description": "实现 memory_search 工具（FTS5 全文搜索）",
+          "steps": [
+            "在记忆中写入一些内容",
+            "在对话中请求搜索记忆",
+            "验证 Agent 调用 memory_search 工具",
+            "验证搜索结果返回正确"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P5-008",
+          "category": "agent-sdk",
+          "priority": "high",
+          "description": "实现 memory_write 工具",
+          "steps": [
+            "在对话中让 Agent 记录信息到 Daily Log",
+            "验证 Agent 调用 memory_write 工具",
+            "验证 Daily Log 文件更新"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P5-009",
+          "category": "agent-sdk",
+          "priority": "medium",
+          "description": "实现 knowledge_read 工具",
+          "steps": [
+            "添加知识库条目",
+            "在对话中请求查询知识库",
+            "验证 Agent 调用 knowledge_read 工具",
+            "验证知识库内容返回正确"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P5-010",
+          "category": "agent-sdk",
+          "priority": "high",
+          "description": "AgentEvent 流式推送到 Renderer",
+          "steps": [
+            "发送消息",
+            "验证 UI 实时显示 message_update 事件",
+            "验证工具执行状态显示 tool_execution 事件"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P5-011",
+          "category": "agent-sdk",
+          "priority": "medium",
+          "description": "Compaction：上下文接近上限时自动压缩",
+          "steps": [
+            "进行长对话使 context 接近上限",
+            "验证 Agent 执行 compaction",
+            "验证对话可以继续进行"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P5-012",
+          "category": "agent-sdk",
+          "priority": "medium",
+          "description": "Pre-compaction flush：压缩前写入 Daily Log",
+          "steps": [
+            "进行长对话使 context 接近上限",
+            "验证 Daily Log 在 compaction 前被更新"
+          ],
+          "passes": false
+        }
+      ]
+    },
+    {
+      "id": "phase-6",
+      "name": "权限模型",
+      "features": [
+        {
+          "id": "P6-001",
+          "category": "permission",
+          "priority": "high",
+          "description": "支持三种权限模式：Explore / Review / Auto",
+          "steps": [
+            "进入项目工作视图",
+            "验证右上角显示权限模式徽标",
+            "点击徽标验证可以切换模式"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P6-002",
+          "category": "permission",
+          "priority": "high",
+          "description": "Explore 模式：Agent 只能读取文件",
+          "steps": [
+            "切换到 Explore 模式",
+            "让 Agent 尝试写入文件",
+            "验证操作被拒绝"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P6-003",
+          "category": "permission",
+          "priority": "high",
+          "description": "Review 模式：危险操作需用户确认",
+          "steps": [
+            "切换到 Review 模式",
+            "让 Agent 尝试写入文件",
+            "验证底部弹出确认栏",
+            "点击允许后验证文件写入成功"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P6-004",
+          "category": "permission",
+          "priority": "medium",
+          "description": "Auto 模式：所有操作自动执行",
+          "steps": [
+            "切换到 Auto 模式",
+            "让 Agent 尝试写入文件",
+            "验证文件直接写入，无确认提示"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P6-005",
+          "category": "permission",
+          "priority": "medium",
+          "description": "确认栏支持'本次会话始终允许'选项",
+          "steps": [
+            "在 Review 模式下触发确认",
+            "点击'本次会话始终允许此类操作'",
+            "让 Agent 再次执行同类操作",
+            "验证不再弹出确认"
+          ],
+          "passes": false
+        },
+        {
+          "id": "P6-006",
+          "category": "permission",
+          "priority": "low",
+          "description": "快捷键 Shift+Tab 循环切换权限模式",
+          "steps": ["按下 Shift+Tab", "验证权限模式循环切换"],
+          "passes": false
+        }
+      ]
+    }
+  ]
+}

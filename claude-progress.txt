@@ -1,0 +1,108 @@
+# 小A 开发进度记录
+
+> 此文件用于跨会话记录开发进度，每次工作结束时更新。
+
+---
+
+## 项目概述
+
+小A 是一个面向非 Coding 群体的 Agent 工作站。
+技术栈: Electron Forge + React 19 | TailwindCSS 4 + shadcn/ui | TanStack Router + Query | oRPC | pi-agent-core + pi-ai
+
+---
+
+## 2026-02-18
+
+### 已完成
+- [x] 项目初始化
+- [x] 基础路由结构 (TanStack Router 文件路由)
+- [x] 基础布局组件 (左侧栏 + 主内容区)
+- [x] shadcn/ui 组件集成
+- [x] 国际化配置 (i18next, zh-CN)
+- [x] 设计文档 (docs/design/architecture.md)
+- [x] 建立长期运行机制 (feature_list.json, claude-progress.txt, init.sh)
+- [x] 全局配置持久化 (config.json 读写)
+- [x] API Key 测试连接功能
+- [x] 设置页面集成 TanStack Query
+
+### 功能清单完成状态
+- P1-001 ✅ 左侧栏布局
+- P1-002 ✅ 主内容区动态切换
+- P1-003 ✅ 全局配置 UI
+- P1-004 ✅ API Key 测试连接
+- P1-006 ✅ 主题切换
+- P1-007 ✅ 语言切换
+- P1-008 ✅ 小A对话视图
+- P1-009 ✅ 会话列表 UI
+- P1-016 ✅ 全局配置存储
+
+### 进行中
+- [ ] P1-005: API Key 加密存储
+- [ ] P1-010~P1-011: 会话创建和持久化
+- [ ] P1-012~P1-017: 工作区管理
+
+### 下一步
+1. 实现工作区 CRUD 和数据存储
+2. 实现会话持久化
+3. 继续完成 Phase 1 剩余功能
+
+---
+
+## 功能完成统计
+
+| Phase | 总数 | 完成 | 进度 |
+|-------|------|------|------|
+| Phase 1: 基础骨架 | 17 | 9 | 53% |
+| Phase 2: Agent配置 | 19 | 0 | 0% |
+| Phase 3: 项目与文件 | 6 | 0 | 0% |
+| Phase 4: 对话系统 | 8 | 0 | 0% |
+| Phase 5: Agent集成 | 12 | 0 | 0% |
+| Phase 6: 权限模型 | 6 | 0 | 0% |
+| **总计** | **68** | **9** | **13%** |
+
+---
+
+## 开发笔记
+
+### 环境要求
+- Node.js 18+
+- Bun (包管理器)
+- Electron Forge
+
+### 常用命令
+```bash
+bun run start        # 启动开发模式
+bun run test         # 运行单元测试
+bun run test:e2e     # 运行端到端测试
+bun run check-types  # 类型检查
+bun run check        # 代码质量检查
+```
+
+### 架构要点
+- IPC 通信使用 oRPC (非传统 ipcMain/ipcRenderer)
+- 状态管理使用 TanStack Query (无全局状态库)
+- Agent 运行在 Main 进程，Renderer 通过 oRPC 交互
+- 工具定义使用 TypeBox (非 Zod)
+
+---
+
+## 会话记录模板
+
+```
+### YYYY-MM-DD 会话 N
+
+**目标**: [本次会话要完成的功能]
+
+**工作内容**:
+- [ ] 功能1
+- [ ] 功能2
+
+**完成**:
+- [x] 已完成项
+
+**阻塞/问题**:
+- [问题描述]
+
+**下次继续**:
+- [下一步工作]
+```

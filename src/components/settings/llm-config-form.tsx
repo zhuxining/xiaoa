@@ -1,5 +1,6 @@
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
+import type { LLMConfig } from "@/actions/config";
 import { FormSection } from "@/components/shared/form-section";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -12,12 +13,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface LLMConfig {
-  provider: string;
-  apiKey: string;
-  model: string;
-}
-
 interface LLMConfigFormProps {
   value: LLMConfig;
   onChange: (value: LLMConfig) => void;
@@ -27,8 +22,9 @@ interface LLMConfigFormProps {
 const PROVIDERS = [
   { id: "openai", name: "OpenAI" },
   { id: "anthropic", name: "Anthropic" },
-  { id: "google", name: "Google AI" },
-  { id: "deepseek", name: "DeepSeek" },
+  { id: "openrouter", name: "OpenRouter" },
+  { id: "ollama", name: "Ollama" },
+  { id: "custom", name: "自定义" },
 ];
 
 const MODELS_BY_PROVIDER: Record<string, string[]> = {
@@ -38,8 +34,9 @@ const MODELS_BY_PROVIDER: Record<string, string[]> = {
     "claude-opus-4-5-20250929",
     "claude-haiku-4-5-20251001",
   ],
-  google: ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"],
-  deepseek: ["deepseek-chat", "deepseek-reasoner"],
+  openrouter: ["anthropic/claude-sonnet-4", "openai/gpt-4o"],
+  ollama: ["llama3.1", "llama3.2", "mistral", "codellama"],
+  custom: [],
 };
 
 export function LLMConfigForm({
@@ -63,7 +60,7 @@ export function LLMConfigForm({
           onValueChange={(provider) =>
             onChange({
               ...value,
-              provider,
+              provider: provider as LLMConfig["provider"],
               model: MODELS_BY_PROVIDER[provider]?.[0] || "",
             })
           }
