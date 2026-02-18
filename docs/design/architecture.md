@@ -918,14 +918,37 @@ interface WorkspacePermissions {
 src/
 ├── main.ts                        # Electron Main 进程入口
 ├── preload.ts                     # Preload 脚本
-├── renderer.ts                    # Renderer 进程入口
+├── renderer.ts                    # Renderer 进程入口（导入 pi-web-ui CSS + 注册工具渲染器）
 ├── app.tsx                        # React 根组件
 │
+├── agent/                         # pi Agent 集成层（Main 进程）
+│   ├── index.ts                   # 公开 API
+│   ├── types.ts                   # AgentMessage 声明合并
+│   ├── workspace-session.ts       # createAgentSession() 封装（工作区 Agent）
+│   ├── global-session.ts          # Agent 封装（全局无项目 Agent）
+│   ├── auth/
+│   │   └── auth-bridge.ts         # AuthStorage + setFallbackResolver
+│   ├── tools/
+│   │   ├── index.ts               # 组装所有工具
+│   │   ├── file-tools.ts          # 权限感知文件工具（含 ctx.ui.confirm）
+│   │   ├── bash-tool.ts           # 权限感知 bash 工具
+│   │   ├── memory-tools.ts        # memory_search, memory_write
+│   │   └── knowledge-tools.ts     # knowledge_read
+│   ├── permission/
+│   │   ├── permission-policy.ts   # 策略（explore/review/auto）
+│   │   └── permission-request.ts  # Promise + IPC 权限桥接
+│   └── run/
+│       ├── run-types.ts           # ActiveRun 接口
+│       ├── run-store.ts           # Map 状态（activeRuns, eventBuffers）
+│       └── run-executor.ts        # AgentSessionEvent → ChatEvent 桥接
+│
 ├── actions/                       # 客户端 IPC 调用封装（Renderer → Main）
+│   ├── chat.ts                    # 对话操作
+│   ├── session.ts                 # 会话管理
 │   ├── language.ts                # 语言切换
-│   ├── shell.ts                   # Shell 操作（打开外部链接等）
+│   ├── shell.ts                   # Shell 操作
 │   ├── theme.ts                   # 主题切换
-│   └── window.ts                  # 窗口控制（最小化/最大化/关闭）
+│   └── window.ts                  # 窗口控制
 │
 ├── ipc/                           # oRPC handlers（Main 进程）
 │   ├── router.ts                  # 聚合所有 domain router
@@ -935,29 +958,23 @@ src/
 │   ├── app/                       # 应用信息
 │   ├── shell/                     # Shell 操作
 │   ├── theme/                     # 主题管理
-│   └── window/                    # 窗口控制
+│   ├── window/                    # 窗口控制
+│   ├── chat/                      # 极薄对话 IPC（handlers / schemas / index）
+│   └── session/                   # 会话 IPC（替换旧 sisson/）
 │
 ├── components/                    # React 组件
 │   ├── ui/                        # shadcn/ui 基础组件
-│   ├── drag-window-region.tsx     # 窗口拖拽区域
-│   ├── external-link.tsx          # 外部链接
-│   ├── lang-toggle.tsx            # 语言切换
-│   ├── navigation-menu.tsx        # 导航菜单
-│   └── toggle-theme.tsx           # 主题切换
+│   ├── chat/
+│   │   ├── pi-message-list.tsx    # pi-web-ui <message-list> React wrapper
+│   │   ├── tool-renderers.ts      # 注册 file/bash 自定义渲染器
+│   │   ├── message-input.tsx      # 输入框（技能菜单保留）
+│   │   ├── permission-dialog.tsx  # 权限确认对话
+│   │   └── session-list.tsx       # 会话列表（适配 pi SessionManager）
+│   └── ...                        # 其他组件
 │
 ├── layouts/                       # 布局组件
-│   └── base-layout.tsx            # 基础布局
-│
 ├── routes/                        # TanStack Router 文件路由
-│   ├── __root.tsx                 # 根路由（Provider + Layout）
-│   ├── index.tsx                  # 首页路由
-│   └── second.tsx                 # 示例路由
-│
 ├── localization/                  # i18n 国际化
-│   ├── i18n.ts                    # i18next 初始化
-│   ├── langs.ts                   # 语言资源
-│   └── language.ts                # 语言工具
-│
 ├── constants/                     # 常量定义
 ├── styles/                        # 全局样式
 ├── types/                         # 类型定义
@@ -1126,8 +1143,8 @@ export const router = {
   project,     // 项目管理：list / open / close / readDir
   session,     // 会话管理：list / create / delete / messages
   file,        // 文件操作：read
-  permission,  // 权限管理：get / set / request / respond
-  chat,        // 对话：send / abort
+  session,     // 会话管理：list / getMessages（读取 pi SessionManager JSONL）
+  chat,        // 对话：send / abort / events / respondPermission / steer / followUp
 };
 ```
 
@@ -1176,121 +1193,179 @@ await client.theme.set({ mode: "dark" });
 
 ---
 
-## 9. Agent 集成架构（pi-agent-core）
+## 9. Agent 集成架构（pi-coding-agent + pi-agent-core）
 
-基于 `@mariozechner/pi-agent-core`（来自 [pi-mono](https://github.com/badlogic/pi-mono) 仓库）实现 Agent 能力。
+基于 pi-mono 生态全面重构，工作区 Agent 使用 `@mariozechner/pi-coding-agent`（自动 Compaction + SessionManager），全局 Agent 使用 `@mariozechner/pi-agent-core`。
 
-> **详细实现文档**：[pi-agent-integration.md](./pi-agent-integration.md)
+> **详细实现文档**：[pi-agent-architecture.md](./pi-agent-architecture.md)
 
 ### 9.1 架构概览
 
 ```text
-src/ipc/chat/
-├── agent/                      # Agent 核心
-│   ├── create-agent.ts         # Agent 工厂 + SDK 钩子配置
-│   ├── convert-to-llm.ts       # 消息转换（过滤自定义类型）
-│   └── transform-context.ts    # 上下文管理（Compaction）
-│
-├── tools/                      # 工具定义（TypeBox schema）
-│   ├── file-tools.ts           # file_read, file_write, file_list
-│   ├── memory-tools.ts         # memory_search, memory_write
-│   ├── knowledge-tools.ts      # knowledge_read
-│   └── permission-guard.ts     # 权限包装器
-│
-├── permission/                 # 三级权限系统
-│   ├── permission-store.ts     # allowlist 状态
-│   ├── permission-policy.ts    # 策略判定
-│   └── permission-request.ts   # Promise 等待模型
-│
-└── run/                        # 运行时管理
-    ├── run-types.ts            # ActiveRun 接口
-    ├── run-store.ts            # 状态 Map
-    └── run-executor.ts         # IPC endpoints
+src/agent/                          # pi Agent 集成层（Main 进程，全新）
+├── workspace-session.ts            # createAgentSession() 封装（工作区 Agent）
+├── global-session.ts               # Agent 类封装（全局无项目 Agent）
+├── auth/
+│   └── auth-bridge.ts             # AuthStorage.inMemory() + setFallbackResolver
+├── tools/
+│   ├── index.ts                   # buildAllTools() 组装
+│   ├── file-tools.ts              # file_read / file_write / file_list（含权限判定）
+│   ├── bash-tool.ts               # bash（含风险级别判定）
+│   ├── memory-tools.ts            # memory_search, memory_write
+│   └── knowledge-tools.ts         # knowledge_read
+├── permission/
+│   ├── permission-policy.ts       # 策略（explore/review/auto）
+│   └── permission-request.ts      # Promise + IPC 权限桥接
+└── run/
+    ├── run-types.ts               # ActiveRun 接口
+    ├── run-store.ts               # Map 状态（activeRuns, eventBuffers）
+    └── run-executor.ts            # AgentSessionEvent → ChatEvent 桥接
+
+src/ipc/chat/                       # 极薄 IPC 层（3 文件）
+src/ipc/session/                    # 会话 IPC（读取 pi SessionManager JSONL）
 ```
 
-### 9.2 关键 SDK 钩子
+**废弃**：`src/ipc/chat/` 下原有的 `agent/`、`tools/`、`permission/`、`run/` 子模块；`src/ipc/sisson/`（替换为 `src/ipc/session/`）；手动 Compaction 和 `patchToolsWithPermission`。
 
-| 钩子 | 职责 | 实现 |
-|------|------|------|
-| `convertToLlm` | 将 AgentMessage 转为 LLM Message | 过滤 `permission_request` / `memory_update`，转换 `compaction_summary` |
-| `transformContext` | 上下文变换 | Pre-compaction flush + 字符数裁剪 |
-| `getApiKey` | 按 Provider 获取 Key | 从 `credentials.providers[provider]` 读取 |
-
-### 9.3 自定义消息类型
-
-通过 declaration merging 扩展：
+### 9.2 工作区 Agent（createAgentSession）
 
 ```typescript
+// src/agent/workspace-session.ts
+const { session } = await createAgentSession({
+  cwd: run.workspaceRootPath,       // 项目根目录
+  agentDir: getXiaoaAgentDir(),     // ~/.xiaoa/agent/（会话 + Skill 存储）
+  model: resolveModel(readConfig()),
+  thinkingLevel: "minimal",
+  tools: [fileReadTool, fileWriteTool, fileListTool, bashTool],  // 含权限逻辑
+  customTools: [...memoryTools, ...knowledgeTools],
+  authStorage: createAuthBridge(),
+});
+```
+
+pi-coding-agent 自动处理：**Compaction**（上下文压缩）、**SessionManager**（JSONL 持久化）、**ResourceLoader**（Skill 自动注入）。
+
+### 9.3 全局 Agent（Agent 类）
+
+```typescript
+// src/agent/global-session.ts（无项目目录，不需要文件/bash 工具）
+return new Agent({
+  initialState: { systemPrompt, model, tools: [...memoryTools, ...knowledgeTools], messages: [] },
+  convertToLlm: filterToLlmMessages,
+  getApiKey: (provider) => readCredentials().providers[provider],
+});
+```
+
+### 9.4 权限控制
+
+权限逻辑内嵌于工具 `execute()` 内部，通过 Promise + IPC 与 Renderer 的 `PermissionDialog` 通信：
+
+```text
+工具 execute()
+  → 检查权限策略（explore/review/auto）
+  → 需要确认时：appendEvent(runKey, { type: "permission_request" })
+  → await waitForPermissionResponse(runKey, permissionId)   ← 阻塞
+  → Renderer 显示 PermissionDialog → 用户点击
+  → respondChatPermission IPC → resolve Promise → 工具继续
+```
+
+| 策略 | file_read | file_write | bash（安全） | bash（危险） |
+|------|-----------|------------|-------------|-------------|
+| explore | ✅ 自动 | ❌ 拒绝 | ❌ 拒绝 | ❌ 拒绝 |
+| review | ✅ 自动 | ⚠️ 确认 | ⚠️ 确认 | ⚠️ 确认 |
+| auto | ✅ 自动 | ✅ 自动 | ✅ 自动 | ⚠️ 确认 |
+
+### 9.5 自定义消息类型（声明合并）
+
+```typescript
+// src/agent/types.ts
 declare module "@mariozechner/pi-agent-core" {
   interface CustomAgentMessages {
-    permission_request: PermissionRequestMessage;   // UI-only
-    compaction_summary: CompactionSummaryMessage;   // 转为 user 消息
-    memory_update: MemoryUpdateMessage;            // UI-only
+    permission_request: PermissionRequestMessage;  // UI-only，不传 LLM
+    memory_update: MemoryUpdateMessage;            // UI-only，不传 LLM
+    // compaction_summary 由 pi-coding-agent 内置处理
   }
 }
 ```
 
-### 9.4 IPC Endpoints
+### 9.6 ChatEvent 类型
 
-| 端点 | 说明 |
+| 事件 | 说明 |
 |------|------|
-| `chat.send` | 发起对话，返回 `{ runId }` |
-| `chat.abort` | 中断当前对话 |
-| `chat.events` | 获取事件流（`afterSeq` 增量拉取） |
-| `chat.respondPermission` | 响应权限请求 |
-| `chat.steer` | 中途打断（Steering） |
-| `chat.followUp` | 完成后追加（Follow-up） |
+| `run_start / run_end / run_error` | 运行生命周期 |
+| `message_start / message_delta / message_end` | 流式文本 |
+| `tool_call / tool_result` | 工具调用（含 toolCallId 关联） |
+| `permission_request / permission_resolved` | 权限对话 |
+| `compaction` | 上下文压缩通知 |
 
-### 9.5 Fallback Agent
+### 9.7 认证适配
 
-未配置 LLM Key 时，使用模式匹配执行工具（只读操作）。
+```typescript
+// src/agent/auth/auth-bridge.ts
+const storage = AuthStorage.inMemory();
+storage.setFallbackResolver((provider) => readCredentials().providers[provider]);
+return storage;
+```
 
-### 9.6 Provider 支持
+### 9.8 Provider 支持
 
-支持 18+ Provider：Anthropic / OpenAI / Google / xAI / Groq / Mistral / DeepSeek / Ollama / Custom 等。
+Anthropic / OpenAI / Google / xAI / Groq / Mistral / DeepSeek / Ollama / Custom 等（由 pi-ai 统一抽象）。
+
+### 9.9 pi-web-ui 集成（消息渲染）
+
+`@mariozechner/pi-web-ui` 提供 LitElement Web Components，选择性集成：
+
+| 组件 | 方案 |
+|------|------|
+| 消息列表 | `<message-list>` Web Component，React 19 ref 命令式赋值 |
+| 工具渲染 | `registerToolRenderer()` 注册 file/bash/memory 自定义渲染器 |
+| 整体布局 | 保留 React + TanStack Router |
+| 技能菜单 | 保留 xiaoa 自定义 `message-input.tsx` |
+| 权限对话 | 保留 xiaoa 自定义 `permission-dialog.tsx` |
 
 ---
 
 ## 10. 实现路线图
 
-### Phase 1 — 基础骨架
+### Phase 1 — 基础骨架 + UI 壳
 
-- 实现左侧栏 + 主内容区的壳布局
-- **全局设置初始化**（config.json 读写 + 设置页面 UI）
-- **内置小A基础对话**（小A入口 + 对话视图 + 会话管理）
+- 左侧栏 + 主内容区布局
+- 全局设置（config.json + 设置页面）
 - 工作区 CRUD 和切换
-- 本地存储层（JSON 文件读写 + credentials.enc 加密存储）
-- oRPC router 注册（config / llm domain）
+- 本地存储层（credentials.enc 加密存储）
 
-### Phase 2 — Agent 配置
+### Phase 2 — Agent 核心（pi-coding-agent）
 
-- Agent 配置页面
-- 技能管理页面（CRUD + SKILL.md 可视化编辑 + 导入/导出）
-- 记忆管理页面
-- 知识库管理页面（本地文件拖入 + URL 粘贴 + 后台解析为 Markdown）
+- 新建 `src/agent/` 集成层（workspace-session / global-session / auth-bridge）
+- 工具层（file / bash / memory / knowledge，含权限逻辑）
+- 事件桥接（AgentSessionEvent → ChatEvent）
+- 极薄 IPC 层（`src/ipc/chat/` 精简为 3 文件）
+- 消息渲染：`<message-list>` Web Component wrapper + 工具渲染器注册
 
-### Phase 3 — 项目与文件
+### Phase 3 — 权限守卫 + 对话 UI
 
-- 打开本地文件夹
-- 文件树浏览器（递归目录读取）
-- 文件预览（文本、图片、PDF）
+- 权限策略（explore/review/auto）
+- Promise + IPC 权限桥接（工具 execute → PermissionDialog → IPC resolve）
+- 会话列表（适配 pi SessionManager JSONL）
+- `src/ipc/session/` 替换 `src/ipc/sisson/`
+- 流式消息渲染（AgentMessage[] 状态重建）
 
-### Phase 4 — 对话系统
+### Phase 4 — Agent 配置 + Skill 系统
 
-- 会话 CRUD
-- 消息输入与展示
-- 流式响应渲染
+- Agent 配置页面（人设 / 模型 / 头像）
+- 技能管理（SKILL.md 文件操作，`~/.xiaoa/agent/skills/`）
+- 记忆管理（MEMORY.md 编辑器）
+- 知识库管理（文件拖入 + URL 解析）
+
+### Phase 5 — 项目工作视图
+
+- 打开本地文件夹，文件树浏览器
+- 文件预览（文本 / 图片 / PDF）
 - `@` 引用文件作为上下文
-- 技能快捷调用（`/` 菜单触发，`$ARGUMENTS` 参数传递）
+- 技能快捷调用（`/` 菜单）
+- ModelSelector + SettingsDialog（pi-web-ui）
 
-### Phase 5 — Agent 集成（pi-agent-core）
+### Phase 6 — ArtifactsPanel + 高级功能
 
-- 集成 `@mariozechner/pi-agent-core`，在 Main 进程创建 Agent 实例
-- 集成 `@mariozechner/pi-ai`，通过 `getModel()` 对接多 LLM Provider
-- System Prompt 组装（Agent 人设 + MEMORY.md + 知识库摘要 + 技能列表）
-- 实现 `convertToLlm`（自定义消息类型转换）和 `transformContext`（上下文管理）
-- 内置工具：`file_read` / `file_write` / `file_list` / `memory_search` / `memory_write` / `knowledge_read`
-- 通过 oRPC `chat.send` / `chat.abort` 将 AgentEvent 流式推送到 Renderer
-- Compaction：Pre-compaction flush 到 Daily Log + LLM 摘要压缩
-- 会话结束钩子：`/new` 或空闲超时时自动写入 Daily Log
-- Declaration merging 扩展 `AgentMessage`（权限请求、压缩摘要等自定义消息）
+- `<artifacts-panel>` 集成（AI 生成可交互制品）
+- SessionManager 分支能力 → 会话树可视化
+- 向量记忆搜索（sqlite-vec）
