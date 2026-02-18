@@ -16,6 +16,9 @@ export const chatEventTypeSchema = z.enum([
   "message_end",
   "tool_start",
   "tool_end",
+  "tool_call",
+  "tool_result",
+  "compaction",
   "permission_request",
   "permission_resolved",
   "run_aborted",
@@ -31,8 +34,17 @@ export const chatEventSchema = z.object({
   sessionId: z.string(),
   type: chatEventTypeSchema,
   timestamp: z.number(),
+  // message events
   content: z.string().optional(),
+  // tool events
   toolName: z.string().optional(),
+  toolCallId: z.string().optional(),
+  args: z.string().optional(),
+  isError: z.boolean().optional(),
+  // compaction events
+  messagesBefore: z.number().optional(),
+  messagesAfter: z.number().optional(),
+  // permission events
   permissionId: z.string().optional(),
   permissionType: permissionTypeSchema.optional(),
   permissionRisk: permissionRiskSchema.optional(),
@@ -40,6 +52,7 @@ export const chatEventSchema = z.object({
   permissionDescription: z.string().optional(),
   permissionDetails: z.string().optional(),
   decision: z.enum(["allow", "deny"]).optional(),
+  // error events
   error: z.string().optional(),
 });
 

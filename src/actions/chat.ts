@@ -24,11 +24,19 @@ export interface ChatGetEventsInput {
 }
 
 export interface ChatEvent {
+  args?: string;
+  // message events
   content?: string;
   decision?: "allow" | "deny";
+  // error events
   error?: string;
+  isError?: boolean;
+  messagesAfter?: number;
+  // compaction events
+  messagesBefore?: number;
   permissionDescription?: string;
   permissionDetails?: string;
+  // permission events
   permissionId?: string;
   permissionRisk?: "low" | "medium" | "high";
   permissionTitle?: string;
@@ -38,6 +46,8 @@ export interface ChatEvent {
   seq: number;
   sessionId: string;
   timestamp: number;
+  toolCallId?: string;
+  // tool events
   toolName?: string;
   type:
     | "run_start"
@@ -46,6 +56,9 @@ export interface ChatEvent {
     | "message_end"
     | "tool_start"
     | "tool_end"
+    | "tool_call"
+    | "tool_result"
+    | "compaction"
     | "permission_request"
     | "permission_resolved"
     | "run_aborted"
