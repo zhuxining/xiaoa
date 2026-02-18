@@ -4,18 +4,28 @@ export interface Knowledge {
   id: string;
   workspaceId: string;
   name: string;
-  type: "file" | "url";
-  source: string;
-  status: "pending" | "ready" | "error";
+  sourceType: "local" | "url";
+  type?: "file" | "url";
+  source?: string;
+  originalPath?: string;
+  originalUrl?: string;
+  mimeType?: string;
+  parsedFile?: string;
+  description?: string;
+  status: "pending" | "parsing" | "ready" | "error";
   error?: string;
   addedAt: number;
+  parsedAt?: number;
+  updatedAt?: number;
 }
 
 export interface AddKnowledgeInput {
   workspaceId: string;
   name: string;
-  type: "file" | "url";
-  source: string;
+  sourceType: "local" | "url";
+  originalPath?: string;
+  originalUrl?: string;
+  mimeType?: string;
 }
 
 export async function getKnowledge(workspaceId: string): Promise<Knowledge[]> {
@@ -33,4 +43,22 @@ export async function deleteKnowledge(
   id: string
 ): Promise<{ success: boolean; id: string }> {
   return await ipc.client.knowledge.delete({ workspaceId, id });
+}
+
+export async function reparseKnowledge(
+  workspaceId: string,
+  id: string
+): Promise<Knowledge | null> {
+  return await ipc.client.knowledge.reparse({ workspaceId, id });
+}
+
+export async function getKnowledgeContent(
+  workspaceId: string,
+  id: string
+): Promise<{ id: string; content: string; parsedFile: string } | null> {
+  return await ipc.client.knowledge.getContent({ workspaceId, id });
+}
+
+export async function selectKnowledgeFiles(): Promise<string[]> {
+  return await ipc.client.knowledge.selectFiles();
 }

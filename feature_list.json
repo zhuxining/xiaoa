@@ -2,8 +2,11 @@
   "meta": {
     "project": "小A",
     "description": "面向非Coding群体的Agent工作站",
-    "version": "0.1.0",
-    "lastUpdated": "2026-02-18"
+    "version": "0.2.0",
+    "lastUpdated": "2026-02-18",
+    "evaluationCriteria": "e2e",
+    "lastAuditAt": "2026-02-18",
+    "updatedAt": "2026-02-18"
   },
   "phases": [
     {
@@ -19,7 +22,26 @@
             "打开应用",
             "验证左侧栏包含：小A入口、工作区切换器、Agent/技能/记忆/知识库配置项、项目列表区域、设置入口"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/actions"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": [
+            "满足端到端验收：左侧栏显示小A入口、工作区切换器、配置项、项目列表、设置入口"
+          ],
+          "testCases": [
+            "打开应用",
+            "验证左侧栏包含：小A入口、工作区切换器、Agent/技能/记忆/知识库配置项、项目列表区域、设置入口"
+          ]
         },
         {
           "id": "P1-002",
@@ -32,7 +54,28 @@
             "点击工作区配置项 → 显示对应配置页",
             "点击项目 → 显示项目工作视图"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/actions"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": [
+            "满足端到端验收：主内容区根据左侧栏选中项动态切换视图"
+          ],
+          "testCases": [
+            "点击小A入口 → 显示小A对话视图",
+            "点击设置 → 显示全局设置页",
+            "点击工作区配置项 → 显示对应配置页",
+            "点击项目 → 显示项目工作视图"
+          ]
         },
         {
           "id": "P1-003",
@@ -45,7 +88,27 @@
             "验证显示 API Key 输入框",
             "验证显示默认模型选择器"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/actions"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": [
+            "满足端到端验收：用户可以查看和编辑全局配置（LLM服务商、API Key、默认模型）"
+          ],
+          "testCases": [
+            "点击设置入口",
+            "验证显示服务商选择器",
+            "验证显示 API Key 输入框",
+            "验证显示默认模型选择器"
+          ]
         },
         {
           "id": "P1-004",
@@ -57,7 +120,24 @@
             "点击测试连接按钮",
             "验证显示连接成功或失败提示"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/actions"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以测试 LLM API Key 连接"],
+          "testCases": [
+            "在设置页输入 API Key",
+            "点击测试连接按钮",
+            "验证显示连接成功或失败提示"
+          ]
         },
         {
           "id": "P1-005",
@@ -69,7 +149,24 @@
             "检查 ~/.xiaoa/credentials.enc 文件存在",
             "重启应用后验证 API Key 仍然可用"
           ],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/actions"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": ["按 phase 优先级实现功能并补齐端到端测试"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：API Key 加密存储于 credentials.enc"],
+          "testCases": [
+            "输入 API Key 并保存",
+            "检查 ~/.xiaoa/credentials.enc 文件存在",
+            "重启应用后验证 API Key 仍然可用"
+          ]
         },
         {
           "id": "P1-006",
@@ -82,7 +179,27 @@
             "点击深色主题 → 验证界面变为深色",
             "点击跟随系统 → 验证与系统主题一致"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/actions"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": [
+            "满足端到端验收：用户可以切换主题（浅色/深色/跟随系统）"
+          ],
+          "testCases": [
+            "打开设置页",
+            "点击浅色主题 → 验证界面变为浅色",
+            "点击深色主题 → 验证界面变为深色",
+            "点击跟随系统 → 验证与系统主题一致"
+          ]
         },
         {
           "id": "P1-007",
@@ -94,7 +211,24 @@
             "切换语言为英文 → 验证界面显示英文",
             "切换语言为中文 → 验证界面显示中文"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/actions"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以切换界面语言"],
+          "testCases": [
+            "打开设置页",
+            "切换语言为英文 → 验证界面显示英文",
+            "切换语言为中文 → 验证界面显示中文"
+          ]
         },
         {
           "id": "P1-008",
@@ -106,7 +240,26 @@
             "验证主内容区显示对话界面",
             "验证有输入框和发送按钮"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": [
+            "满足端到端验收：点击小A入口显示小A对话视图（开箱即用的通用助手）"
+          ],
+          "testCases": [
+            "点击左侧栏小A入口",
+            "验证主内容区显示对话界面",
+            "验证有输入框和发送按钮"
+          ]
         },
         {
           "id": "P1-009",
@@ -118,7 +271,24 @@
             "验证左侧显示会话列表",
             "验证有新建会话按钮"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：小A对话视图显示会话列表"],
+          "testCases": [
+            "进入小A对话视图",
+            "验证左侧显示会话列表",
+            "验证有新建会话按钮"
+          ]
         },
         {
           "id": "P1-010",
@@ -130,7 +300,24 @@
             "验证会话列表新增一条",
             "验证对话区清空并显示欢迎状态"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以创建新的小A会话"],
+          "testCases": [
+            "点击新建会话按钮",
+            "验证会话列表新增一条",
+            "验证对话区清空并显示欢迎状态"
+          ]
         },
         {
           "id": "P1-011",
@@ -142,7 +329,26 @@
             "检查 ~/.xiaoa/xiaoa/sessions/ 目录下有对应的 .jsonl 文件",
             "重启应用后验证会话和消息仍然存在"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": [
+            "满足端到端验收：小A会话数据持久化到 ~/.xiaoa/xiaoa/sessions/"
+          ],
+          "testCases": [
+            "创建会话并发送消息",
+            "检查 ~/.xiaoa/xiaoa/sessions/ 目录下有对应的 .jsonl 文件",
+            "重启应用后验证会话和消息仍然存在"
+          ]
         },
         {
           "id": "P1-012",
@@ -155,7 +361,25 @@
             "输入工作区名称",
             "验证工作区创建成功并自动切换"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以创建新工作区"],
+          "testCases": [
+            "点击工作区切换器",
+            "点击新建工作区",
+            "输入工作区名称",
+            "验证工作区创建成功并自动切换"
+          ]
         },
         {
           "id": "P1-013",
@@ -167,7 +391,24 @@
             "点击工作区切换器选择另一个工作区",
             "验证左侧栏配置项和项目列表更新为新工作区内容"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以切换工作区"],
+          "testCases": [
+            "创建两个工作区",
+            "点击工作区切换器选择另一个工作区",
+            "验证左侧栏配置项和项目列表更新为新工作区内容"
+          ]
         },
         {
           "id": "P1-014",
@@ -180,7 +421,25 @@
             "输入新名称",
             "验证工作区名称更新"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以重命名工作区"],
+          "testCases": [
+            "右键或长按工作区名称",
+            "选择重命名",
+            "输入新名称",
+            "验证工作区名称更新"
+          ]
         },
         {
           "id": "P1-015",
@@ -194,7 +453,26 @@
             "验证工作区从列表中移除",
             "验证 ~/.xiaoa/workspaces/{id}/ 目录被删除"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以删除工作区"],
+          "testCases": [
+            "右键或长按工作区名称",
+            "选择删除",
+            "确认删除操作",
+            "验证工作区从列表中移除",
+            "验证 ~/.xiaoa/workspaces/{id}/ 目录被删除"
+          ]
         },
         {
           "id": "P1-016",
@@ -205,7 +483,23 @@
             "修改任意全局设置",
             "检查 ~/.xiaoa/config.json 文件存在且内容正确"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/actions"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：全局配置存储到 ~/.xiaoa/config.json"],
+          "testCases": [
+            "修改任意全局设置",
+            "检查 ~/.xiaoa/config.json 文件存在且内容正确"
+          ]
         },
         {
           "id": "P1-017",
@@ -216,7 +510,25 @@
             "创建工作区并配置 Agent",
             "检查对应目录下的 workspace.json 文件存在且内容正确"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/actions"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": [
+            "满足端到端验收：工作区配置存储到 ~/.xiaoa/workspaces/{id}/workspace.json"
+          ],
+          "testCases": [
+            "创建工作区并配置 Agent",
+            "检查对应目录下的 workspace.json 文件存在且内容正确"
+          ]
         }
       ]
     },
@@ -234,7 +546,24 @@
             "修改 Agent 名称",
             "验证名称更新成功"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以配置 Agent 名称"],
+          "testCases": [
+            "进入工作区 Agent 配置页",
+            "修改 Agent 名称",
+            "验证名称更新成功"
+          ]
         },
         {
           "id": "P2-002",
@@ -246,7 +575,24 @@
             "点击头像区域选择图片",
             "验证头像更新成功"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以配置 Agent 头像"],
+          "testCases": [
+            "进入工作区 Agent 配置页",
+            "点击头像区域选择图片",
+            "验证头像更新成功"
+          ]
         },
         {
           "id": "P2-003",
@@ -258,7 +604,26 @@
             "在人多行文本框中编辑人设",
             "验证人设保存成功"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": [
+            "满足端到端验收：用户可以编辑 Agent 人设（System Prompt）"
+          ],
+          "testCases": [
+            "进入工作区 Agent 配置页",
+            "在人多行文本框中编辑人设",
+            "验证人设保存成功"
+          ]
         },
         {
           "id": "P2-004",
@@ -270,7 +635,26 @@
             "选择与全局默认不同的模型",
             "验证模型选择生效"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": [
+            "满足端到端验收：用户可以为工作区选择特定模型（覆盖全局默认）"
+          ],
+          "testCases": [
+            "进入工作区 Agent 配置页",
+            "选择与全局默认不同的模型",
+            "验证模型选择生效"
+          ]
         },
         {
           "id": "P2-005",
@@ -278,7 +662,21 @@
           "priority": "high",
           "description": "用户可以查看技能列表",
           "steps": ["进入工作区技能管理页", "验证显示当前工作区的所有技能"],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/actions"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以查看技能列表"],
+          "testCases": ["进入工作区技能管理页", "验证显示当前工作区的所有技能"]
         },
         {
           "id": "P2-006",
@@ -290,7 +688,25 @@
             "填写名称、图标、描述、指令正文",
             "验证技能创建成功并出现在列表中"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/actions"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以创建新技能"],
+          "testCases": [
+            "点击新建技能按钮",
+            "填写名称、图标、描述、指令正文",
+            "验证技能创建成功并出现在列表中"
+          ]
         },
         {
           "id": "P2-007",
@@ -302,7 +718,25 @@
             "修改技能的各个字段",
             "验证修改保存成功"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/actions"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以编辑已有技能"],
+          "testCases": [
+            "在技能列表中选择一个技能",
+            "修改技能的各个字段",
+            "验证修改保存成功"
+          ]
         },
         {
           "id": "P2-008",
@@ -315,7 +749,26 @@
             "确认删除",
             "验证技能从列表中移除"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/actions"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以删除技能"],
+          "testCases": [
+            "选择要删除的技能",
+            "点击删除按钮",
+            "确认删除",
+            "验证技能从列表中移除"
+          ]
         },
         {
           "id": "P2-009",
@@ -327,7 +780,25 @@
             "选择包含 SKILL.md 的目录",
             "验证技能导入成功"
           ],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/actions"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": ["按 phase 优先级实现功能并补齐端到端测试"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以导入技能（SKILL.md 目录）"],
+          "testCases": [
+            "点击导入技能按钮",
+            "选择包含 SKILL.md 的目录",
+            "验证技能导入成功"
+          ]
         },
         {
           "id": "P2-010",
@@ -339,7 +810,25 @@
             "点击导出按钮",
             "验证导出目录包含完整的 SKILL.md 和 references/"
           ],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/actions"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": ["按 phase 优先级实现功能并补齐端到端测试"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以导出技能"],
+          "testCases": [
+            "选择要导出的技能",
+            "点击导出按钮",
+            "验证导出目录包含完整的 SKILL.md 和 references/"
+          ]
         },
         {
           "id": "P2-011",
@@ -351,7 +840,25 @@
             "上传或选择参考文件",
             "验证文件出现在 references 列表中"
           ],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/actions"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": ["按 phase 优先级实现功能并补齐端到端测试"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：技能支持添加参考资料"],
+          "testCases": [
+            "编辑技能时点击添加参考文件",
+            "上传或选择参考文件",
+            "验证文件出现在 references 列表中"
+          ]
         },
         {
           "id": "P2-012",
@@ -364,7 +871,27 @@
             "编辑内容并保存",
             "验证文件更新成功"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": [
+            "满足端到端验收：用户可以查看和编辑长期记忆 (MEMORY.md)"
+          ],
+          "testCases": [
+            "进入工作区记忆管理页",
+            "验证显示 MEMORY.md 编辑器",
+            "编辑内容并保存",
+            "验证文件更新成功"
+          ]
         },
         {
           "id": "P2-013",
@@ -375,7 +902,23 @@
             "在记忆编辑器中使用标题、列表等 Markdown 语法",
             "验证保存后格式正确"
           ],
-          "passes": true
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：记忆文件使用 Markdown 格式"],
+          "testCases": [
+            "在记忆编辑器中使用标题、列表等 Markdown 语法",
+            "验证保存后格式正确"
+          ]
         },
         {
           "id": "P2-014",
@@ -387,7 +930,26 @@
             "拖拽 PDF/Word/Markdown 文件到上传区域",
             "验证文件出现在知识库列表中"
           ],
-          "passes": false
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": [
+            "满足端到端验收：用户可以通过拖拽添加本地文件到知识库"
+          ],
+          "testCases": [
+            "进入知识库管理页",
+            "拖拽 PDF/Word/Markdown 文件到上传区域",
+            "验证文件出现在知识库列表中"
+          ]
         },
         {
           "id": "P2-015",
@@ -399,7 +961,26 @@
             "粘贴网页 URL",
             "验证 URL 内容被解析并添加到知识库"
           ],
-          "passes": false
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": [
+            "满足端到端验收：用户可以通过粘贴 URL 添加在线内容到知识库"
+          ],
+          "testCases": [
+            "进入知识库管理页",
+            "粘贴网页 URL",
+            "验证 URL 内容被解析并添加到知识库"
+          ]
         },
         {
           "id": "P2-016",
@@ -412,7 +993,27 @@
             "等待解析完成",
             "验证状态变为 ready 或 error"
           ],
-          "passes": false
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": [
+            "满足端到端验收：知识库条目显示解析状态（pending/parsing/ready/error）"
+          ],
+          "testCases": [
+            "添加文件到知识库",
+            "验证初始状态为 pending",
+            "等待解析完成",
+            "验证状态变为 ready 或 error"
+          ]
         },
         {
           "id": "P2-017",
@@ -424,7 +1025,24 @@
             "点击预览按钮",
             "验证显示解析后的 Markdown 内容"
           ],
-          "passes": false
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以预览解析后的知识库内容"],
+          "testCases": [
+            "选择已就绪的知识库条目",
+            "点击预览按钮",
+            "验证显示解析后的 Markdown 内容"
+          ]
         },
         {
           "id": "P2-018",
@@ -437,7 +1055,25 @@
             "确认删除",
             "验证条目从列表中移除"
           ],
-          "passes": false
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以删除知识库条目"],
+          "testCases": [
+            "选择知识库条目",
+            "点击删除按钮",
+            "确认删除",
+            "验证条目从列表中移除"
+          ]
         },
         {
           "id": "P2-019",
@@ -449,7 +1085,86 @@
             "点击重新解析按钮",
             "验证解析流程重新开始"
           ],
-          "passes": false
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以重新解析失败的知识库条目"],
+          "testCases": [
+            "选择解析失败的条目",
+            "点击重新解析按钮",
+            "验证解析流程重新开始"
+          ]
+        },
+        {
+          "id": "P2-020",
+          "category": "knowledge",
+          "priority": "high",
+          "description": "知识库生成解析产物 knowledge/{id}.md，并写入 frontmatter(description) 供 Agent 摘要检索",
+          "steps": [
+            "添加本地文件或 URL 到知识库",
+            "解析完成后检查工作区 knowledge 目录存在 {id}.md",
+            "验证 Markdown 文件 frontmatter 含 name/description 字段"
+          ],
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "passes": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": ["P2-014", "P2-015", "P2-016"],
+          "acceptance": [
+            "满足端到端验收：知识库生成解析产物 knowledge/{id}.md，并写入 frontmatter(description) 供 Agent 摘要检索"
+          ],
+          "testCases": [
+            "添加本地文件或 URL 到知识库",
+            "解析完成后检查工作区 knowledge 目录存在 {id}.md",
+            "验证 Markdown 文件 frontmatter 含 name/description 字段"
+          ]
+        },
+        {
+          "id": "P2-021",
+          "category": "knowledge",
+          "priority": "high",
+          "description": "知识库后台任务状态完整流转：pending -> parsing -> ready/error，并可在 UI 实时感知",
+          "steps": [
+            "导入知识条目后状态为 pending",
+            "后台任务启动后状态为 parsing",
+            "成功时状态变为 ready，失败时状态变为 error 并展示错误信息"
+          ],
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "passes": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": ["P2-020"],
+          "acceptance": [
+            "满足端到端验收：知识库后台任务状态完整流转：pending -> parsing -> ready/error，并可在 UI 实时感知"
+          ],
+          "testCases": [
+            "导入知识条目后状态为 pending",
+            "后台任务启动后状态为 parsing",
+            "成功时状态变为 ready，失败时状态变为 error 并展示错误信息"
+          ]
         }
       ]
     },
@@ -467,7 +1182,25 @@
             "在系统对话框中选择文件夹",
             "验证项目出现在左侧栏项目列表中"
           ],
-          "passes": false
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/actions"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以打开本地文件夹作为项目"],
+          "testCases": [
+            "点击打开文件夹按钮",
+            "在系统对话框中选择文件夹",
+            "验证项目出现在左侧栏项目列表中"
+          ]
         },
         {
           "id": "P3-002",
@@ -479,7 +1212,27 @@
             "验证中间栏上方显示文件树",
             "验证可以展开/折叠文件夹"
           ],
-          "passes": false
+          "passes": false,
+          "status": "partial",
+          "progress": 50,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/actions"
+          ],
+          "gaps": ["当前目录读取默认深度为1，未满足递归文件树展示要求"],
+          "nextActions": [
+            "将 project.readDir 改为按需递归加载，并支持树节点懒展开"
+          ],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：项目工作视图显示文件树浏览器"],
+          "testCases": [
+            "点击项目进入项目工作视图",
+            "验证中间栏上方显示文件树",
+            "验证可以展开/折叠文件夹"
+          ]
         },
         {
           "id": "P3-003",
@@ -491,7 +1244,25 @@
             "验证右侧操作区显示文件预览",
             "验证文本文件正确显示内容"
           ],
-          "passes": false
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/actions"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：点击文件可以在操作区预览内容"],
+          "testCases": [
+            "在文件树中点击文件",
+            "验证右侧操作区显示文件预览",
+            "验证文本文件正确显示内容"
+          ]
         },
         {
           "id": "P3-004",
@@ -499,7 +1270,21 @@
           "priority": "medium",
           "description": "支持预览图片文件",
           "steps": ["点击图片文件", "验证操作区显示图片预览"],
-          "passes": false
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/actions"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：支持预览图片文件"],
+          "testCases": ["点击图片文件", "验证操作区显示图片预览"]
         },
         {
           "id": "P3-005",
@@ -507,7 +1292,21 @@
           "priority": "medium",
           "description": "支持预览 PDF 文件",
           "steps": ["点击 PDF 文件", "验证操作区显示 PDF 预览"],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/actions"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": ["按 phase 优先级实现功能并补齐端到端测试"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：支持预览 PDF 文件"],
+          "testCases": ["点击 PDF 文件", "验证操作区显示 PDF 预览"]
         },
         {
           "id": "P3-006",
@@ -519,7 +1318,25 @@
             "选择关闭项目",
             "验证项目从列表中移除（但文件保留）"
           ],
-          "passes": false
+          "passes": false,
+          "status": "partial",
+          "progress": 50,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/actions"
+          ],
+          "gaps": ["后端已有 project.remove，但项目视图缺少关闭项目的 UI 入口"],
+          "nextActions": ["在项目列表增加“关闭项目”菜单并调用 project.remove"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以关闭项目"],
+          "testCases": [
+            "右键项目名称",
+            "选择关闭项目",
+            "验证项目从列表中移除（但文件保留）"
+          ]
         }
       ]
     },
@@ -537,7 +1354,24 @@
             "验证中间栏下方显示会话列表",
             "验证有新建会话按钮"
           ],
-          "passes": false
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：项目工作视图显示会话列表"],
+          "testCases": [
+            "进入项目工作视图",
+            "验证中间栏下方显示会话列表",
+            "验证有新建会话按钮"
+          ]
         },
         {
           "id": "P4-002",
@@ -549,7 +1383,24 @@
             "验证会话出现在列表中",
             "验证操作区切换到对话视图"
           ],
-          "passes": false
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以创建新会话"],
+          "testCases": [
+            "点击新建会话按钮",
+            "验证会话出现在列表中",
+            "验证操作区切换到对话视图"
+          ]
         },
         {
           "id": "P4-003",
@@ -562,7 +1413,29 @@
             "验证消息显示在对话区",
             "验证 Agent 响应以流式方式逐字显示"
           ],
-          "passes": false
+          "passes": false,
+          "status": "partial",
+          "progress": 50,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [
+            "当前助手回复为 setTimeout 模拟消息，未接入真实 AgentEvent 流式链路"
+          ],
+          "nextActions": [
+            "实现 chat.send/chat.abort 与 Main 进程 Agent 事件订阅渲染"
+          ],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以发送消息并收到流式响应"],
+          "testCases": [
+            "在输入框输入消息",
+            "点击发送按钮",
+            "验证消息显示在对话区",
+            "验证 Agent 响应以流式方式逐字显示"
+          ]
         },
         {
           "id": "P4-004",
@@ -574,7 +1447,24 @@
             "验证弹出文件选择菜单",
             "选择文件后验证文件路径添加到输入中"
           ],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": ["按 phase 优先级实现功能并补齐端到端测试"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以通过 @ 引用文件作为上下文"],
+          "testCases": [
+            "在输入框输入 @",
+            "验证弹出文件选择菜单",
+            "选择文件后验证文件路径添加到输入中"
+          ]
         },
         {
           "id": "P4-005",
@@ -586,7 +1476,26 @@
             "验证弹出技能菜单",
             "选择技能后验证技能名添加到输入中"
           ],
-          "passes": false
+          "passes": false,
+          "status": "partial",
+          "progress": 50,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [
+            "输入 / 可弹技能菜单，但插入格式与技能执行链路未对齐架构设计"
+          ],
+          "nextActions": ["将技能插入语法与 argument-hint 联动并对接技能执行"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以通过 / 调用技能"],
+          "testCases": [
+            "在输入框输入 /",
+            "验证弹出技能菜单",
+            "选择技能后验证技能名添加到输入中"
+          ]
         },
         {
           "id": "P4-006",
@@ -597,7 +1506,23 @@
             "选择带 argument-hint 的技能",
             "验证输入框显示参数占位提示"
           ],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": ["按 phase 优先级实现功能并补齐端到端测试"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：技能显示参数提示 (argument-hint)"],
+          "testCases": [
+            "选择带 argument-hint 的技能",
+            "验证输入框显示参数占位提示"
+          ]
         },
         {
           "id": "P4-007",
@@ -605,7 +1530,25 @@
           "priority": "medium",
           "description": "用户可以删除会话",
           "steps": ["右键会话", "选择删除", "确认删除", "验证会话从列表中移除"],
-          "passes": false
+          "passes": false,
+          "status": "partial",
+          "progress": 50,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": ["后端已有会话删除能力，但项目会话列表未提供删除交互"],
+          "nextActions": ["补充会话右键删除及确认弹窗，调用 sisson.delete"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：用户可以删除会话"],
+          "testCases": [
+            "右键会话",
+            "选择删除",
+            "确认删除",
+            "验证会话从列表中移除"
+          ]
         },
         {
           "id": "P4-008",
@@ -617,7 +1560,55 @@
             "检查 ~/.xiaoa/workspaces/{id}/sessions/{session-id}.jsonl 文件",
             "验证文件包含消息记录"
           ],
-          "passes": false
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
+          "dependencies": [],
+          "acceptance": ["满足端到端验收：会话消息持久化到 JSONL 文件"],
+          "testCases": [
+            "发送消息",
+            "检查 ~/.xiaoa/workspaces/{id}/sessions/{session-id}.jsonl 文件",
+            "验证文件包含消息记录"
+          ]
+        },
+        {
+          "id": "P4-009",
+          "category": "chat",
+          "priority": "medium",
+          "description": "URL search params 与会话/文件/模式状态双向同步（session/file/mode）",
+          "steps": [
+            "切换会话后 URL 包含 session 参数",
+            "选择文件后 URL 包含 file 参数并切换 mode=preview",
+            "刷新页面后根据 URL 恢复会话和视图状态"
+          ],
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "passes": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/routes",
+            "/Users/zhuxining/Code/xiaoa/src/components",
+            "/Users/zhuxining/Code/xiaoa/src/ipc"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": ["按 phase 优先级实现功能并补齐端到端测试"],
+          "dependencies": ["P4-001", "P4-002"],
+          "acceptance": [
+            "满足端到端验收：URL search params 与会话/文件/模式状态双向同步（session/file/mode）"
+          ],
+          "testCases": [
+            "切换会话后 URL 包含 session 参数",
+            "选择文件后 URL 包含 file 参数并切换 mode=preview",
+            "刷新页面后根据 URL 恢复会话和视图状态"
+          ]
         }
       ]
     },
@@ -635,7 +1626,29 @@
             "检查 Main 进程日志确认 Agent 初始化成功",
             "发送消息验证 Agent 响应正常"
           ],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/components"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": [
+            "先完成 chat.send/chat.abort + AgentEvent 流",
+            "再接入 file/memory/knowledge 工具链",
+            "最后实现 compaction 与会话结束钩子"
+          ],
+          "dependencies": ["P4-003"],
+          "acceptance": [
+            "满足端到端验收：集成 pi-agent-core，Agent 在 Main 进程运行"
+          ],
+          "testCases": [
+            "启动应用",
+            "检查 Main 进程日志确认 Agent 初始化成功",
+            "发送消息验证 Agent 响应正常"
+          ]
         },
         {
           "id": "P5-002",
@@ -646,7 +1659,26 @@
             "在设置页选择不同服务商",
             "验证 Agent 使用对应 Provider 的模型"
           ],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/components"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": [
+            "先完成 chat.send/chat.abort + AgentEvent 流",
+            "再接入 file/memory/knowledge 工具链",
+            "最后实现 compaction 与会话结束钩子"
+          ],
+          "dependencies": ["P4-003"],
+          "acceptance": ["满足端到端验收：集成 pi-ai，支持多 LLM Provider"],
+          "testCases": [
+            "在设置页选择不同服务商",
+            "验证 Agent 使用对应 Provider 的模型"
+          ]
         },
         {
           "id": "P5-003",
@@ -660,7 +1692,31 @@
             "创建技能",
             "发送消息并验证 Agent 响应包含以上上下文"
           ],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/components"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": [
+            "先完成 chat.send/chat.abort + AgentEvent 流",
+            "再接入 file/memory/knowledge 工具链",
+            "最后实现 compaction 与会话结束钩子"
+          ],
+          "dependencies": ["P5-001"],
+          "acceptance": [
+            "满足端到端验收：System Prompt 组装（人设 + 记忆 + 知识库 + 技能）"
+          ],
+          "testCases": [
+            "配置 Agent 人设",
+            "添加记忆内容",
+            "添加知识库条目",
+            "创建技能",
+            "发送消息并验证 Agent 响应包含以上上下文"
+          ]
         },
         {
           "id": "P5-004",
@@ -672,7 +1728,27 @@
             "验证 Agent 调用 file_read 工具",
             "验证文件内容返回正确"
           ],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/components"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": [
+            "先完成 chat.send/chat.abort + AgentEvent 流",
+            "再接入 file/memory/knowledge 工具链",
+            "最后实现 compaction 与会话结束钩子"
+          ],
+          "dependencies": ["P5-001", "P5-010"],
+          "acceptance": ["满足端到端验收：实现 file_read 工具"],
+          "testCases": [
+            "在对话中请求读取文件",
+            "验证 Agent 调用 file_read 工具",
+            "验证文件内容返回正确"
+          ]
         },
         {
           "id": "P5-005",
@@ -684,7 +1760,27 @@
             "验证 Agent 调用 file_write 工具",
             "验证文件创建/修改成功"
           ],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/components"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": [
+            "先完成 chat.send/chat.abort + AgentEvent 流",
+            "再接入 file/memory/knowledge 工具链",
+            "最后实现 compaction 与会话结束钩子"
+          ],
+          "dependencies": ["P5-001", "P5-010"],
+          "acceptance": ["满足端到端验收：实现 file_write 工具"],
+          "testCases": [
+            "在对话中请求创建/修改文件",
+            "验证 Agent 调用 file_write 工具",
+            "验证文件创建/修改成功"
+          ]
         },
         {
           "id": "P5-006",
@@ -696,7 +1792,27 @@
             "验证 Agent 调用 file_list 工具",
             "验证目录结构返回正确"
           ],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/components"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": [
+            "先完成 chat.send/chat.abort + AgentEvent 流",
+            "再接入 file/memory/knowledge 工具链",
+            "最后实现 compaction 与会话结束钩子"
+          ],
+          "dependencies": ["P5-001", "P5-010"],
+          "acceptance": ["满足端到端验收：实现 file_list 工具"],
+          "testCases": [
+            "在对话中请求列出目录",
+            "验证 Agent 调用 file_list 工具",
+            "验证目录结构返回正确"
+          ]
         },
         {
           "id": "P5-007",
@@ -709,7 +1825,30 @@
             "验证 Agent 调用 memory_search 工具",
             "验证搜索结果返回正确"
           ],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/components"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": [
+            "先完成 chat.send/chat.abort + AgentEvent 流",
+            "再接入 file/memory/knowledge 工具链",
+            "最后实现 compaction 与会话结束钩子"
+          ],
+          "dependencies": ["P5-001", "P5-010"],
+          "acceptance": [
+            "满足端到端验收：实现 memory_search 工具（FTS5 全文搜索）"
+          ],
+          "testCases": [
+            "在记忆中写入一些内容",
+            "在对话中请求搜索记忆",
+            "验证 Agent 调用 memory_search 工具",
+            "验证搜索结果返回正确"
+          ]
         },
         {
           "id": "P5-008",
@@ -721,7 +1860,27 @@
             "验证 Agent 调用 memory_write 工具",
             "验证 Daily Log 文件更新"
           ],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/components"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": [
+            "先完成 chat.send/chat.abort + AgentEvent 流",
+            "再接入 file/memory/knowledge 工具链",
+            "最后实现 compaction 与会话结束钩子"
+          ],
+          "dependencies": ["P5-001", "P5-010"],
+          "acceptance": ["满足端到端验收：实现 memory_write 工具"],
+          "testCases": [
+            "在对话中让 Agent 记录信息到 Daily Log",
+            "验证 Agent 调用 memory_write 工具",
+            "验证 Daily Log 文件更新"
+          ]
         },
         {
           "id": "P5-009",
@@ -734,7 +1893,28 @@
             "验证 Agent 调用 knowledge_read 工具",
             "验证知识库内容返回正确"
           ],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/components"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": [
+            "先完成 chat.send/chat.abort + AgentEvent 流",
+            "再接入 file/memory/knowledge 工具链",
+            "最后实现 compaction 与会话结束钩子"
+          ],
+          "dependencies": ["P5-001", "P5-010"],
+          "acceptance": ["满足端到端验收：实现 knowledge_read 工具"],
+          "testCases": [
+            "添加知识库条目",
+            "在对话中请求查询知识库",
+            "验证 Agent 调用 knowledge_read 工具",
+            "验证知识库内容返回正确"
+          ]
         },
         {
           "id": "P5-010",
@@ -746,7 +1926,27 @@
             "验证 UI 实时显示 message_update 事件",
             "验证工具执行状态显示 tool_execution 事件"
           ],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/components"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": [
+            "先完成 chat.send/chat.abort + AgentEvent 流",
+            "再接入 file/memory/knowledge 工具链",
+            "最后实现 compaction 与会话结束钩子"
+          ],
+          "dependencies": ["P4-003"],
+          "acceptance": ["满足端到端验收：AgentEvent 流式推送到 Renderer"],
+          "testCases": [
+            "发送消息",
+            "验证 UI 实时显示 message_update 事件",
+            "验证工具执行状态显示 tool_execution 事件"
+          ]
         },
         {
           "id": "P5-011",
@@ -758,7 +1958,29 @@
             "验证 Agent 执行 compaction",
             "验证对话可以继续进行"
           ],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/components"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": [
+            "先完成 chat.send/chat.abort + AgentEvent 流",
+            "再接入 file/memory/knowledge 工具链",
+            "最后实现 compaction 与会话结束钩子"
+          ],
+          "dependencies": ["P5-001", "P5-003"],
+          "acceptance": [
+            "满足端到端验收：Compaction：上下文接近上限时自动压缩"
+          ],
+          "testCases": [
+            "进行长对话使 context 接近上限",
+            "验证 Agent 执行 compaction",
+            "验证对话可以继续进行"
+          ]
         },
         {
           "id": "P5-012",
@@ -769,7 +1991,60 @@
             "进行长对话使 context 接近上限",
             "验证 Daily Log 在 compaction 前被更新"
           ],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/components"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": [
+            "先完成 chat.send/chat.abort + AgentEvent 流",
+            "再接入 file/memory/knowledge 工具链",
+            "最后实现 compaction 与会话结束钩子"
+          ],
+          "dependencies": ["P5-001", "P5-003"],
+          "acceptance": [
+            "满足端到端验收：Pre-compaction flush：压缩前写入 Daily Log"
+          ],
+          "testCases": [
+            "进行长对话使 context 接近上限",
+            "验证 Daily Log 在 compaction 前被更新"
+          ]
+        },
+        {
+          "id": "P5-013",
+          "category": "agent-sdk",
+          "priority": "high",
+          "description": "Renderer 不再写入模拟 assistant 消息，助手响应完全来自 Main 进程 Agent 事件流",
+          "steps": [
+            "发送消息后 Renderer 不使用 setTimeout 注入 assistant 文本",
+            "assistant 消息由 AgentEvent message_update/message_end 驱动生成"
+          ],
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "passes": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/components"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": [
+            "先完成 chat.send/chat.abort + AgentEvent 流",
+            "再接入 file/memory/knowledge 工具链",
+            "最后实现 compaction 与会话结束钩子"
+          ],
+          "dependencies": ["P5-001", "P5-010"],
+          "acceptance": [
+            "满足端到端验收：Renderer 不再写入模拟 assistant 消息，助手响应完全来自 Main 进程 Agent 事件流"
+          ],
+          "testCases": [
+            "发送消息后 Renderer 不使用 setTimeout 注入 assistant 文本",
+            "assistant 消息由 AgentEvent message_update/message_end 驱动生成"
+          ]
         }
       ]
     },
@@ -787,7 +2062,29 @@
             "验证右上角显示权限模式徽标",
             "点击徽标验证可以切换模式"
           ],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/components"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": [
+            "先补 permission IPC domain",
+            "实现工具风险分级与确认流",
+            "补齐会话白名单和快捷键行为"
+          ],
+          "dependencies": ["P5-010"],
+          "acceptance": [
+            "满足端到端验收：支持三种权限模式：Explore / Review / Auto"
+          ],
+          "testCases": [
+            "进入项目工作视图",
+            "验证右上角显示权限模式徽标",
+            "点击徽标验证可以切换模式"
+          ]
         },
         {
           "id": "P6-002",
@@ -799,7 +2096,27 @@
             "让 Agent 尝试写入文件",
             "验证操作被拒绝"
           ],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/components"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": [
+            "先补 permission IPC domain",
+            "实现工具风险分级与确认流",
+            "补齐会话白名单和快捷键行为"
+          ],
+          "dependencies": ["P5-010"],
+          "acceptance": ["满足端到端验收：Explore 模式：Agent 只能读取文件"],
+          "testCases": [
+            "切换到 Explore 模式",
+            "让 Agent 尝试写入文件",
+            "验证操作被拒绝"
+          ]
         },
         {
           "id": "P6-003",
@@ -812,7 +2129,28 @@
             "验证底部弹出确认栏",
             "点击允许后验证文件写入成功"
           ],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/components"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": [
+            "先补 permission IPC domain",
+            "实现工具风险分级与确认流",
+            "补齐会话白名单和快捷键行为"
+          ],
+          "dependencies": ["P5-010"],
+          "acceptance": ["满足端到端验收：Review 模式：危险操作需用户确认"],
+          "testCases": [
+            "切换到 Review 模式",
+            "让 Agent 尝试写入文件",
+            "验证底部弹出确认栏",
+            "点击允许后验证文件写入成功"
+          ]
         },
         {
           "id": "P6-004",
@@ -824,7 +2162,27 @@
             "让 Agent 尝试写入文件",
             "验证文件直接写入，无确认提示"
           ],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/components"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": [
+            "先补 permission IPC domain",
+            "实现工具风险分级与确认流",
+            "补齐会话白名单和快捷键行为"
+          ],
+          "dependencies": ["P5-010"],
+          "acceptance": ["满足端到端验收：Auto 模式：所有操作自动执行"],
+          "testCases": [
+            "切换到 Auto 模式",
+            "让 Agent 尝试写入文件",
+            "验证文件直接写入，无确认提示"
+          ]
         },
         {
           "id": "P6-005",
@@ -837,7 +2195,28 @@
             "让 Agent 再次执行同类操作",
             "验证不再弹出确认"
           ],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/components"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": [
+            "先补 permission IPC domain",
+            "实现工具风险分级与确认流",
+            "补齐会话白名单和快捷键行为"
+          ],
+          "dependencies": ["P5-010"],
+          "acceptance": ["满足端到端验收：确认栏支持'本次会话始终允许'选项"],
+          "testCases": [
+            "在 Review 模式下触发确认",
+            "点击'本次会话始终允许此类操作'",
+            "让 Agent 再次执行同类操作",
+            "验证不再弹出确认"
+          ]
         },
         {
           "id": "P6-006",
@@ -845,7 +2224,57 @@
           "priority": "low",
           "description": "快捷键 Shift+Tab 循环切换权限模式",
           "steps": ["按下 Shift+Tab", "验证权限模式循环切换"],
-          "passes": false
+          "passes": false,
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/components"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": [
+            "先补 permission IPC domain",
+            "实现工具风险分级与确认流",
+            "补齐会话白名单和快捷键行为"
+          ],
+          "dependencies": ["P5-010"],
+          "acceptance": ["满足端到端验收：快捷键 Shift+Tab 循环切换权限模式"],
+          "testCases": ["按下 Shift+Tab", "验证权限模式循环切换"]
+        },
+        {
+          "id": "P6-007",
+          "category": "permission",
+          "priority": "medium",
+          "description": "权限模式徽标与项目视图状态联动（模式切换后 UI 与行为一致）",
+          "steps": [
+            "在项目视图切换权限模式",
+            "验证徽标、文案与当前模式一致",
+            "验证随后触发的工具操作遵循对应模式规则"
+          ],
+          "status": "todo",
+          "progress": 0,
+          "legacyPasses": false,
+          "passes": false,
+          "evidence": [
+            "/Users/zhuxining/Code/xiaoa/src/ipc",
+            "/Users/zhuxining/Code/xiaoa/src/components"
+          ],
+          "gaps": ["尚未达到端到端可用标准"],
+          "nextActions": [
+            "先补 permission IPC domain",
+            "实现工具风险分级与确认流",
+            "补齐会话白名单和快捷键行为"
+          ],
+          "dependencies": ["P5-010"],
+          "acceptance": [
+            "满足端到端验收：权限模式徽标与项目视图状态联动（模式切换后 UI 与行为一致）"
+          ],
+          "testCases": [
+            "在项目视图切换权限模式",
+            "验证徽标、文案与当前模式一致",
+            "验证随后触发的工具操作遵循对应模式规则"
+          ]
         }
       ]
     }

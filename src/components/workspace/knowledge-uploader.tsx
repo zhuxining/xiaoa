@@ -4,13 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 interface KnowledgeUploaderProps {
-  onFileSelect: (files: FileList) => void;
+  onFilePathsSelect: (paths: string[]) => void;
+  onPickFiles: () => void;
+  onDropWithoutPath?: () => void;
   onUrlSubmit: (url: string) => void;
   className?: string;
 }
 
 export function KnowledgeUploader({
-  onFileSelect,
+  onFilePathsSelect,
+  onPickFiles,
+  onDropWithoutPath,
   onUrlSubmit,
   className,
 }: KnowledgeUploaderProps) {
@@ -18,22 +22,20 @@ export function KnowledgeUploader({
     (e: React.DragEvent) => {
       e.preventDefault();
       const files = e.dataTransfer.files;
-      if (files.length > 0) {
-        onFileSelect(files);
+      const paths = Array.from(files)
+        .map((file) => (file as File & { path?: string }).path)
+        .filter((path): path is string => typeof path === "string");
+      if (paths.length > 0) {
+        onFilePathsSelect(paths);
+      } else if (files.length > 0) {
+        onDropWithoutPath?.();
       }
     },
-    [onFileSelect]
+    [onFilePathsSelect, onDropWithoutPath]
   );
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      onFileSelect(files);
-    }
   };
 
   const handleUrlKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -59,22 +61,10 @@ export function KnowledgeUploader({
         <p className="mb-2 text-sm">拖放文件到此处</p>
         <p className="mb-3 text-xs">或</p>
         <div className="flex items-center gap-2">
-          <label htmlFor="file-upload">
-            <Button asChild size="sm" variant="outline">
-              <span>
-                <FileText className="mr-1 size-4" />
-                选择文件
-              </span>
-            </Button>
-          </label>
-          <input
-            accept=".pdf,.doc,.docx,.txt,.md"
-            className="hidden"
-            id="file-upload"
-            multiple
-            onChange={handleFileChange}
-            type="file"
-          />
+          <Button onClick={onPickFiles} size="sm" variant="outline">
+            <FileText className="mr-1 size-4" />
+            选择文件
+          </Button>
         </div>
       </section>
       <div className="mt-3 flex items-center gap-2">

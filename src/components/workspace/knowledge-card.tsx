@@ -7,11 +7,16 @@ export interface Knowledge {
   id: string;
   workspaceId: string;
   name: string;
-  type: "file" | "url";
-  source: string;
-  status: "pending" | "ready" | "error";
+  sourceType: "local" | "url";
+  type?: "file" | "url";
+  source?: string;
+  originalPath?: string;
+  originalUrl?: string;
+  description?: string;
+  status: "pending" | "parsing" | "ready" | "error";
   error?: string;
   addedAt: number;
+  parsedAt?: number;
 }
 
 interface KnowledgeCardProps {
@@ -33,6 +38,8 @@ export function KnowledgeCard({
         return "就绪";
       case "pending":
         return "待处理";
+      case "parsing":
+        return "解析中";
       case "error":
         return "错误";
       default:
@@ -47,6 +54,7 @@ export function KnowledgeCard({
       case "ready":
         return "success";
       case "pending":
+      case "parsing":
         return "processing";
       case "error":
         return "error";
@@ -78,7 +86,7 @@ export function KnowledgeCard({
             </StatusBadge>
           </div>
           <p className="truncate text-muted-foreground text-xs">
-            {knowledge.type === "file" ? "文件" : "网页"}
+            {knowledge.sourceType === "local" ? "文件" : "网页"}
           </p>
         </div>
       </div>

@@ -1,5 +1,5 @@
-import type { Message, Session } from "@/components/chat/chat-view";
 import { Plus } from "lucide-react";
+import type { Message, Session } from "@/components/chat/chat-view";
 import { ChatView } from "@/components/chat/chat-view";
 import { Button } from "@/components/ui/button";
 import {
