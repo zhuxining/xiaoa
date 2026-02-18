@@ -6,8 +6,14 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import { X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import {
+  abortChat,
+  type ChatEvent,
+  getChatEvents,
+  sendChat,
+} from "@/actions/chat";
 import {
   getProjects,
   readDir,
@@ -15,15 +21,19 @@ import {
   removeProject,
 } from "@/actions/project";
 import {
-  addSissonMessage,
   createSisson,
   deleteSisson,
   getSissonMessages,
   listSissons,
 } from "@/actions/sisson";
 import { getSkills } from "@/actions/skill";
-import { getWorkspace } from "@/actions/workspace";
+import {
+  getWorkspace,
+  updateWorkspace,
+  type WorkspacePermissions,
+} from "@/actions/workspace";
 import type { FileMenuItem } from "@/components/chat/file-menu";
+import type { PermissionRequest } from "@/components/chat/permission-dialog";
 import type { SkillMenuItem } from "@/components/chat/skill-menu";
 import type { FileInfo } from "@/components/project/file-preview";
 import type { FileNode } from "@/components/project/file-tree";
@@ -38,6 +48,11 @@ export interface ProjectSearch {
 }
 
 const ARGUMENT_HINT_REGEX = /(\[[^\]]+\](?:\s+\[[^\]]+\])*)/;
+const WRITE_REQUEST_REGEX =
+  /写入|修改|创建|删除|rename|write|edit|delete|move/i;
+const EXECUTE_REQUEST_REGEX = /执行|run|shell|command|终端/i;
+
+type PermissionMode = NonNullable<WorkspacePermissions["mode"]>;
 
 function extractArgumentHint(prompt: string): string | undefined {
   const match = prompt.match(ARGUMENT_HINT_REGEX);
@@ -76,6 +91,58 @@ function inferFileType(
   return "code";
 }
 
+function inferPermissionRequest(content: string): PermissionRequest | null {
+  if (WRITE_REQUEST_REGEX.test(content)) {
+    return {
+      id: `perm-${Date.now()}`,
+      type: "file_write",
+      title: "写入文件",
+      description: "请求执行文件写入/修改操作",
+      details: content,
+      risk: "high",
+    };
+  }
+
+  if (EXECUTE_REQUEST_REGEX.test(content)) {
+    return {
+      id: `perm-${Date.now()}`,
+      type: "execute",
+      title: "执行命令",
+      description: "请求执行命令或脚本",
+      details: content,
+      risk: "high",
+    };
+  }
+
+  return null;
+}
+
+function applyProjectChatEvent(
+  event: ChatEvent,
+  onDelta: (delta: string) => void,
+  onReset: () => void,
+  onError: (message: string) => void
+): void {
+  if (event.type === "message_start") {
+    onReset();
+    return;
+  }
+
+  if (event.type === "message_delta") {
+    onDelta(event.content ?? "");
+    return;
+  }
+
+  if (event.type === "message_end") {
+    onReset();
+    return;
+  }
+
+  if (event.type === "run_error") {
+    onError(event.error ?? "生成失败");
+  }
+}
+
 function ProjectPage() {
   const { workspaceId, projectId } = Route.useParams();
   const navigate = useNavigate();
@@ -94,12 +161,23 @@ function ProjectPage() {
   const [fileInfo, setFileInfo] = useState<FileInfo | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
-  const streamTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [eventCursor, setEventCursor] = useState(0);
+  const [permissionMode, setPermissionMode] =
+    useState<PermissionMode>("review");
+  const [permissionRequest, setPermissionRequest] =
+    useState<PermissionRequest | null>(null);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
 
   const { data: workspace } = useQuery({
     queryKey: ["workspace", workspaceId],
     queryFn: () => getWorkspace(workspaceId),
   });
+
+  useEffect(() => {
+    const currentMode = workspace?.permissions?.mode ?? "review";
+    setPermissionMode(currentMode);
+  }, [workspace?.permissions?.mode]);
 
   const { data: skillsData = [] } = useQuery({
     queryKey: ["skills", workspaceId],
@@ -216,13 +294,44 @@ function ProjectPage() {
   }, [sessionExists, sessions]);
 
   useEffect(() => {
-    return () => {
-      if (streamTimerRef.current) {
-        clearInterval(streamTimerRef.current);
-        streamTimerRef.current = null;
-      }
-    };
-  }, []);
+    if (!currentSessionId) {
+      setStreamingContent("");
+      setIsGenerating(false);
+      setActiveRunId(null);
+      setEventCursor(0);
+      setPermissionRequest(null);
+      setPendingMessage(null);
+      return;
+    }
+
+    setStreamingContent("");
+    setIsGenerating(false);
+    setActiveRunId(null);
+    setEventCursor(0);
+    setPermissionRequest(null);
+    setPendingMessage(null);
+  }, [currentSessionId]);
+
+  const updatePermissionMutation = useMutation({
+    mutationFn: (mode: PermissionMode) =>
+      updateWorkspace({
+        id: workspaceId,
+        permissions: {
+          mode,
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["workspace", workspaceId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["workspaces"],
+      });
+    },
+    onError: (error) => {
+      toast.error(`切换权限模式失败: ${error.message}`);
+    },
+  });
 
   const { data: messagesData = [] } = useQuery({
     queryKey: [
@@ -290,8 +399,8 @@ function ProjectPage() {
     },
   });
 
-  const addMessageMutation = useMutation({
-    mutationFn: addSissonMessage,
+  const sendChatMutation = useMutation({
+    mutationFn: sendChat,
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: [
@@ -305,6 +414,12 @@ function ProjectPage() {
       queryClient.invalidateQueries({
         queryKey: ["sisson", "workspace", workspaceId, "sessions", projectId],
       });
+    },
+    onError: (error) => {
+      setIsGenerating(false);
+      setStreamingContent("");
+      setActiveRunId(null);
+      toast.error(`发送消息失败: ${error.message}`);
     },
   });
 
@@ -355,6 +470,78 @@ function ProjectPage() {
     },
   });
 
+  const { data: eventResult } = useQuery({
+    queryKey: [
+      "chat",
+      "events",
+      "workspace",
+      workspaceId,
+      currentSessionId,
+      eventCursor,
+      activeRunId,
+    ],
+    queryFn: () =>
+      currentSessionId
+        ? getChatEvents({
+            scope: "workspace",
+            workspaceId,
+            sessionId: currentSessionId,
+            afterSeq: eventCursor,
+          })
+        : {
+            events: [],
+            lastSeq: eventCursor,
+            running: false,
+            runId: null,
+          },
+    enabled: !!currentSessionId && isGenerating,
+    refetchInterval: isGenerating ? 250 : false,
+  });
+
+  useEffect(() => {
+    if (!eventResult) {
+      return;
+    }
+
+    if (eventResult.lastSeq > eventCursor) {
+      setEventCursor(eventResult.lastSeq);
+    }
+
+    for (const event of eventResult.events) {
+      applyProjectChatEvent(
+        event,
+        (delta) => setStreamingContent((prev) => prev + delta),
+        () => setStreamingContent(""),
+        (message) => toast.error(message)
+      );
+    }
+
+    if (!eventResult.running) {
+      setIsGenerating(false);
+      setActiveRunId(null);
+      setStreamingContent("");
+      queryClient.invalidateQueries({
+        queryKey: [
+          "sisson",
+          "workspace",
+          workspaceId,
+          "messages",
+          currentSessionId,
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["sisson", "workspace", workspaceId, "sessions", projectId],
+      });
+    }
+  }, [
+    currentSessionId,
+    eventCursor,
+    eventResult,
+    projectId,
+    queryClient,
+    workspaceId,
+  ]);
+
   const handleFileSelect = async (node: FileNode) => {
     if (node.type !== "file") {
       return;
@@ -387,58 +574,94 @@ function ProjectPage() {
     }
   };
 
+  const dispatchChat = useCallback(
+    (content: string) => {
+      if (!currentSessionId) {
+        return;
+      }
+      setPermissionRequest(null);
+      setIsGenerating(true);
+      setStreamingContent("");
+      sendChatMutation.mutate(
+        {
+          scope: "workspace",
+          workspaceId,
+          sessionId: currentSessionId,
+          content,
+        },
+        {
+          onSuccess: (result) => {
+            setActiveRunId(result.runId);
+          },
+        }
+      );
+
+      navigate({
+        to: "/workspace/$workspaceId/project/$projectId",
+        params: { workspaceId, projectId },
+        search: (prev: ProjectSearch) => ({
+          ...prev,
+          session: currentSessionId,
+          mode: "chat" as const,
+        }),
+      });
+    },
+    [currentSessionId, navigate, projectId, sendChatMutation, workspaceId]
+  );
+
   const handleMessageSend = (content: string) => {
     if (!currentSessionId) {
       return;
     }
 
-    addMessageMutation.mutate({
-      scope: "workspace",
-      workspaceId,
-      sessionId: currentSessionId,
-      role: "user",
-      content,
-    });
-    navigate({
-      to: "/workspace/$workspaceId/project/$projectId",
-      params: { workspaceId, projectId },
-      search: (prev: ProjectSearch) => ({
-        ...prev,
-        session: currentSessionId,
-        mode: "chat" as const,
-      }),
-    });
+    const request = inferPermissionRequest(content);
+    const isDangerous = request?.risk === "high";
+    const dangerousAutoConfirm =
+      workspace?.permissions?.dangerousAutoConfirm ?? false;
 
-    setIsGenerating(true);
-    setStreamingContent("");
-
-    const response = `这是一个流式模拟响应：我已收到你的请求“${content}”。当前阶段先以流式输出方式返回结果，后续会接入主进程 Agent 事件流。`;
-    let index = 0;
-    if (streamTimerRef.current) {
-      clearInterval(streamTimerRef.current);
+    if (permissionMode === "explore" && isDangerous) {
+      toast.error("Explore 模式下禁止危险操作（仅允许只读）。");
+      return;
     }
 
-    streamTimerRef.current = setInterval(() => {
-      index += 1;
-      setStreamingContent(response.slice(0, index));
+    if (
+      request &&
+      ((permissionMode === "review" && isDangerous) ||
+        (permissionMode === "auto" && isDangerous && !dangerousAutoConfirm))
+    ) {
+      setPendingMessage(content);
+      setPermissionRequest(request);
+      return;
+    }
 
-      if (index >= response.length) {
-        if (streamTimerRef.current) {
-          clearInterval(streamTimerRef.current);
-          streamTimerRef.current = null;
-        }
-        addMessageMutation.mutate({
-          scope: "workspace",
-          workspaceId,
-          sessionId: currentSessionId,
-          role: "assistant",
-          content: response,
-        });
-        setIsGenerating(false);
-        setStreamingContent("");
-      }
-    }, 20);
+    dispatchChat(content);
   };
+
+  const cyclePermissionMode = useCallback(() => {
+    let nextMode: PermissionMode = "explore";
+    if (permissionMode === "explore") {
+      nextMode = "review";
+    } else if (permissionMode === "review") {
+      nextMode = "auto";
+    }
+    setPermissionMode(nextMode);
+    updatePermissionMutation.mutate(nextMode);
+    toast.success(`权限模式已切换为 ${nextMode}`);
+  }, [permissionMode, updatePermissionMutation]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Tab" && event.shiftKey) {
+        event.preventDefault();
+        cyclePermissionMode();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [cyclePermissionMode]);
 
   return (
     <div className="flex h-full flex-col">
@@ -467,12 +690,17 @@ function ProjectPage() {
         isGenerating={isGenerating}
         messages={displayMessages}
         onAbort={() => {
-          if (streamTimerRef.current) {
-            clearInterval(streamTimerRef.current);
-            streamTimerRef.current = null;
+          if (currentSessionId) {
+            abortChat({
+              scope: "workspace",
+              workspaceId,
+              sessionId: currentSessionId,
+              runId: activeRunId ?? undefined,
+            });
           }
           setIsGenerating(false);
           setStreamingContent("");
+          setActiveRunId(null);
           navigate({
             to: "/workspace/$workspaceId/project/$projectId",
             params: { workspaceId, projectId },
@@ -485,6 +713,25 @@ function ProjectPage() {
         }}
         onFileSelect={handleFileSelect}
         onMessageSend={handleMessageSend}
+        onPermissionAllow={() => {
+          if (!(pendingMessage && currentSessionId)) {
+            setPermissionRequest(null);
+            return;
+          }
+          setPermissionRequest(null);
+          const message = pendingMessage;
+          setPendingMessage(null);
+          dispatchChat(message);
+        }}
+        onPermissionDeny={() => {
+          setPermissionRequest(null);
+          setPendingMessage(null);
+          toast.error("已拒绝本次危险操作");
+        }}
+        onPermissionModeChange={(mode) => {
+          setPermissionMode(mode);
+          updatePermissionMutation.mutate(mode);
+        }}
         onSessionCreate={() => createSessionMutation.mutate()}
         onSessionDelete={(sessionId) => deleteSessionMutation.mutate(sessionId)}
         onSessionSelect={(sessionId) => {
@@ -499,6 +746,8 @@ function ProjectPage() {
             }),
           });
         }}
+        permissionMode={permissionMode}
+        permissionRequest={permissionRequest}
         selectedFileId={selectedFileId}
         sessions={sessions}
         skills={skills}

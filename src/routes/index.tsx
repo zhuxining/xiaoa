@@ -3,16 +3,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { FileText, Globe, Wrench } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import {
-  addSissonMessage,
-  createSisson,
-  getSissonMessages,
-  listSissons,
-} from "@/actions/sisson";
+  abortChat,
+  type ChatEvent,
+  getChatEvents,
+  sendChat,
+} from "@/actions/chat";
+import { createSisson, getSissonMessages, listSissons } from "@/actions/sisson";
 import { ChatView } from "@/components/chat/chat-view";
 import type { PermissionRequest } from "@/components/chat/permission-dialog";
 import type { SkillMenuItem } from "@/components/chat/skill-menu";
 
-// 技能列表
 const SKILLS: SkillMenuItem[] = [
   {
     id: "web-search",
@@ -34,16 +34,38 @@ const SKILLS: SkillMenuItem[] = [
   },
 ];
 
+function applyHomeChatEvent(
+  event: ChatEvent,
+  onDelta: (delta: string) => void,
+  onReset: () => void,
+  onToolStart: (toolName: string, runId: string, seq: number) => void,
+  onToolEnd: () => void
+): void {
+  if (event.type === "message_start") {
+    onReset();
+    return;
+  }
+  if (event.type === "message_delta") {
+    onDelta(event.content ?? "");
+    return;
+  }
+  if (event.type === "tool_start") {
+    onToolStart(event.toolName ?? "unknown", event.runId, event.seq);
+    return;
+  }
+  if (event.type === "tool_end" || event.type === "run_error") {
+    onToolEnd();
+  }
+}
+
 function HomePage() {
   const queryClient = useQueryClient();
 
-  // 获取会话列表
   const { data: sessionsData = [] } = useQuery({
     queryKey: ["sisson", "global", "sessions"],
     queryFn: () => listSissons({ scope: "global" }),
   });
 
-  // 转换会话数据格式
   const sessions = sessionsData.map((s) => ({
     id: s.id,
     title: s.title,
@@ -51,19 +73,16 @@ function HomePage() {
     messageCount: s.messageCount,
   }));
 
-  // 当前选中的会话 ID
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(
     undefined
   );
 
-  // 如果没有选中会话且有会话列表，自动选中第一个
   useEffect(() => {
     if (!currentSessionId && sessions.length > 0) {
       setCurrentSessionId(sessions[0].id);
     }
   }, [currentSessionId, sessions]);
 
-  // 获取当前会话的消息
   const { data: messagesData = [] } = useQuery({
     queryKey: ["sisson", "global", "messages", currentSessionId],
     queryFn: () =>
@@ -76,7 +95,6 @@ function HomePage() {
     enabled: !!currentSessionId,
   });
 
-  // 转换消息数据格式
   const messages = messagesData.map((m) => ({
     id: m.id,
     role: m.role,
@@ -84,24 +102,56 @@ function HomePage() {
     createdAt: new Date(m.timestamp),
   }));
 
-  // 创建会话
   const createSessionMutation = useMutation({
     mutationFn: () => createSisson({ scope: "global" }),
     onSuccess: (newSession) => {
-      // 刷新会话列表
       queryClient.invalidateQueries({
         queryKey: ["sisson", "global", "sessions"],
       });
-      // 切换到新会话
       setCurrentSessionId(newSession.id);
     },
   });
 
-  // 添加消息
-  const addMessageMutation = useMutation({
-    mutationFn: addSissonMessage,
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [streamingContent, setStreamingContent] = useState("");
+  const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [eventCursor, setEventCursor] = useState(0);
+  const [permissionRequest, setPermissionRequest] =
+    useState<PermissionRequest | null>(null);
+
+  const displayMessages =
+    isGenerating && streamingContent
+      ? [
+          ...messages,
+          {
+            id: "streaming-assistant",
+            role: "assistant" as const,
+            content: streamingContent,
+            createdAt: new Date(),
+          },
+        ]
+      : messages;
+
+  useEffect(() => {
+    if (!currentSessionId) {
+      setStreamingContent("");
+      setIsGenerating(false);
+      setActiveRunId(null);
+      setEventCursor(0);
+      setPermissionRequest(null);
+      return;
+    }
+
+    setStreamingContent("");
+    setIsGenerating(false);
+    setActiveRunId(null);
+    setEventCursor(0);
+    setPermissionRequest(null);
+  }, [currentSessionId]);
+
+  const sendChatMutation = useMutation({
+    mutationFn: sendChat,
     onSuccess: () => {
-      // 刷新消息和会话列表
       queryClient.invalidateQueries({
         queryKey: ["sisson", "global", "messages", currentSessionId],
       });
@@ -109,11 +159,82 @@ function HomePage() {
         queryKey: ["sisson", "global", "sessions"],
       });
     },
+    onError: (error) => {
+      setIsGenerating(false);
+      setStreamingContent("");
+      setActiveRunId(null);
+      setPermissionRequest(null);
+      console.error(error);
+    },
   });
 
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [permissionRequest, setPermissionRequest] =
-    useState<PermissionRequest | null>(null);
+  const { data: eventResult } = useQuery({
+    queryKey: [
+      "chat",
+      "events",
+      "global",
+      currentSessionId,
+      eventCursor,
+      activeRunId,
+    ],
+    queryFn: () =>
+      currentSessionId
+        ? getChatEvents({
+            scope: "global",
+            sessionId: currentSessionId,
+            afterSeq: eventCursor,
+          })
+        : {
+            events: [],
+            lastSeq: eventCursor,
+            running: false,
+            runId: null,
+          },
+    enabled: !!currentSessionId && isGenerating,
+    refetchInterval: isGenerating ? 250 : false,
+  });
+
+  useEffect(() => {
+    if (!eventResult) {
+      return;
+    }
+
+    if (eventResult.lastSeq > eventCursor) {
+      setEventCursor(eventResult.lastSeq);
+    }
+
+    for (const event of eventResult.events) {
+      applyHomeChatEvent(
+        event,
+        (delta) => setStreamingContent((prev) => prev + delta),
+        () => setStreamingContent(""),
+        (toolName, runId, seq) => {
+          setPermissionRequest({
+            id: `${runId}:${seq}`,
+            type: "network",
+            title: `执行工具 ${toolName}`,
+            description: "Main 进程正在执行工具步骤",
+            details: `runId=${runId}`,
+            risk: "medium",
+          });
+        },
+        () => setPermissionRequest(null)
+      );
+    }
+
+    if (!eventResult.running) {
+      setIsGenerating(false);
+      setStreamingContent("");
+      setActiveRunId(null);
+      setPermissionRequest(null);
+      queryClient.invalidateQueries({
+        queryKey: ["sisson", "global", "messages", currentSessionId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["sisson", "global", "sessions"],
+      });
+    }
+  }, [currentSessionId, eventCursor, eventResult, queryClient]);
 
   const handleSessionSelect = useCallback((id: string) => {
     setCurrentSessionId(id);
@@ -129,101 +250,59 @@ function HomePage() {
         return;
       }
 
-      // 添加用户消息
-      addMessageMutation.mutate({
-        scope: "global",
-        sessionId: currentSessionId,
-        role: "user",
-        content,
-      });
-
-      // 模拟 AI 响应
       setIsGenerating(true);
-
-      // 模拟权限请求
-      if (content.includes("搜索") || content.includes("网页")) {
-        setTimeout(() => {
-          setPermissionRequest({
-            id: "perm-1",
-            type: "network",
-            title: "访问网络",
-            description: "Agent 请求访问网络以搜索信息",
-            details: `目标 URL: https://www.google.com/search?q=${encodeURIComponent(content)}`,
-            risk: "medium",
-          });
-          setIsGenerating(false);
-        }, 500);
-        return;
-      }
-
-      setTimeout(() => {
-        // 添加助手消息
-        addMessageMutation.mutate({
+      setStreamingContent("");
+      sendChatMutation.mutate(
+        {
           scope: "global",
           sessionId: currentSessionId,
-          role: "assistant",
-          content: "这是一个模拟的响应。实际的 Agent 集成将在后续实现。",
-        });
-        setIsGenerating(false);
-      }, 1000);
+          content,
+        },
+        {
+          onSuccess: (result) => {
+            setActiveRunId(result.runId);
+          },
+        }
+      );
     },
-    [currentSessionId, addMessageMutation]
+    [currentSessionId, sendChatMutation]
   );
 
   const handleAbort = useCallback(() => {
+    if (currentSessionId) {
+      abortChat({
+        scope: "global",
+        sessionId: currentSessionId,
+        runId: activeRunId ?? undefined,
+      });
+    }
+
     setIsGenerating(false);
-  }, []);
+    setStreamingContent("");
+    setPermissionRequest(null);
+    setActiveRunId(null);
+  }, [activeRunId, currentSessionId]);
 
   const handleSkillSelect = useCallback((skill: SkillMenuItem) => {
     console.log("Selected skill:", skill);
   }, []);
 
-  const handlePermissionAllow = useCallback(
-    (request: PermissionRequest) => {
-      console.log("Permission allowed:", request);
-      setPermissionRequest(null);
+  const handlePermissionAllow = useCallback((request: PermissionRequest) => {
+    console.log("Permission allowed:", request);
+    setPermissionRequest(null);
+  }, []);
 
-      if (!currentSessionId) {
-        return;
-      }
-
-      // 添加助手响应
-      addMessageMutation.mutate({
-        scope: "global",
-        sessionId: currentSessionId,
-        role: "assistant",
-        content: `已获授权执行 ${request.title}。正在处理...`,
-      });
-    },
-    [currentSessionId, addMessageMutation]
-  );
-
-  const handlePermissionDeny = useCallback(
-    (request: PermissionRequest) => {
-      console.log("Permission denied:", request);
-      setPermissionRequest(null);
-
-      if (!currentSessionId) {
-        return;
-      }
-
-      // 添加助手响应
-      addMessageMutation.mutate({
-        scope: "global",
-        sessionId: currentSessionId,
-        role: "assistant",
-        content: `操作被拒绝：${request.title}`,
-      });
-    },
-    [currentSessionId, addMessageMutation]
-  );
+  const handlePermissionDeny = useCallback((request: PermissionRequest) => {
+    console.log("Permission denied:", request);
+    setPermissionRequest(null);
+  }, []);
 
   return (
     <ChatView
       agentName="小A"
       currentSessionId={currentSessionId}
       isGenerating={isGenerating}
-      messages={messages}
+      messages={displayMessages}
       onAbort={handleAbort}
       onMessageSend={handleMessageSend}
       onPermissionAllow={handlePermissionAllow}

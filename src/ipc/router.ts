@@ -1,4 +1,5 @@
 import { app } from "./app";
+import { chat } from "./chat";
 import { config } from "./config";
 import { knowledge } from "./knowledge";
 import { memory } from "./memory";
@@ -14,6 +15,7 @@ export const router = {
   theme,
   window,
   app,
+  chat,
   shell,
   sisson,
   config,

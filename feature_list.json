@@ -1919,18 +1919,21 @@
             "验证工具执行状态显示 tool_execution 事件"
           ],
           "passes": false,
-          "status": "todo",
-          "progress": 0,
+          "status": "partial",
+          "progress": 60,
           "legacyPasses": false,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/components"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
+          "gaps": [
+            "已实现 Main 进程 chat 事件流与中断，但尚未接入 pi-agent-core 原生 AgentEvent",
+            "tool_execution 目前为占位事件，尚未绑定真实工具执行链路"
+          ],
           "nextActions": [
-            "先完成 chat.send/chat.abort + AgentEvent 流",
-            "再接入 file/memory/knowledge 工具链",
-            "最后实现 compaction 与会话结束钩子"
+            "将 chat.send/chat.abort 绑定到 pi-agent-core Agent 实例",
+            "把 message/tool 事件替换为真实 AgentEvent 映射并补充失败回传",
+            "在 Renderer 中展示 tool_execution 详细状态与结果"
           ],
           "dependencies": ["P4-003"],
           "acceptance": ["满足端到端验收：AgentEvent 流式推送到 Renderer"],
@@ -2015,19 +2018,22 @@
             "发送消息后 Renderer 不使用 setTimeout 注入 assistant 文本",
             "assistant 消息由 AgentEvent message_update/message_end 驱动生成"
           ],
-          "status": "todo",
-          "progress": 0,
+          "status": "partial",
+          "progress": 60,
           "legacyPasses": false,
           "passes": false,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/components"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
+          "gaps": [
+            "已实现 Main 进程 chat 事件流与中断，但尚未接入 pi-agent-core 原生 AgentEvent",
+            "tool_execution 目前为占位事件，尚未绑定真实工具执行链路"
+          ],
           "nextActions": [
-            "先完成 chat.send/chat.abort + AgentEvent 流",
-            "再接入 file/memory/knowledge 工具链",
-            "最后实现 compaction 与会话结束钩子"
+            "将 chat.send/chat.abort 绑定到 pi-agent-core Agent 实例",
+            "把 message/tool 事件替换为真实 AgentEvent 映射并补充失败回传",
+            "在 Renderer 中展示 tool_execution 详细状态与结果"
           ],
           "dependencies": ["P5-001", "P5-010"],
           "acceptance": [
@@ -2054,19 +2060,17 @@
             "验证右上角显示权限模式徽标",
             "点击徽标验证可以切换模式"
           ],
-          "passes": false,
-          "status": "todo",
-          "progress": 0,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/components"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
+          "gaps": [],
           "nextActions": [
-            "先补 permission IPC domain",
-            "实现工具风险分级与确认流",
-            "补齐会话白名单和快捷键行为"
+            "将权限模式与真实 tool_execution 风险分级联动，替换关键词预判"
           ],
           "dependencies": ["P5-010"],
           "acceptance": [
@@ -2089,18 +2093,18 @@
             "验证操作被拒绝"
           ],
           "passes": false,
-          "status": "todo",
-          "progress": 0,
+          "status": "partial",
+          "progress": 60,
           "legacyPasses": false,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/components"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
+          "gaps": [
+            "当前基于发送前关键词识别危险操作，尚未基于真实工具执行事件强制只读"
+          ],
           "nextActions": [
-            "先补 permission IPC domain",
-            "实现工具风险分级与确认流",
-            "补齐会话白名单和快捷键行为"
+            "接入真实 tool_execution 事件与工具风险分级后，在 Explore 下对危险工具统一拒绝"
           ],
           "dependencies": ["P5-010"],
           "acceptance": ["满足端到端验收：Explore 模式：Agent 只能读取文件"],
@@ -2122,18 +2126,16 @@
             "点击允许后验证文件写入成功"
           ],
           "passes": false,
-          "status": "todo",
-          "progress": 0,
+          "status": "partial",
+          "progress": 60,
           "legacyPasses": false,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/components"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
+          "gaps": ["当前为发送前确认，尚未在工具执行时逐次拦截确认"],
           "nextActions": [
-            "先补 permission IPC domain",
-            "实现工具风险分级与确认流",
-            "补齐会话白名单和快捷键行为"
+            "实现 tool_start 暂停/确认/继续 执行链路，完成运行时确认栏"
           ],
           "dependencies": ["P5-010"],
           "acceptance": ["满足端到端验收：Review 模式：危险操作需用户确认"],
@@ -2155,18 +2157,18 @@
             "验证文件直接写入，无确认提示"
           ],
           "passes": false,
-          "status": "todo",
-          "progress": 0,
+          "status": "partial",
+          "progress": 60,
           "legacyPasses": false,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/components"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
+          "gaps": [
+            "Auto 模式已可切换并默认自动发送，但危险操作仍依赖关键词与配置开关的前置确认"
+          ],
           "nextActions": [
-            "先补 permission IPC domain",
-            "实现工具风险分级与确认流",
-            "补齐会话白名单和快捷键行为"
+            "在真实工具链上实现 Auto 直接放行与 dangerousAutoConfirm 精细控制"
           ],
           "dependencies": ["P5-010"],
           "acceptance": ["满足端到端验收：Auto 模式：所有操作自动执行"],
@@ -2216,20 +2218,16 @@
           "priority": "low",
           "description": "快捷键 Shift+Tab 循环切换权限模式",
           "steps": ["按下 Shift+Tab", "验证权限模式循环切换"],
-          "passes": false,
-          "status": "todo",
-          "progress": 0,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/components"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
-          "nextActions": [
-            "先补 permission IPC domain",
-            "实现工具风险分级与确认流",
-            "补齐会话白名单和快捷键行为"
-          ],
+          "gaps": [],
+          "nextActions": ["补充快捷键冲突测试，确保输入框焦点场景可配置"],
           "dependencies": ["P5-010"],
           "acceptance": ["满足端到端验收：快捷键 Shift+Tab 循环切换权限模式"],
           "testCases": ["按下 Shift+Tab", "验证权限模式循环切换"]
@@ -2244,20 +2242,16 @@
             "验证徽标、文案与当前模式一致",
             "验证随后触发的工具操作遵循对应模式规则"
           ],
-          "status": "todo",
-          "progress": 0,
-          "legacyPasses": false,
-          "passes": false,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "passes": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/components"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
-          "nextActions": [
-            "先补 permission IPC domain",
-            "实现工具风险分级与确认流",
-            "补齐会话白名单和快捷键行为"
-          ],
+          "gaps": [],
+          "nextActions": ["将模式徽标扩展到全局小A视图，保持跨入口一致"],
           "dependencies": ["P5-010"],
           "acceptance": [
             "满足端到端验收：权限模式徽标与项目视图状态联动（模式切换后 UI 与行为一致）"

@@ -2,16 +2,27 @@ import { Plus, Trash2 } from "lucide-react";
 import type { Message, Session } from "@/components/chat/chat-view";
 import { ChatView } from "@/components/chat/chat-view";
 import type { FileMenuItem } from "@/components/chat/file-menu";
+import type { PermissionRequest } from "@/components/chat/permission-dialog";
 import type { SkillMenuItem } from "@/components/chat/skill-menu";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/utils/tailwind";
 import { type FileInfo, FilePreview } from "./file-preview";
 import { type FileNode, FileTree } from "./file-tree";
+
+type PermissionMode = "explore" | "review" | "auto";
 
 interface ProjectViewProps {
   files: FileNode[];
@@ -30,6 +41,11 @@ interface ProjectViewProps {
   onSessionDelete?: (id: string) => void;
   onMessageSend: (message: string) => void;
   onAbort?: () => void;
+  permissionMode?: PermissionMode;
+  onPermissionModeChange?: (mode: PermissionMode) => void;
+  permissionRequest?: PermissionRequest | null;
+  onPermissionAllow?: (request: PermissionRequest) => void;
+  onPermissionDeny?: (request: PermissionRequest) => void;
   agentName?: string;
   className?: string;
 }
@@ -51,9 +67,21 @@ export function ProjectView({
   onSessionDelete,
   onMessageSend,
   onAbort,
+  permissionMode = "review",
+  onPermissionModeChange,
+  permissionRequest,
+  onPermissionAllow,
+  onPermissionDeny,
   agentName,
   className,
 }: ProjectViewProps) {
+  let modeLabel = "Review";
+  if (permissionMode === "explore") {
+    modeLabel = "Explore";
+  } else if (permissionMode === "auto") {
+    modeLabel = "Auto";
+  }
+
   return (
     <div className={cn("flex h-full", className)} data-slot="project-view">
       <ResizablePanelGroup autoSave="project-main" orientation="horizontal">
@@ -145,6 +173,24 @@ export function ProjectView({
         <ResizableHandle withHandle />
         {/* 右侧：内容区 */}
         <ResizablePanel defaultSize={75}>
+          <div className="flex items-center justify-end gap-2 border-b px-3 py-1.5">
+            <Badge variant="outline">权限模式: {modeLabel}</Badge>
+            <Select
+              onValueChange={(value) =>
+                onPermissionModeChange?.(value as PermissionMode)
+              }
+              value={permissionMode}
+            >
+              <SelectTrigger className="w-[128px]" size="sm">
+                <SelectValue placeholder="选择模式" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="explore">Explore（只读）</SelectItem>
+                <SelectItem value="review">Review（确认）</SelectItem>
+                <SelectItem value="auto">Auto（自动）</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           {viewMode === "chat" ? (
             <ChatView
               agentName={agentName}
@@ -154,8 +200,11 @@ export function ProjectView({
               messages={messages}
               onAbort={onAbort}
               onMessageSend={onMessageSend}
+              onPermissionAllow={onPermissionAllow}
+              onPermissionDeny={onPermissionDeny}
               onSessionCreate={onSessionCreate}
               onSessionSelect={onSessionSelect}
+              permissionRequest={permissionRequest}
               sessions={sessions}
               showSessionList={false}
               skills={skills}
