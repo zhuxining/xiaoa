@@ -82,7 +82,7 @@ interface ActiveRun {
   agent?: Agent;
 }
 
-interface ToolContext {
+export interface ToolContext {
   run: ActiveRun;
   projectRoot: string | null;
 }
@@ -291,7 +291,7 @@ function getDailyLogPath(workspaceId: string, date: Date): string {
   return join(getWorkspaceDailyDir(workspaceId), `${yyyy}-${mm}-${dd}.md`);
 }
 
-function appendDailyLog(
+export function appendDailyLog(
   workspaceId: string,
   title: string,
   content: string
@@ -343,7 +343,11 @@ function searchDailyLogs(
   }));
 }
 
-function memorySearch(workspaceId: string, query: string, limit = 5): string {
+export function memorySearch(
+  workspaceId: string,
+  query: string,
+  limit = 5
+): string {
   const memory = getMemory(workspaceId).content;
   const idx = memory.toLowerCase().indexOf(query.toLowerCase());
   const memoryHit =
@@ -361,12 +365,12 @@ function memorySearch(workspaceId: string, query: string, limit = 5): string {
   return all.length > 0 ? all.slice(0, limit).join("\n") : "未找到相关记忆。";
 }
 
-function memoryWrite(workspaceId: string, content: string): string {
+export function memoryWrite(workspaceId: string, content: string): string {
   appendDailyLog(workspaceId, "Agent 记忆写入", content);
   return "已写入当日记忆日志。";
 }
 
-function knowledgeRead(
+export function knowledgeRead(
   workspaceId: string,
   query?: string,
   id?: string,
@@ -404,7 +408,7 @@ function knowledgeRead(
   return chunks.length > 0 ? chunks.join("\n\n") : "知识内容暂不可用。";
 }
 
-function resolveProjectRoot(run: ActiveRun): string | null {
+export function resolveProjectRoot(run: ActiveRun): string | null {
   if (run.scope !== "workspace" || !run.workspaceId) {
     return null;
   }
@@ -604,7 +608,7 @@ function getModelFromConfig(): GetModelReturn {
   );
 }
 
-function createTools(context: ToolContext): AgentTool[] {
+export function createTools(context: ToolContext): AgentTool[] {
   const fileRead: AgentTool = {
     name: "file_read",
     label: "File Read",
@@ -1202,6 +1206,14 @@ async function executeRun(run: ActiveRun): Promise<void> {
     activeRuns.delete(run.key);
   }
 }
+
+// 测试辅助导出（仅用于单元测试）
+export const __test = {
+  appendDailyLog,
+  maybeCompactMessages,
+  preCompactionFlush,
+  handleAgentStreamEvent,
+};
 
 export function startChatRun(input: StartRunInput): { runId: string } {
   if (!input.content.trim()) {

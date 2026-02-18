@@ -15,7 +15,7 @@
   - `src/localization/*`、`src/styles/*`、`src/types*`、`src/utils/*` 也都对应设计文档中给出的结构。
 
 - **轻微偏离 / 可选优化点**：
-  - `src/ipc/window/hadlers.ts` 文件名存在拼写错误（`hadlers`），容易造成认知负担与搜索困难，建议更名为 `handlers.ts` 并相应调整导入路径。
+  - `src/ipc/window/hadlers.ts` 文件名此前存在拼写错误（`hadlers`），已更名为 `handlers.ts` 并相应调整导入路径，后续新增 handler 文件建议统一采用 `handlers.ts` 命名。
   - `src/components/CLAUDE.md`、`src/actions/CLAUDE.md`、`src/ipc/CLAUDE.md` 等规则文档分散在多个子目录，利于就近查阅，但在阅读体验上略显分散，可以在本 `CODE_REVIEW.md` 中增加“规则索引”小节，汇总这些文档的路径，降低新同学上手成本（非必须）。
   - `utils/routes.ts` 中导出的 `router` 与 `ipc/router.ts` 中的同名 `router` 在命名上存在潜在歧义，虽然作用域不同但容易在 IDE 中混淆，建议：
     - `ipc` 侧保持 `router` 命名，用于 oRPC；
@@ -34,9 +34,8 @@
 
 - **Main 进程与 oRPC 启动流程**：
   - `main.ts` 中通过 `setupORPC()` 监听 `IPC_CHANNELS.START_ORPC_SERVER` 并在收到 `MessagePort` 后调用 `rpcHandler.upgrade(serverPort)`，整体模式与设计文档中“单一通道 + MessagePort” 方案一致。
-  - 目前 `BrowserWindow` 的 `webPreferences` 中启用了 `contextIsolation: true`，但同时将 `nodeIntegration` 设为 `true`。在现代 Electron 安全实践中，推荐关闭 Renderer 端 Node 集成（`nodeIntegration: false`），仅通过 Preload 暴露受控 API。当前配置在安全性上偏宽松，建议：
-    - 中长期目标：将 `nodeIntegration` 置为 `false`，清理组件中潜在对 Node 内建模块的直接引用，确保仅通过 IPC 与 Main 交互。
-    - 如短期内无法调整，可在本 `CODE_REVIEW.md` 中明确记录这一点作为已知风险，并在后续版本中排期修复。
+  - 目前 `BrowserWindow` 的 `webPreferences` 中启用了 `contextIsolation: true`，并已将 Renderer 端 Node 集成关闭为 `nodeIntegration: false`。基于对 `src/` 下 React 组件的代码检索，Renderer 端未直接引用 `node:fs`/`node:path`/`node:os` 等 Node 内建模块，所有 Node 相关逻辑均收敛在 Main + `ipc/*` 域，通过 oRPC 间接暴露给前端。
+  - 后续如需新增 Node 能力，应优先在 `src/ipc/` 下通过 handler + action 的方式暴露，而不是在 Renderer 中直接引入 Node 内建模块；如确有特殊需求，需要在本文件中补充说明并评估安全影响。
   - `updateElectronApp` 的使用方式合理，但建议在未来考虑根据渠道（dev / beta / stable）或网络环境增加更细粒度的控制与日志。
 
 - **Preload 与 IPC 桥接**：
@@ -181,9 +180,9 @@
 ## 9. 建议实施路线图（技术债治理）
 
 1. **第一阶段：安全与结构打底（影响大且改动可控）**
-   - 修复 `ipc/window/hadlers.ts` 命名问题，并梳理 IPC 域内的命名一致性。
-   - 明确 `chat/store.ts` 的拆分边界，将最易抽离的部分（如 `tools.ts`, `permissions.ts`）以内部重构方式拆出，保持对外 API 不变。
-   - 在文档与代码注释中明确 `nodeIntegration: true` 的安全风险，并为关闭 Node 集成预留技术方案（列出依赖 Node 的 renderer 代码路径）。
+   - 已修复 `ipc/window/hadlers.ts` 命名问题（更名为 `handlers.ts`）并统一相关导入路径，后续新增窗口 handler 统一使用 `handlers.ts` 命名。
+   - 为 `chat` 域引入了 `tools.ts` 等子模块骨架，并通过导出 `ToolContext`、`createTools`、`memory_*` 与 `knowledge_read` 等 API，为后续将实现从 `store.ts` 迁移出去预留边界（当前对外 IPC API 保持不变）。
+   - 已将 `main.ts` 中的 Renderer Node 集成关闭为 `nodeIntegration: false`，并梳理 Renderer 端对 Node 能力的依赖（目前仅 Main/IPC 层使用 `node:*` 内建模块）。后续如需重新开启或扩展，应在本文件补充风险评估与改造方案。
 
 2. **第二阶段：Agent/Chat 与测试加强**
    - 按本 Review 中的建议完善 `chat/store` 相关单元测试，覆盖权限模式、compaction 与 fallback/pi-agent-core 流程。
