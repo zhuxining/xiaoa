@@ -2,37 +2,37 @@ import { ipc } from "@/ipc/manager";
 
 // 类型定义
 export interface Skill {
-  id: string;
-  workspaceId: string;
-  name: string;
-  description: string;
-  icon?: string;
   argumentHint?: string;
+  createdAt: number;
+  description: string;
+  enabled: boolean;
+  icon?: string;
+  id: string;
+  name: string;
   prompt: string;
   references?: Array<{ name: string; path: string }>;
-  enabled: boolean;
-  createdAt: number;
   updatedAt: number;
+  workspaceId: string;
 }
 
 export interface CreateSkillInput {
-  workspaceId: string;
-  name: string;
-  prompt: string;
+  argumentHint?: string;
   description?: string;
   icon?: string;
-  argumentHint?: string;
+  name: string;
+  prompt: string;
+  workspaceId: string;
 }
 
 export interface UpdateSkillInput {
-  id: string;
-  workspaceId: string;
-  name?: string;
-  description?: string;
-  icon?: string;
   argumentHint?: string;
-  prompt?: string;
+  description?: string;
   enabled?: boolean;
+  icon?: string;
+  id: string;
+  name?: string;
+  prompt?: string;
+  workspaceId: string;
 }
 
 // 获取工作区的所有技能

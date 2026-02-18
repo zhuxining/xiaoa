@@ -2,10 +2,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { type Skill, SkillCard } from "./skill-card";
 
 interface SkillListProps {
-  skills: Skill[];
-  selectedSkillId: string | null;
-  onSkillSelect: (id: string) => void;
   className?: string;
+  onSkillSelect: (id: string) => void;
+  selectedSkillId: string | null;
+  skills: Skill[];
 }
 
 export function SkillList({

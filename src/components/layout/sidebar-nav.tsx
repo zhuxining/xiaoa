@@ -9,15 +9,15 @@ import {
 import { cn } from "@/utils/tailwind";
 
 interface NavItem {
-  to: string;
   icon: ReactNode;
   label: string;
+  to: string;
 }
 
 interface SidebarNavProps {
+  action?: ReactNode;
   items: NavItem[];
   title?: string;
-  action?: ReactNode;
 }
 
 export function SidebarNav({ items, title, action }: SidebarNavProps) {

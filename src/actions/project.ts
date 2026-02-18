@@ -2,30 +2,30 @@ import { ipc } from "@/ipc/manager";
 
 export interface Project {
   id: string;
-  workspaceId: string;
   name: string;
   path: string;
+  workspaceId: string;
 }
 
 export interface FileNode {
+  children?: FileNode[];
   id: string;
   name: string;
   path: string;
   type: "file" | "folder";
-  children?: FileNode[];
 }
 
 export interface FileInfo {
+  content: string;
+  lastModified: number;
   name: string;
   path: string;
-  content: string;
   size: number;
-  lastModified: number;
 }
 
 export interface AddProjectInput {
-  workspaceId: string;
   path: string;
+  workspaceId: string;
 }
 
 export async function getProjects(workspaceId: string): Promise<Project[]> {

@@ -3,9 +3,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/utils/tailwind";
 
 interface AppLayoutProps {
-  sidebar?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  sidebar?: React.ReactNode;
 }
 
 export function AppLayout({ sidebar, children, className }: AppLayoutProps) {

@@ -19,8 +19,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Appearance 表单的配置类型
 interface AppearanceConfig {
-  theme: "light" | "dark" | "system";
   language: "zh-CN" | "en-US";
+  theme: "light" | "dark" | "system";
 }
 
 function SettingsPage() {

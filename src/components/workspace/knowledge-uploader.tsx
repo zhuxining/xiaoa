@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 interface KnowledgeUploaderProps {
+  className?: string;
+  onDropWithoutPath?: () => void;
   onFilePathsSelect: (paths: string[]) => void;
   onPickFiles: () => void;
-  onDropWithoutPath?: () => void;
   onUrlSubmit: (url: string) => void;
-  className?: string;
 }
 
 export function KnowledgeUploader({

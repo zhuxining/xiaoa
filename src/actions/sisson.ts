@@ -4,64 +4,64 @@ export type SissonScope = "global" | "workspace";
 export type MessageRole = "user" | "assistant";
 
 export interface Attachment {
+  mimeType?: string;
   name: string;
   path: string;
-  mimeType?: string;
 }
 
 export interface AgentSnapshot {
-  name: string;
   model: string;
+  name: string;
   systemPrompt: string;
 }
 
 export interface Sisson {
-  id: string;
-  scope: SissonScope;
-  workspaceId: string | null;
-  projectId: string | null;
-  title: string;
-  createdAt: number;
-  updatedAt: number;
-  messageCount: number;
   agentSnapshot?: AgentSnapshot;
+  createdAt: number;
+  id: string;
+  messageCount: number;
+  projectId: string | null;
+  scope: SissonScope;
+  title: string;
+  updatedAt: number;
+  workspaceId: string | null;
 }
 
 export interface Message {
+  attachments?: Attachment[];
+  content: string;
   id: string;
   role: MessageRole;
-  content: string;
-  attachments?: Attachment[];
   timestamp: number;
 }
 
 export interface ListSissonInput {
+  projectId?: string | null;
   scope: SissonScope;
   workspaceId?: string;
-  projectId?: string | null;
 }
 
 export interface CreateSissonInput {
-  scope: SissonScope;
-  workspaceId?: string;
-  title?: string;
   projectId?: string | null;
+  scope: SissonScope;
+  title?: string;
+  workspaceId?: string;
 }
 
 export interface UpdateSissonInput {
-  scope: SissonScope;
-  workspaceId?: string;
   id: string;
+  scope: SissonScope;
   title: string;
+  workspaceId?: string;
 }
 
 export interface AddMessageInput {
-  scope: SissonScope;
-  workspaceId?: string;
-  sessionId: string;
-  role: MessageRole;
-  content: string;
   attachments?: Attachment[];
+  content: string;
+  role: MessageRole;
+  scope: SissonScope;
+  sessionId: string;
+  workspaceId?: string;
 }
 
 export async function listSissons(input: ListSissonInput): Promise<Sisson[]> {

@@ -4,14 +4,14 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 interface AppearanceConfig {
-  theme: "light" | "dark" | "system";
   language: "zh-CN" | "en-US";
+  theme: "light" | "dark" | "system";
 }
 
 interface AppearanceFormProps {
-  value: AppearanceConfig;
-  onChange: (value: AppearanceConfig) => void;
   className?: string;
+  onChange: (value: AppearanceConfig) => void;
+  value: AppearanceConfig;
 }
 
 export function AppearanceForm({

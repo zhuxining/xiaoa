@@ -1,31 +1,31 @@
 import { ipc } from "@/ipc/manager";
 
 export interface Knowledge {
+  addedAt: number;
+  description?: string;
+  error?: string;
   id: string;
-  workspaceId: string;
+  mimeType?: string;
   name: string;
-  sourceType: "local" | "url";
-  type?: "file" | "url";
-  source?: string;
   originalPath?: string;
   originalUrl?: string;
-  mimeType?: string;
-  parsedFile?: string;
-  description?: string;
-  status: "pending" | "parsing" | "ready" | "error";
-  error?: string;
-  addedAt: number;
   parsedAt?: number;
+  parsedFile?: string;
+  source?: string;
+  sourceType: "local" | "url";
+  status: "pending" | "parsing" | "ready" | "error";
+  type?: "file" | "url";
   updatedAt?: number;
+  workspaceId: string;
 }
 
 export interface AddKnowledgeInput {
-  workspaceId: string;
+  mimeType?: string;
   name: string;
-  sourceType: "local" | "url";
   originalPath?: string;
   originalUrl?: string;
-  mimeType?: string;
+  sourceType: "local" | "url";
+  workspaceId: string;
 }
 
 export async function getKnowledge(workspaceId: string): Promise<Knowledge[]> {

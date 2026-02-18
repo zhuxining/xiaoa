@@ -32,8 +32,8 @@ import type { ActiveRun, ToolContext } from "./run-types";
 const STREAM_DELAY_MS = 8;
 
 interface ToolPlan {
-  name: string;
   args: Record<string, unknown>;
+  name: string;
 }
 
 const FILE_WRITE_REGEX = /写入|修改|创建|删除|rename|write|edit|delete|move/i;

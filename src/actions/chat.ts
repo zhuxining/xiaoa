@@ -3,32 +3,42 @@ import { ipc } from "@/ipc/manager";
 export type ChatScope = "global" | "workspace";
 
 export interface ChatSendInput {
-  scope: ChatScope;
-  workspaceId?: string;
-  sessionId: string;
   content: string;
+  scope: ChatScope;
+  sessionId: string;
+  workspaceId?: string;
 }
 
 export interface ChatAbortInput {
-  scope: ChatScope;
-  workspaceId?: string;
-  sessionId: string;
   runId?: string;
+  scope: ChatScope;
+  sessionId: string;
+  workspaceId?: string;
 }
 
 export interface ChatGetEventsInput {
-  scope: ChatScope;
-  workspaceId?: string;
-  sessionId: string;
   afterSeq?: number;
+  scope: ChatScope;
+  sessionId: string;
+  workspaceId?: string;
 }
 
 export interface ChatEvent {
-  seq: number;
+  content?: string;
+  decision?: "allow" | "deny";
+  error?: string;
+  permissionDescription?: string;
+  permissionDetails?: string;
+  permissionId?: string;
+  permissionRisk?: "low" | "medium" | "high";
+  permissionTitle?: string;
+  permissionType?: "file_read" | "file_write" | "execute" | "network";
   runId: string;
   scope: ChatScope;
-  workspaceId: string | null;
+  seq: number;
   sessionId: string;
+  timestamp: number;
+  toolName?: string;
   type:
     | "run_start"
     | "message_start"
@@ -41,48 +51,38 @@ export interface ChatEvent {
     | "run_aborted"
     | "run_error"
     | "run_end";
-  timestamp: number;
-  content?: string;
-  toolName?: string;
-  permissionId?: string;
-  permissionType?: "file_read" | "file_write" | "execute" | "network";
-  permissionRisk?: "low" | "medium" | "high";
-  permissionTitle?: string;
-  permissionDescription?: string;
-  permissionDetails?: string;
-  decision?: "allow" | "deny";
-  error?: string;
+  workspaceId: string | null;
 }
 
 export interface ChatEventsResult {
   events: ChatEvent[];
   lastSeq: number;
-  running: boolean;
   runId: string | null;
+  running: boolean;
 }
 
 export interface ChatRespondPermissionInput {
-  scope: ChatScope;
-  workspaceId?: string;
-  sessionId: string;
-  runId: string;
-  requestId: string;
-  decision: "allow" | "deny";
   alwaysAllowInSession?: boolean;
+  decision: "allow" | "deny";
+  requestId: string;
+  runId: string;
+  scope: ChatScope;
+  sessionId: string;
+  workspaceId?: string;
 }
 
 export interface ChatSteerInput {
-  scope: ChatScope;
-  workspaceId?: string;
-  sessionId: string;
   message: string;
+  scope: ChatScope;
+  sessionId: string;
+  workspaceId?: string;
 }
 
 export interface ChatFollowUpInput {
-  scope: ChatScope;
-  workspaceId?: string;
-  sessionId: string;
   message: string;
+  scope: ChatScope;
+  sessionId: string;
+  workspaceId?: string;
 }
 
 export async function sendChat(

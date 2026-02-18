@@ -2,26 +2,26 @@ import type { Agent } from "@mariozechner/pi-agent-core";
 import type { ChatScope, PermissionType } from "../schemas";
 
 export interface PendingPermission {
-  requestId: string;
-  type: PermissionType;
-  resolve: (allow: boolean, alwaysAllow: boolean) => void;
   reject: (error: Error) => void;
+  requestId: string;
+  resolve: (allow: boolean, alwaysAllow: boolean) => void;
+  type: PermissionType;
 }
 
 export interface ActiveRun {
-  runId: string;
-  key: string;
-  scope: ChatScope;
-  workspaceId: string | null;
-  sessionId: string;
-  content: string;
   aborted: boolean;
-  pendingPermission: PendingPermission | null;
-  assistantBuffer: string;
   agent?: Agent;
+  assistantBuffer: string;
+  content: string;
+  key: string;
+  pendingPermission: PendingPermission | null;
+  runId: string;
+  scope: ChatScope;
+  sessionId: string;
+  workspaceId: string | null;
 }
 
 export interface ToolContext {
-  run: ActiveRun;
   projectRoot: string | null;
+  run: ActiveRun;
 }

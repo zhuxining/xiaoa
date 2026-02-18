@@ -14,9 +14,9 @@ import {
 } from "@/components/ui/select";
 
 interface LLMConfigFormProps {
-  value: LLMConfig;
-  onChange: (value: LLMConfig) => void;
   className?: string;
+  onChange: (value: LLMConfig) => void;
+  value: LLMConfig;
 }
 
 const PROVIDERS = [

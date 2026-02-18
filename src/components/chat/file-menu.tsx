@@ -15,12 +15,12 @@ export interface FileMenuItem {
 }
 
 interface FileMenuProps {
-  files: FileMenuItem[];
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSelect: (file: FileMenuItem) => void;
   anchor?: React.ReactNode;
   className?: string;
+  files: FileMenuItem[];
+  onOpenChange: (open: boolean) => void;
+  onSelect: (file: FileMenuItem) => void;
+  open: boolean;
 }
 
 export function FileMenu({

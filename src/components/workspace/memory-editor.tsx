@@ -3,11 +3,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/utils/tailwind";
 
 interface MemoryEditorProps {
-  value: string;
+  className?: string;
+  disabled?: boolean;
   onChange: (value: string) => void;
   placeholder?: string;
-  disabled?: boolean;
-  className?: string;
+  value: string;
 }
 
 export function MemoryEditor({

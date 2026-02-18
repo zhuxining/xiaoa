@@ -11,12 +11,12 @@ import {
 import { Input } from "@/components/ui/input";
 
 interface CreateWorkspaceDialogProps {
-  open: boolean;
-  name: string;
   isSubmitting?: boolean;
-  onOpenChange: (open: boolean) => void;
-  onNameChange: (value: string) => void;
+  name: string;
   onConfirm: () => void;
+  onNameChange: (value: string) => void;
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
 }
 
 export function CreateWorkspaceDialog({

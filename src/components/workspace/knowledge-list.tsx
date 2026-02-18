@@ -2,10 +2,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { type Knowledge, KnowledgeCard } from "./knowledge-card";
 
 interface KnowledgeListProps {
-  knowledge: Knowledge[];
-  selectedId: string | null;
-  onSelect: (id: string) => void;
   className?: string;
+  knowledge: Knowledge[];
+  onSelect: (id: string) => void;
+  selectedId: string | null;
 }
 
 export function KnowledgeList({

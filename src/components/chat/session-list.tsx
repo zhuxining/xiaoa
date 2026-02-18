@@ -5,17 +5,17 @@ import { cn } from "@/utils/tailwind";
 
 interface Session {
   id: string;
+  messageCount: number;
   title: string;
   updatedAt: Date;
-  messageCount: number;
 }
 
 interface SessionListProps {
-  sessions: Session[];
-  currentSessionId?: string;
-  onSessionSelect: (id: string) => void;
-  onSessionCreate?: () => void;
   className?: string;
+  currentSessionId?: string;
+  onSessionCreate?: () => void;
+  onSessionSelect: (id: string) => void;
+  sessions: Session[];
 }
 
 export function SessionList({

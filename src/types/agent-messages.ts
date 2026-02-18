@@ -5,33 +5,33 @@
 import type { PermissionRisk, PermissionType } from "@/ipc/chat/schemas";
 
 export interface PermissionRequestMessage {
-  role: "permission_request";
-  permissionId: string;
-  permissionType: PermissionType;
-  permissionRisk: PermissionRisk;
-  permissionTitle: string;
   permissionDescription: string;
   permissionDetails: string;
+  permissionId: string;
+  permissionRisk: PermissionRisk;
+  permissionTitle: string;
+  permissionType: PermissionType;
+  role: "permission_request";
   timestamp: number;
 }
 
 export interface CompactionSummaryMessage {
+  flushedMessageCount: number;
   role: "compaction_summary";
   summary: string;
-  flushedMessageCount: number;
   timestamp: number;
 }
 
 export interface MemoryUpdateMessage {
-  role: "memory_update";
   content: string;
+  role: "memory_update";
   timestamp: number;
 }
 
 declare module "@mariozechner/pi-agent-core" {
   interface CustomAgentMessages {
-    permission_request: PermissionRequestMessage;
     compaction_summary: CompactionSummaryMessage;
     memory_update: MemoryUpdateMessage;
+    permission_request: PermissionRequestMessage;
   }
 }

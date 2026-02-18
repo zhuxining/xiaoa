@@ -25,29 +25,29 @@ import { type FileNode, FileTree } from "./file-tree";
 type PermissionMode = "explore" | "review" | "auto";
 
 interface ProjectViewProps {
-  files: FileNode[];
-  sessions: Session[];
-  currentSessionId?: string;
-  messages: Message[];
-  selectedFileId?: string | null;
-  fileInfo?: FileInfo | null;
-  viewMode: "chat" | "preview";
-  isGenerating?: boolean;
-  skills?: SkillMenuItem[];
-  filesForMention?: FileMenuItem[];
-  onFileSelect: (node: FileNode) => void;
-  onSessionSelect: (id: string) => void;
-  onSessionCreate?: () => void;
-  onSessionDelete?: (id: string) => void;
-  onMessageSend: (message: string) => void;
-  onAbort?: () => void;
-  permissionMode?: PermissionMode;
-  onPermissionModeChange?: (mode: PermissionMode) => void;
-  permissionRequest?: PermissionRequest | null;
-  onPermissionAllow?: (request: PermissionRequest) => void;
-  onPermissionDeny?: (request: PermissionRequest) => void;
   agentName?: string;
   className?: string;
+  currentSessionId?: string;
+  fileInfo?: FileInfo | null;
+  files: FileNode[];
+  filesForMention?: FileMenuItem[];
+  isGenerating?: boolean;
+  messages: Message[];
+  onAbort?: () => void;
+  onFileSelect: (node: FileNode) => void;
+  onMessageSend: (message: string) => void;
+  onPermissionAllow?: (request: PermissionRequest) => void;
+  onPermissionDeny?: (request: PermissionRequest) => void;
+  onPermissionModeChange?: (mode: PermissionMode) => void;
+  onSessionCreate?: () => void;
+  onSessionDelete?: (id: string) => void;
+  onSessionSelect: (id: string) => void;
+  permissionMode?: PermissionMode;
+  permissionRequest?: PermissionRequest | null;
+  selectedFileId?: string | null;
+  sessions: Session[];
+  skills?: SkillMenuItem[];
+  viewMode: "chat" | "preview";
 }
 
 export function ProjectView({

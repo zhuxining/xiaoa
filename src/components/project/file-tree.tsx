@@ -5,10 +5,10 @@ import { type FileNode, FileTreeItem } from "./file-tree-item";
 export type { FileNode } from "./file-tree-item";
 
 interface FileTreeProps {
-  nodes: FileNode[];
-  selectedId?: string;
-  onSelect?: (node: FileNode) => void;
   className?: string;
+  nodes: FileNode[];
+  onSelect?: (node: FileNode) => void;
+  selectedId?: string;
 }
 
 export function FileTree({

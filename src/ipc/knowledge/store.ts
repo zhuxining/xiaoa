@@ -13,14 +13,14 @@ import type { knowledgeSchema } from "./schemas";
 type Knowledge = z.infer<typeof knowledgeSchema>;
 
 interface LegacyKnowledge {
+  addedAt?: number;
+  error?: string;
   id: string;
-  workspaceId: string;
   name: string;
-  type?: "file" | "url";
   source?: string;
   status?: "pending" | "ready" | "error";
-  error?: string;
-  addedAt?: number;
+  type?: "file" | "url";
+  workspaceId: string;
 }
 
 const workspaceQueues = new Map<string, Promise<void>>();
@@ -374,12 +374,12 @@ export function listKnowledge(workspaceId: string): Knowledge[] {
 }
 
 interface AddKnowledgeInput {
-  workspaceId: string;
+  mimeType?: string;
   name: string;
-  sourceType: Knowledge["sourceType"];
   originalPath?: string;
   originalUrl?: string;
-  mimeType?: string;
+  sourceType: Knowledge["sourceType"];
+  workspaceId: string;
 }
 
 export function addKnowledge(input: AddKnowledgeInput): Knowledge {

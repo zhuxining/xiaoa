@@ -2,9 +2,9 @@ import { ipc } from "@/ipc/manager";
 
 // 类型定义
 export interface Memory {
-  workspaceId: string;
   content: string;
   updatedAt: number;
+  workspaceId: string;
 }
 
 // 获取记忆

@@ -4,26 +4,26 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/utils/tailwind";
 
 export interface Knowledge {
+  addedAt: number;
+  description?: string;
+  error?: string;
   id: string;
-  workspaceId: string;
   name: string;
-  sourceType: "local" | "url";
-  type?: "file" | "url";
-  source?: string;
   originalPath?: string;
   originalUrl?: string;
-  description?: string;
-  status: "pending" | "parsing" | "ready" | "error";
-  error?: string;
-  addedAt: number;
   parsedAt?: number;
+  source?: string;
+  sourceType: "local" | "url";
+  status: "pending" | "parsing" | "ready" | "error";
+  type?: "file" | "url";
+  workspaceId: string;
 }
 
 interface KnowledgeCardProps {
-  knowledge: Knowledge;
-  isSelected: boolean;
-  onClick: () => void;
   className?: string;
+  isSelected: boolean;
+  knowledge: Knowledge;
+  onClick: () => void;
 }
 
 export function KnowledgeCard({

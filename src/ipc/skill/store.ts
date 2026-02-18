@@ -17,10 +17,10 @@ import type { skillSchema } from "./schemas";
 type Skill = z.infer<typeof skillSchema>;
 
 interface ParsedSkillMarkdown {
-  name?: string;
+  argumentHint?: string;
   description?: string;
   icon?: string;
-  argumentHint?: string;
+  name?: string;
   prompt: string;
 }
 

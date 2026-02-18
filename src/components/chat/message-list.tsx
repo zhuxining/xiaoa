@@ -4,17 +4,17 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/utils/tailwind";
 
 interface Message {
-  id: string;
-  role: "user" | "assistant";
   content: string;
   createdAt: Date;
+  id: string;
+  role: "user" | "assistant";
 }
 
 interface MessageListProps {
-  messages: Message[];
-  agentName?: string;
   agentAvatar?: string;
+  agentName?: string;
   className?: string;
+  messages: Message[];
 }
 
 export function MessageList({

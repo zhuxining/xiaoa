@@ -133,8 +133,8 @@ export function createWorkspace(
 
 // 更新工作区输入类型
 interface UpdateWorkspaceInput {
-  name?: string;
   agent?: Partial<AgentConfig>;
+  name?: string;
   permissions?: Partial<Workspace["permissions"]>;
 }
 

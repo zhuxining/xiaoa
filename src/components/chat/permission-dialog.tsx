@@ -19,22 +19,22 @@ import { cn } from "@/utils/tailwind";
 export type PermissionType = "file_read" | "file_write" | "execute" | "network";
 
 export interface PermissionRequest {
-  id: string;
-  type: PermissionType;
-  title: string;
   description: string;
   details?: string;
-  risk?: "low" | "medium" | "high";
+  id: string;
   rememberInSession?: boolean;
+  risk?: "low" | "medium" | "high";
+  title: string;
+  type: PermissionType;
 }
 
 interface PermissionDialogProps {
-  request: PermissionRequest | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  className?: string;
   onAllow: (request: PermissionRequest) => void;
   onDeny: (request: PermissionRequest) => void;
-  className?: string;
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
+  request: PermissionRequest | null;
 }
 
 const PERMISSION_CONFIG: Record<

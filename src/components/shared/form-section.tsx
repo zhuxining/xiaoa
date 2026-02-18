@@ -3,10 +3,10 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/utils/tailwind";
 
 interface FormSectionProps {
-  title: string;
-  description?: string;
   children: React.ReactNode;
   className?: string;
+  description?: string;
+  title: string;
 }
 
 export function FormSection({

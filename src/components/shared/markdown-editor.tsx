@@ -3,11 +3,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/utils/tailwind";
 
 interface MarkdownEditorProps {
-  value: string;
+  className?: string;
+  disabled?: boolean;
   onChange: (value: string) => void;
   placeholder?: string;
-  disabled?: boolean;
-  className?: string;
+  value: string;
 }
 
 export function MarkdownEditor({

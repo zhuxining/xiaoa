@@ -5,12 +5,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Knowledge } from "./knowledge-card";
 
 interface KnowledgeDetailProps {
+  className?: string;
   knowledge: Knowledge | null;
   onDelete: () => void;
   onOpenUrl?: () => void;
   onPreview?: () => void;
   onReparse?: () => void;
-  className?: string;
 }
 
 export function KnowledgeDetail({

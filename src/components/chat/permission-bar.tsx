@@ -5,9 +5,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
 interface PermissionBarProps {
-  request: PermissionRequest | null;
   onAllow?: (request: PermissionRequest) => void;
   onDeny?: (request: PermissionRequest) => void;
+  request: PermissionRequest | null;
 }
 
 export function PermissionBar({

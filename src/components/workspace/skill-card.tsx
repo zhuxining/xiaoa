@@ -4,21 +4,21 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/utils/tailwind";
 
 export interface Skill {
+  argumentHint?: string;
+  description: string;
+  enabled: boolean;
+  icon?: string;
   id: string;
   name: string;
-  description: string;
-  icon?: string;
-  argumentHint?: string;
   prompt: string;
   references?: Array<{ name: string; path: string }>;
-  enabled: boolean;
 }
 
 interface SkillCardProps {
-  skill: Skill;
+  className?: string;
   isSelected: boolean;
   onClick: () => void;
-  className?: string;
+  skill: Skill;
 }
 
 export function SkillCard({

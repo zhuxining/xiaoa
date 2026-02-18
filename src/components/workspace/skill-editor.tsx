@@ -7,16 +7,16 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Skill } from "./skill-card";
 
 interface SkillEditorProps {
-  skill: Skill | null;
-  isEditing: boolean;
-  onUpdate: (updates: Partial<Skill>) => void;
-  onEditToggle: () => void;
-  onDelete: () => void;
-  onExport?: () => void;
-  onAddReferences?: () => void;
-  onSave: () => void;
-  onCancel: () => void;
   className?: string;
+  isEditing: boolean;
+  onAddReferences?: () => void;
+  onCancel: () => void;
+  onDelete: () => void;
+  onEditToggle: () => void;
+  onExport?: () => void;
+  onSave: () => void;
+  onUpdate: (updates: Partial<Skill>) => void;
+  skill: Skill | null;
 }
 
 export function SkillEditor({

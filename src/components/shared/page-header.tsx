@@ -2,10 +2,10 @@ import type React from "react";
 import { cn } from "@/utils/tailwind";
 
 interface PageHeaderProps {
-  title: string;
-  description?: string;
   actions?: React.ReactNode;
   className?: string;
+  description?: string;
+  title: string;
 }
 
 export function PageHeader({

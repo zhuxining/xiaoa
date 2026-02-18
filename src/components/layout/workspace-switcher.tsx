@@ -38,20 +38,20 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/utils/tailwind";
 
 interface Workspace {
+  avatar?: string;
   id: string;
   name: string;
-  avatar?: string;
 }
 
 interface WorkspaceSwitcherProps {
-  workspaces: Workspace[];
+  className?: string;
   currentWorkspaceId: string;
   onWorkspaceChange: (id: string) => void;
   onWorkspaceCreate?: () => void;
-  onWorkspaceSettings?: () => void;
-  onWorkspaceRename?: (id: string, name: string) => void;
   onWorkspaceDelete?: (id: string) => void;
-  className?: string;
+  onWorkspaceRename?: (id: string, name: string) => void;
+  onWorkspaceSettings?: () => void;
+  workspaces: Workspace[];
 }
 
 export function WorkspaceSwitcher({

@@ -3,18 +3,18 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/utils/tailwind";
 
 export interface FileInfo {
+  content?: string;
   id: string;
+  lastModified?: Date;
   name: string;
   path: string;
-  content?: string;
-  type: "text" | "code" | "image" | "binary" | "pdf";
   size?: number;
-  lastModified?: Date;
+  type: "text" | "code" | "image" | "binary" | "pdf";
 }
 
 interface FilePreviewProps {
-  file: FileInfo | null;
   className?: string;
+  file: FileInfo | null;
 }
 
 export function FilePreview({ file, className }: FilePreviewProps) {

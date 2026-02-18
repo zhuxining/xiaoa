@@ -4,11 +4,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/utils/tailwind";
 
 interface AvatarUploadProps {
-  value?: string;
-  onChange: (value: string) => void;
-  fallback?: string;
-  size?: "default" | "sm" | "lg";
   className?: string;
+  fallback?: string;
+  onChange: (value: string) => void;
+  size?: "default" | "sm" | "lg";
+  value?: string;
 }
 
 export function AvatarUpload({

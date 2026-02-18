@@ -43,9 +43,9 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 
 export interface ProjectSearch {
-  session?: string;
   file?: string;
   mode?: "chat" | "preview";
+  session?: string;
 }
 
 const ARGUMENT_HINT_REGEX = /(\[[^\]]+\](?:\s+\[[^\]]+\])*)/;

@@ -14,9 +14,9 @@ type GlobalConfig = z.infer<typeof globalConfigSchema>;
 type Provider = z.infer<typeof llmConfigSchema>["provider"];
 
 interface EncryptedPayload {
+  data: string;
   iv: string;
   tag: string;
-  data: string;
 }
 
 interface CredentialStore {

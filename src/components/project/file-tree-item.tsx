@@ -8,20 +8,20 @@ import {
 import { cn } from "@/utils/tailwind";
 
 export interface FileNode {
+  children?: FileNode[];
   id: string;
   name: string;
   type: "file" | "folder";
-  children?: FileNode[];
 }
 
 interface FileTreeItemProps {
-  node: FileNode;
-  depth?: number;
-  selectedId?: string;
-  onSelect?: (node: FileNode) => void;
-  expandedIds?: Set<string>;
-  onToggleExpand?: (id: string) => void;
   className?: string;
+  depth?: number;
+  expandedIds?: Set<string>;
+  node: FileNode;
+  onSelect?: (node: FileNode) => void;
+  onToggleExpand?: (id: string) => void;
+  selectedId?: string;
 }
 
 export function FileTreeItem({

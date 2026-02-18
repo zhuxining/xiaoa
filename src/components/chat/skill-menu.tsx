@@ -9,20 +9,20 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/utils/tailwind";
 
 export interface SkillMenuItem {
+  argumentHint?: string;
+  description: string;
+  icon?: React.ReactNode;
   id: string;
   name: string;
-  description: string;
-  argumentHint?: string;
-  icon?: React.ReactNode;
 }
 
 interface SkillMenuProps {
-  skills: SkillMenuItem[];
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSelect: (skill: SkillMenuItem) => void;
   anchor?: React.ReactNode;
   className?: string;
+  onOpenChange: (open: boolean) => void;
+  onSelect: (skill: SkillMenuItem) => void;
+  open: boolean;
+  skills: SkillMenuItem[];
 }
 
 export function SkillMenu({

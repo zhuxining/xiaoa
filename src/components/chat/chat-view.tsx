@@ -9,37 +9,37 @@ import type { SkillMenuItem } from "./skill-menu";
 
 export interface Session {
   id: string;
+  messageCount: number;
   title: string;
   updatedAt: Date;
-  messageCount: number;
 }
 
 export interface Message {
-  id: string;
-  role: "user" | "assistant";
   content: string;
   createdAt: Date;
+  id: string;
+  role: "user" | "assistant";
 }
 
 interface ChatViewProps {
-  sessions: Session[];
-  currentSessionId?: string;
-  messages: Message[];
-  isGenerating?: boolean;
-  agentName?: string;
   agentAvatar?: string;
-  skills?: SkillMenuItem[];
+  agentName?: string;
+  className?: string;
+  currentSessionId?: string;
   files?: FileMenuItem[];
-  permissionRequest?: PermissionRequest | null;
-  onSessionSelect: (id: string) => void;
-  onSessionCreate?: () => void;
-  onMessageSend: (message: string) => void;
+  isGenerating?: boolean;
+  messages: Message[];
   onAbort?: () => void;
-  onSkillSelect?: (skill: SkillMenuItem) => void;
+  onMessageSend: (message: string) => void;
   onPermissionAllow?: (request: PermissionRequest) => void;
   onPermissionDeny?: (request: PermissionRequest) => void;
+  onSessionCreate?: () => void;
+  onSessionSelect: (id: string) => void;
+  onSkillSelect?: (skill: SkillMenuItem) => void;
+  permissionRequest?: PermissionRequest | null;
+  sessions: Session[];
   showSessionList?: boolean;
-  className?: string;
+  skills?: SkillMenuItem[];
 }
 
 export function ChatView({

@@ -52,9 +52,9 @@ export type Project = z.infer<typeof projectSchema>;
 export type FileInfo = z.infer<typeof fileInfoSchema>;
 
 export interface FileNode {
+  children?: FileNode[];
   id: string;
   name: string;
   path: string;
   type: "file" | "folder";
-  children?: FileNode[];
 }

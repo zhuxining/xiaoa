@@ -2,37 +2,37 @@ import { ipc } from "@/ipc/manager";
 
 // 类型定义
 export interface AgentConfig {
-  name: string;
   avatar?: string;
-  systemPrompt: string;
   model: string;
+  name: string;
+  systemPrompt: string;
   temperature?: number;
 }
 
 export interface WorkspacePermissions {
-  mode: "explore" | "review" | "auto";
-  dangerousAutoConfirm?: boolean;
   allowedWritePaths?: string[];
+  dangerousAutoConfirm?: boolean;
+  mode: "explore" | "review" | "auto";
 }
 
 export interface Workspace {
+  agent: AgentConfig;
+  createdAt: number;
   id: string;
   name: string;
-  agent: AgentConfig;
   permissions?: WorkspacePermissions;
-  createdAt: number;
   updatedAt: number;
 }
 
 export interface CreateWorkspaceInput {
-  name: string;
   agent?: Partial<AgentConfig>;
+  name: string;
 }
 
 export interface UpdateWorkspaceInput {
+  agent?: Partial<AgentConfig>;
   id: string;
   name?: string;
-  agent?: Partial<AgentConfig>;
   permissions?: Partial<WorkspacePermissions>;
 }
 

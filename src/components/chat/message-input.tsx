@@ -10,15 +10,15 @@ const _TRAILING_SLASH_REGEX = /\/$/;
 const _TRAILING_AT_REGEX = /@$/;
 
 interface MessageInputProps {
-  onSend: (message: string) => void;
-  onAbort?: () => void;
-  isGenerating?: boolean;
-  placeholder?: string;
-  disabled?: boolean;
-  skills?: SkillMenuItem[];
-  files?: FileMenuItem[];
-  onSkillSelect?: (skill: SkillMenuItem) => void;
   className?: string;
+  disabled?: boolean;
+  files?: FileMenuItem[];
+  isGenerating?: boolean;
+  onAbort?: () => void;
+  onSend: (message: string) => void;
+  onSkillSelect?: (skill: SkillMenuItem) => void;
+  placeholder?: string;
+  skills?: SkillMenuItem[];
 }
 
 export function MessageInput({
