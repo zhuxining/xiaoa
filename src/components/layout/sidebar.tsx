@@ -29,7 +29,7 @@ interface SidebarHeaderProps {
 export function SidebarHeader({ children, className }: SidebarHeaderProps) {
   return (
     <div
-      className={cn("flex flex-col gap-2 p-3", className)}
+      className={cn("flex flex-col gap-2 p-3 pt-11", className)}
       data-slot="sidebar-header"
     >
       {children}

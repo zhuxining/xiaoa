@@ -132,4 +132,8 @@
   .draglayer {
     -webkit-app-region: drag;
   }
+
+  .nodraglayer {
+    -webkit-app-region: no-drag;
+  }
 }

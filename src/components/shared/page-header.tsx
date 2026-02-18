@@ -17,7 +17,7 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "flex items-center justify-between border-b px-6 py-4",
+        "draglayer relative z-50 flex items-center justify-between border-b px-6 py-4",
         className
       )}
       data-slot="page-header"
@@ -28,7 +28,9 @@ export function PageHeader({
           <p className="text-muted-foreground text-sm">{description}</p>
         )}
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      {actions && (
+        <div className="nodraglayer flex items-center gap-2">{actions}</div>
+      )}
     </div>
   );
 }

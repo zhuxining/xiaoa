@@ -17,8 +17,8 @@ const inDevelopment = process.env.NODE_ENV === "development";
 function createWindow() {
   const preload = path.join(__dirname, "preload.js");
   const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1280,
+    height: 800,
     webPreferences: {
       devTools: inDevelopment,
       contextIsolation: true,
@@ -27,9 +27,15 @@ function createWindow() {
 
       preload,
     },
-    titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "hidden",
-    trafficLightPosition:
-      process.platform === "darwin" ? { x: 5, y: 5 } : undefined,
+    ...(process.platform === "darwin"
+      ? {
+          titleBarStyle: "hiddenInset" as const,
+          trafficLightPosition: { x: 8, y: 11 },
+        }
+      : {
+          frame: true,
+          autoHideMenuBar: true,
+        }),
   });
   ipcContext.setMainWindow(mainWindow);
 

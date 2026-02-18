@@ -11,11 +11,13 @@ interface AppLayoutProps {
 export function AppLayout({ sidebar, children, className }: AppLayoutProps) {
   return (
     <TooltipProvider>
+      {/* Fixed 透明拖拽覆盖层全宽铺开。需要交互的元素加 relative z-50 nodraglayer 即可穿透 */}
+      <div className="draglayer fixed top-0 right-0 left-0 z-40 h-9" />
+
       <div
         className={cn("flex h-screen flex-col overflow-hidden", className)}
         data-slot="app-layout"
       >
-        {/* Main content area with sidebar */}
         <div className="flex flex-1 overflow-hidden">
           {sidebar}
           <main className="flex flex-1 flex-col overflow-hidden">

@@ -30,7 +30,7 @@ export function SessionList({
       className={cn("flex h-full flex-col border-r bg-muted/30", className)}
       data-slot="session-list"
     >
-      <div className="border-b p-2">
+      <div className="nodraglayer relative z-50 border-b p-2">
         <Button
           className="w-full justify-start gap-2"
           onClick={onSessionCreate}

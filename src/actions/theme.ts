@@ -19,35 +19,43 @@ export async function getCurrentTheme(): Promise<ThemePreferences> {
   };
 }
 
+let _systemThemeListener: ((e: MediaQueryListEvent) => void) | null = null;
+
 export async function setTheme(newTheme: ThemeMode) {
-  const isDarkMode = newTheme === "dark";
   await ipc.client.theme.setThemeMode(newTheme);
   localStorage.setItem(LOCAL_STORAGE_KEYS.THEME, newTheme);
-  updateDocumentTheme(isDarkMode);
+  applyDocumentTheme(newTheme);
 }
 
 export async function toggleTheme() {
   const isDarkMode = await ipc.client.theme.toggleThemeMode();
   const newTheme = isDarkMode ? "dark" : "light";
-
-  updateDocumentTheme(isDarkMode);
   localStorage.setItem(LOCAL_STORAGE_KEYS.THEME, newTheme);
+  applyDocumentTheme(newTheme);
 }
 
 export async function syncWithLocalTheme() {
   const { local } = await getCurrentTheme();
-  if (!local) {
-    setTheme("system");
-    return;
+  await setTheme(local ?? "system");
+}
+
+function applyDocumentTheme(theme: ThemeMode) {
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+
+  if (_systemThemeListener) {
+    mq.removeEventListener("change", _systemThemeListener);
+    _systemThemeListener = null;
   }
 
-  await setTheme(local);
+  if (theme === "system") {
+    updateDocumentTheme(mq.matches);
+    _systemThemeListener = (e) => updateDocumentTheme(e.matches);
+    mq.addEventListener("change", _systemThemeListener);
+  } else {
+    updateDocumentTheme(theme === "dark");
+  }
 }
 
 function updateDocumentTheme(isDarkMode: boolean) {
-  if (isDarkMode) {
-    document.documentElement.classList.add("dark");
-  } else {
-    document.documentElement.classList.remove("dark");
-  }
+  document.documentElement.classList.toggle("dark", isDarkMode);
 }
