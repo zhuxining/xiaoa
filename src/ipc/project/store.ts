@@ -5,11 +5,20 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { basename, join } from "node:path";
+import { basename, extname, join } from "node:path";
 import { app } from "electron";
 import type { FileInfo, FileNode, Project } from "./schemas";
 
 const FILE_SIZE_LIMIT = 1024 * 1024; // 1MB
+const IMAGE_EXTENSIONS = new Set([
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".svg",
+  ".webp",
+]);
+const PDF_EXTENSION = ".pdf";
 
 function getWorkspacesRoot(): string {
   return join(app.getPath("userData"), "workspaces");
@@ -105,6 +114,18 @@ export function readDir(dirPath: string, depth = 1): FileNode[] {
 
 export function readFile(filePath: string): FileInfo {
   const stat = statSync(filePath);
+  const ext = extname(filePath).toLowerCase();
+
+  if (IMAGE_EXTENSIONS.has(ext) || ext === PDF_EXTENSION) {
+    return {
+      name: basename(filePath),
+      path: filePath,
+      content: `file://${filePath}`,
+      size: stat.size,
+      lastModified: stat.mtimeMs,
+    };
+  }
+
   if (stat.size > FILE_SIZE_LIMIT) {
     return {
       name: basename(filePath),

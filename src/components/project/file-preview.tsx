@@ -7,7 +7,7 @@ export interface FileInfo {
   name: string;
   path: string;
   content?: string;
-  type: "text" | "code" | "image" | "binary";
+  type: "text" | "code" | "image" | "binary" | "pdf";
   size?: number;
   lastModified?: Date;
 }
@@ -39,6 +39,8 @@ export function FilePreview({ file, className }: FilePreviewProps) {
       case "image":
         return <FileImage className="size-5" />;
       case "text":
+        return <FileText className="size-5" />;
+      case "pdf":
         return <FileText className="size-5" />;
       default:
         return <File className="size-5" />;
@@ -78,6 +80,15 @@ export function FilePreview({ file, className }: FilePreviewProps) {
               height="auto"
               src={file.content}
               width="100%"
+            />
+          </div>
+        )}
+        {file.type === "pdf" && file.content && (
+          <div className="h-[calc(100vh-16rem)] p-2">
+            <iframe
+              className="h-full w-full rounded border"
+              src={file.content}
+              title={file.name}
             />
           </div>
         )}

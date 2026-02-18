@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from "lucide-react";
+import { Download, Link2, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,8 @@ interface SkillEditorProps {
   onUpdate: (updates: Partial<Skill>) => void;
   onEditToggle: () => void;
   onDelete: () => void;
+  onExport?: () => void;
+  onAddReferences?: () => void;
   onSave: () => void;
   onCancel: () => void;
   className?: string;
@@ -23,6 +25,8 @@ export function SkillEditor({
   onUpdate,
   onEditToggle,
   onDelete,
+  onExport,
+  onAddReferences,
   onSave,
   onCancel,
   className,
@@ -45,6 +49,12 @@ export function SkillEditor({
           <div className="flex gap-2">
             <Button onClick={onEditToggle} size="icon-sm" variant="outline">
               <Pencil className="size-3" />
+            </Button>
+            <Button onClick={onAddReferences} size="icon-sm" variant="outline">
+              <Link2 className="size-3" />
+            </Button>
+            <Button onClick={onExport} size="icon-sm" variant="outline">
+              <Download className="size-3" />
             </Button>
             <Button onClick={onDelete} size="icon-sm" variant="destructive">
               <Trash2 className="size-3" />
@@ -71,6 +81,25 @@ export function SkillEditor({
         </Field>
 
         <Field>
+          <FieldLabel>图标</FieldLabel>
+          <Input
+            disabled={!isEditing}
+            onChange={(e) => onUpdate({ icon: e.target.value })}
+            value={skill.icon || ""}
+          />
+        </Field>
+
+        <Field>
+          <FieldLabel>参数提示</FieldLabel>
+          <Input
+            disabled={!isEditing}
+            onChange={(e) => onUpdate({ argumentHint: e.target.value })}
+            placeholder="[参数1] [参数2]"
+            value={skill.argumentHint || ""}
+          />
+        </Field>
+
+        <Field>
           <FieldLabel>提示词</FieldLabel>
           <Textarea
             disabled={!isEditing}
@@ -78,6 +107,21 @@ export function SkillEditor({
             rows={8}
             value={skill.prompt}
           />
+        </Field>
+
+        <Field>
+          <FieldLabel>参考资料</FieldLabel>
+          <div className="rounded border p-2">
+            {skill.references?.length ? (
+              <ul className="space-y-1 text-xs">
+                {skill.references.map((ref) => (
+                  <li key={ref.path}>{ref.path}</li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-muted-foreground text-xs">暂无参考资料</div>
+            )}
+          </div>
         </Field>
 
         <Field>

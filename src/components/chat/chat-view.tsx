@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { cn } from "@/utils/tailwind";
+import type { FileMenuItem } from "./file-menu";
 import { MessageInput } from "./message-input";
 import { MessageList } from "./message-list";
 import { PermissionDialog, type PermissionRequest } from "./permission-dialog";
@@ -28,6 +29,7 @@ interface ChatViewProps {
   agentName?: string;
   agentAvatar?: string;
   skills?: SkillMenuItem[];
+  files?: FileMenuItem[];
   permissionRequest?: PermissionRequest | null;
   onSessionSelect: (id: string) => void;
   onSessionCreate?: () => void;
@@ -48,6 +50,7 @@ export function ChatView({
   agentName,
   agentAvatar,
   skills = [],
+  files = [],
   permissionRequest,
   onSessionSelect,
   onSessionCreate,
@@ -83,6 +86,7 @@ export function ChatView({
           messages={messages}
         />
         <MessageInput
+          files={files}
           isGenerating={isGenerating}
           onAbort={onAbort}
           onSend={onMessageSend}

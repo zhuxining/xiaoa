@@ -1,5 +1,5 @@
-import { Search, Wrench } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { File, Search } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
   Popover,
   PopoverAnchor,
@@ -8,44 +8,39 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/utils/tailwind";
 
-export interface SkillMenuItem {
+export interface FileMenuItem {
   id: string;
   name: string;
-  description: string;
-  argumentHint?: string;
-  icon?: React.ReactNode;
+  path: string;
 }
 
-interface SkillMenuProps {
-  skills: SkillMenuItem[];
+interface FileMenuProps {
+  files: FileMenuItem[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelect: (skill: SkillMenuItem) => void;
+  onSelect: (file: FileMenuItem) => void;
   anchor?: React.ReactNode;
   className?: string;
 }
 
-export function SkillMenu({
-  skills,
+export function FileMenu({
+  files,
   open,
   onOpenChange,
   onSelect,
   anchor,
   className,
-}: SkillMenuProps) {
+}: FileMenuProps) {
   const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const listRef = useRef<HTMLDivElement>(null);
 
-  const filteredSkills = skills.filter(
-    (skill) =>
-      skill.name.toLowerCase().includes(search.toLowerCase()) ||
-      skill.description.toLowerCase().includes(search.toLowerCase())
-  );
-
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, []);
+  const filteredFiles = files.filter((file) => {
+    const query = search.toLowerCase();
+    return (
+      file.name.toLowerCase().includes(query) ||
+      file.path.toLowerCase().includes(query)
+    );
+  });
 
   useEffect(() => {
     if (!open) {
@@ -59,7 +54,7 @@ export function SkillMenu({
       case "ArrowDown":
         e.preventDefault();
         setSelectedIndex((prev) =>
-          prev < filteredSkills.length - 1 ? prev + 1 : prev
+          prev < filteredFiles.length - 1 ? prev + 1 : prev
         );
         break;
       case "ArrowUp":
@@ -68,8 +63,8 @@ export function SkillMenu({
         break;
       case "Enter":
         e.preventDefault();
-        if (filteredSkills[selectedIndex]) {
-          onSelect(filteredSkills[selectedIndex]);
+        if (filteredFiles[selectedIndex]) {
+          onSelect(filteredFiles[selectedIndex]);
           onOpenChange(false);
         }
         break;
@@ -87,7 +82,7 @@ export function SkillMenu({
       <PopoverAnchor asChild>{anchor}</PopoverAnchor>
       <PopoverContent
         align="start"
-        className={cn("w-64 p-0", className)}
+        className={cn("w-80 p-0", className)}
         onOpenAutoFocus={(e) => e.preventDefault()}
         side="top"
       >
@@ -99,55 +94,45 @@ export function SkillMenu({
               className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="搜索技能..."
+              placeholder="搜索文件..."
               type="text"
               value={search}
             />
           </div>
         </div>
-        <ScrollArea className="max-h-48">
-          <div className="p-1" ref={listRef}>
-            {filteredSkills.length === 0 ? (
+        <ScrollArea className="max-h-56">
+          <div className="p-1">
+            {filteredFiles.length === 0 ? (
               <div className="py-4 text-center text-muted-foreground text-xs">
-                未找到匹配的技能
+                未找到匹配文件
               </div>
             ) : (
-              filteredSkills.map((skill, index) => (
+              filteredFiles.map((file, index) => (
                 <button
                   className={cn(
                     "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors",
                     index === selectedIndex ? "bg-muted" : "hover:bg-muted"
                   )}
-                  key={skill.id}
+                  key={file.id}
                   onClick={() => {
-                    onSelect(skill);
+                    onSelect(file);
                     onOpenChange(false);
                   }}
                   onMouseEnter={() => setSelectedIndex(index)}
                   type="button"
                 >
-                  <div className="flex size-5 items-center justify-center rounded bg-muted">
-                    {skill.icon || <Wrench className="size-3" />}
-                  </div>
+                  <File className="size-3 shrink-0 text-muted-foreground" />
                   <div className="min-w-0 flex-1">
-                    <div className="truncate font-medium">{skill.name}</div>
+                    <div className="truncate font-medium">{file.name}</div>
                     <div className="truncate text-muted-foreground">
-                      {skill.description}
+                      {file.path}
                     </div>
-                    {skill.argumentHint && (
-                      <div className="truncate text-[10px] text-muted-foreground/80">
-                        {skill.argumentHint}
-                      </div>
-                    )}
                   </div>
                 </button>
               ))
             )}
           </div>
         </ScrollArea>
-        <div className="border-t px-2 py-1 text-[10px] text-muted-foreground">
-          ↑↓ 选择 · Enter 确认 · Esc 关闭
-        </div>
       </PopoverContent>
     </Popover>
   );

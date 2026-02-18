@@ -6,7 +6,10 @@ export interface Skill {
   workspaceId: string;
   name: string;
   description: string;
+  icon?: string;
+  argumentHint?: string;
   prompt: string;
+  references?: Array<{ name: string; path: string }>;
   enabled: boolean;
   createdAt: number;
   updatedAt: number;
@@ -17,6 +20,8 @@ export interface CreateSkillInput {
   name: string;
   prompt: string;
   description?: string;
+  icon?: string;
+  argumentHint?: string;
 }
 
 export interface UpdateSkillInput {
@@ -24,6 +29,8 @@ export interface UpdateSkillInput {
   workspaceId: string;
   name?: string;
   description?: string;
+  icon?: string;
+  argumentHint?: string;
   prompt?: string;
   enabled?: boolean;
 }
@@ -59,4 +66,39 @@ export async function deleteSkill(
   id: string
 ): Promise<{ success: boolean; id: string }> {
   return await ipc.client.skill.delete({ workspaceId, id });
+}
+
+export async function selectSkillImportDir(): Promise<string | null> {
+  return await ipc.client.skill.selectImportDir();
+}
+
+export async function selectSkillExportDir(): Promise<string | null> {
+  return await ipc.client.skill.selectExportDir();
+}
+
+export async function importSkillFromDir(
+  workspaceId: string,
+  dirPath: string
+): Promise<Skill> {
+  return await ipc.client.skill.importFromDir({ workspaceId, dirPath });
+}
+
+export async function exportSkillToDir(
+  workspaceId: string,
+  id: string,
+  targetDir: string
+): Promise<{ path: string } | null> {
+  return await ipc.client.skill.exportToDir({ workspaceId, id, targetDir });
+}
+
+export async function selectSkillReferenceFiles(): Promise<string[]> {
+  return await ipc.client.skill.selectReferenceFiles();
+}
+
+export async function addSkillReferences(
+  workspaceId: string,
+  id: string,
+  filePaths: string[]
+): Promise<Skill | null> {
+  return await ipc.client.skill.addReferences({ workspaceId, id, filePaths });
 }

@@ -5,9 +5,15 @@ import { useState } from "react";
 import { toast } from "sonner";
 import type { Skill } from "@/actions/skill";
 import {
+  addSkillReferences,
   createSkill,
   deleteSkill,
+  exportSkillToDir,
   getSkills,
+  importSkillFromDir,
+  selectSkillExportDir,
+  selectSkillImportDir,
+  selectSkillReferenceFiles,
   updateSkill,
 } from "@/actions/skill";
 import { PageHeader } from "@/components/shared/page-header";
@@ -43,6 +49,7 @@ function SkillsPage() {
         name: "新技能",
         prompt: "",
         description: "",
+        icon: "🛠️",
       }),
     onSuccess: (newSkill) => {
       queryClient.invalidateQueries({ queryKey: ["skills", workspaceId] });
@@ -95,6 +102,72 @@ function SkillsPage() {
     },
   });
 
+  const importMutation = useMutation({
+    mutationFn: async () => {
+      const dirPath = await selectSkillImportDir();
+      if (!dirPath) {
+        return null;
+      }
+      return await importSkillFromDir(workspaceId, dirPath);
+    },
+    onSuccess: (skill) => {
+      if (!skill) {
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: ["skills", workspaceId] });
+      setSelectedSkillId(skill.id);
+      toast.success("技能导入成功");
+    },
+    onError: (error) => {
+      toast.error(`导入失败: ${(error as Error).message}`);
+    },
+  });
+
+  const exportMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedSkillId) {
+        throw new Error("No skill selected");
+      }
+      const targetDir = await selectSkillExportDir();
+      if (!targetDir) {
+        return null;
+      }
+      return await exportSkillToDir(workspaceId, selectedSkillId, targetDir);
+    },
+    onSuccess: (result) => {
+      if (!result) {
+        return;
+      }
+      toast.success(`已导出到: ${result.path}`);
+    },
+    onError: (error) => {
+      toast.error(`导出失败: ${(error as Error).message}`);
+    },
+  });
+
+  const addReferencesMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedSkillId) {
+        throw new Error("No skill selected");
+      }
+      const files = await selectSkillReferenceFiles();
+      if (files.length === 0) {
+        return null;
+      }
+      return await addSkillReferences(workspaceId, selectedSkillId, files);
+    },
+    onSuccess: (skill) => {
+      if (!skill) {
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: ["skills", workspaceId] });
+      toast.success("参考资料添加成功");
+    },
+    onError: (error) => {
+      toast.error(`添加参考资料失败: ${(error as Error).message}`);
+    },
+  });
+
   const handleSkillUpdate = (updates: Partial<Skill>) => {
     updateMutation.mutate(updates);
   };
@@ -125,7 +198,15 @@ function SkillsPage() {
       <PageHeader
         actions={
           <div className="flex gap-2">
-            <Button size="sm" variant="outline">
+            <Button
+              disabled={importMutation.isPending}
+              onClick={() => importMutation.mutate()}
+              size="sm"
+              variant="outline"
+            >
+              {importMutation.isPending && (
+                <Loader2 className="mr-1 size-4 animate-spin" />
+              )}
               <Plus className="mr-1 size-4" />
               导入
             </Button>
@@ -162,9 +243,11 @@ function SkillsPage() {
           <SkillEditor
             className="h-full"
             isEditing={isEditing}
+            onAddReferences={() => addReferencesMutation.mutate()}
             onCancel={() => setIsEditing(false)}
             onDelete={handleDelete}
             onEditToggle={() => setIsEditing(!isEditing)}
+            onExport={() => exportMutation.mutate()}
             onSave={handleSave}
             onUpdate={handleSkillUpdate}
             skill={selectedSkill}

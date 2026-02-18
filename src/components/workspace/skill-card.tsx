@@ -7,7 +7,10 @@ export interface Skill {
   id: string;
   name: string;
   description: string;
+  icon?: string;
+  argumentHint?: string;
   prompt: string;
+  references?: Array<{ name: string; path: string }>;
   enabled: boolean;
 }
 
@@ -35,7 +38,11 @@ export function SkillCard({
     >
       <div className="flex items-start gap-3">
         <div className="flex size-8 items-center justify-center rounded-md bg-muted">
-          <Wrench className="size-4" />
+          {skill.icon ? (
+            <span>{skill.icon}</span>
+          ) : (
+            <Wrench className="size-4" />
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">

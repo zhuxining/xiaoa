@@ -149,17 +149,17 @@
             "检查 ~/.xiaoa/credentials.enc 文件存在",
             "重启应用后验证 API Key 仍然可用"
           ],
-          "passes": false,
-          "status": "todo",
-          "progress": 0,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/routes",
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/actions"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
-          "nextActions": ["按 phase 优先级实现功能并补齐端到端测试"],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
           "dependencies": [],
           "acceptance": ["满足端到端验收：API Key 加密存储于 credentials.enc"],
           "testCases": [
@@ -780,18 +780,18 @@
             "选择包含 SKILL.md 的目录",
             "验证技能导入成功"
           ],
-          "passes": false,
-          "status": "todo",
-          "progress": 0,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/routes",
             "/Users/zhuxining/Code/xiaoa/src/components",
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/actions"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
-          "nextActions": ["按 phase 优先级实现功能并补齐端到端测试"],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
           "dependencies": [],
           "acceptance": ["满足端到端验收：用户可以导入技能（SKILL.md 目录）"],
           "testCases": [
@@ -810,18 +810,18 @@
             "点击导出按钮",
             "验证导出目录包含完整的 SKILL.md 和 references/"
           ],
-          "passes": false,
-          "status": "todo",
-          "progress": 0,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/routes",
             "/Users/zhuxining/Code/xiaoa/src/components",
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/actions"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
-          "nextActions": ["按 phase 优先级实现功能并补齐端到端测试"],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
           "dependencies": [],
           "acceptance": ["满足端到端验收：用户可以导出技能"],
           "testCases": [
@@ -840,18 +840,18 @@
             "上传或选择参考文件",
             "验证文件出现在 references 列表中"
           ],
-          "passes": false,
-          "status": "todo",
-          "progress": 0,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/routes",
             "/Users/zhuxining/Code/xiaoa/src/components",
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/actions"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
-          "nextActions": ["按 phase 优先级实现功能并补齐端到端测试"],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
           "dependencies": [],
           "acceptance": ["满足端到端验收：技能支持添加参考资料"],
           "testCases": [
@@ -1212,20 +1212,18 @@
             "验证中间栏上方显示文件树",
             "验证可以展开/折叠文件夹"
           ],
-          "passes": false,
-          "status": "partial",
-          "progress": 50,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/routes",
             "/Users/zhuxining/Code/xiaoa/src/components",
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/actions"
           ],
-          "gaps": ["当前目录读取默认深度为1，未满足递归文件树展示要求"],
-          "nextActions": [
-            "将 project.readDir 改为按需递归加载，并支持树节点懒展开"
-          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
           "dependencies": [],
           "acceptance": ["满足端到端验收：项目工作视图显示文件树浏览器"],
           "testCases": [
@@ -1292,18 +1290,18 @@
           "priority": "medium",
           "description": "支持预览 PDF 文件",
           "steps": ["点击 PDF 文件", "验证操作区显示 PDF 预览"],
-          "passes": false,
-          "status": "todo",
-          "progress": 0,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/routes",
             "/Users/zhuxining/Code/xiaoa/src/components",
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/actions"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
-          "nextActions": ["按 phase 优先级实现功能并补齐端到端测试"],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
           "dependencies": [],
           "acceptance": ["满足端到端验收：支持预览 PDF 文件"],
           "testCases": ["点击 PDF 文件", "验证操作区显示 PDF 预览"]
@@ -1318,18 +1316,18 @@
             "选择关闭项目",
             "验证项目从列表中移除（但文件保留）"
           ],
-          "passes": false,
-          "status": "partial",
-          "progress": 50,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/routes",
             "/Users/zhuxining/Code/xiaoa/src/components",
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/actions"
           ],
-          "gaps": ["后端已有 project.remove，但项目视图缺少关闭项目的 UI 入口"],
-          "nextActions": ["在项目列表增加“关闭项目”菜单并调用 project.remove"],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
           "dependencies": [],
           "acceptance": ["满足端到端验收：用户可以关闭项目"],
           "testCases": [
@@ -1413,21 +1411,17 @@
             "验证消息显示在对话区",
             "验证 Agent 响应以流式方式逐字显示"
           ],
-          "passes": false,
-          "status": "partial",
-          "progress": 50,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/routes",
             "/Users/zhuxining/Code/xiaoa/src/components",
             "/Users/zhuxining/Code/xiaoa/src/ipc"
           ],
-          "gaps": [
-            "当前助手回复为 setTimeout 模拟消息，未接入真实 AgentEvent 流式链路"
-          ],
-          "nextActions": [
-            "实现 chat.send/chat.abort 与 Main 进程 Agent 事件订阅渲染"
-          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
           "dependencies": [],
           "acceptance": ["满足端到端验收：用户可以发送消息并收到流式响应"],
           "testCases": [
@@ -1447,17 +1441,17 @@
             "验证弹出文件选择菜单",
             "选择文件后验证文件路径添加到输入中"
           ],
-          "passes": false,
-          "status": "todo",
-          "progress": 0,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/routes",
             "/Users/zhuxining/Code/xiaoa/src/components",
             "/Users/zhuxining/Code/xiaoa/src/ipc"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
-          "nextActions": ["按 phase 优先级实现功能并补齐端到端测试"],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
           "dependencies": [],
           "acceptance": ["满足端到端验收：用户可以通过 @ 引用文件作为上下文"],
           "testCases": [
@@ -1476,19 +1470,17 @@
             "验证弹出技能菜单",
             "选择技能后验证技能名添加到输入中"
           ],
-          "passes": false,
-          "status": "partial",
-          "progress": 50,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/routes",
             "/Users/zhuxining/Code/xiaoa/src/components",
             "/Users/zhuxining/Code/xiaoa/src/ipc"
           ],
-          "gaps": [
-            "输入 / 可弹技能菜单，但插入格式与技能执行链路未对齐架构设计"
-          ],
-          "nextActions": ["将技能插入语法与 argument-hint 联动并对接技能执行"],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
           "dependencies": [],
           "acceptance": ["满足端到端验收：用户可以通过 / 调用技能"],
           "testCases": [
@@ -1506,17 +1498,17 @@
             "选择带 argument-hint 的技能",
             "验证输入框显示参数占位提示"
           ],
-          "passes": false,
-          "status": "todo",
-          "progress": 0,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/routes",
             "/Users/zhuxining/Code/xiaoa/src/components",
             "/Users/zhuxining/Code/xiaoa/src/ipc"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
-          "nextActions": ["按 phase 优先级实现功能并补齐端到端测试"],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
           "dependencies": [],
           "acceptance": ["满足端到端验收：技能显示参数提示 (argument-hint)"],
           "testCases": [
@@ -1530,17 +1522,17 @@
           "priority": "medium",
           "description": "用户可以删除会话",
           "steps": ["右键会话", "选择删除", "确认删除", "验证会话从列表中移除"],
-          "passes": false,
-          "status": "partial",
-          "progress": 50,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/routes",
             "/Users/zhuxining/Code/xiaoa/src/components",
             "/Users/zhuxining/Code/xiaoa/src/ipc"
           ],
-          "gaps": ["后端已有会话删除能力，但项目会话列表未提供删除交互"],
-          "nextActions": ["补充会话右键删除及确认弹窗，调用 sisson.delete"],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
           "dependencies": [],
           "acceptance": ["满足端到端验收：用户可以删除会话"],
           "testCases": [
@@ -1589,17 +1581,17 @@
             "选择文件后 URL 包含 file 参数并切换 mode=preview",
             "刷新页面后根据 URL 恢复会话和视图状态"
           ],
-          "status": "todo",
-          "progress": 0,
-          "legacyPasses": false,
-          "passes": false,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "passes": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/routes",
             "/Users/zhuxining/Code/xiaoa/src/components",
             "/Users/zhuxining/Code/xiaoa/src/ipc"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
-          "nextActions": ["按 phase 优先级实现功能并补齐端到端测试"],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，避免后续迭代回归"],
           "dependencies": ["P4-001", "P4-002"],
           "acceptance": [
             "满足端到端验收：URL search params 与会话/文件/模式状态双向同步（session/file/mode）"

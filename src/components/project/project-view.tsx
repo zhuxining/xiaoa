@@ -1,6 +1,8 @@
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import type { Message, Session } from "@/components/chat/chat-view";
 import { ChatView } from "@/components/chat/chat-view";
+import type { FileMenuItem } from "@/components/chat/file-menu";
+import type { SkillMenuItem } from "@/components/chat/skill-menu";
 import { Button } from "@/components/ui/button";
 import {
   ResizableHandle,
@@ -20,9 +22,12 @@ interface ProjectViewProps {
   fileInfo?: FileInfo | null;
   viewMode: "chat" | "preview";
   isGenerating?: boolean;
+  skills?: SkillMenuItem[];
+  filesForMention?: FileMenuItem[];
   onFileSelect: (node: FileNode) => void;
   onSessionSelect: (id: string) => void;
   onSessionCreate?: () => void;
+  onSessionDelete?: (id: string) => void;
   onMessageSend: (message: string) => void;
   onAbort?: () => void;
   agentName?: string;
@@ -38,9 +43,12 @@ export function ProjectView({
   fileInfo,
   viewMode,
   isGenerating,
+  skills = [],
+  filesForMention = [],
   onFileSelect,
   onSessionSelect,
   onSessionCreate,
+  onSessionDelete,
   onMessageSend,
   onAbort,
   agentName,
@@ -89,17 +97,30 @@ export function ProjectView({
                 <div className="flex-1 overflow-auto">
                   <div className="flex flex-col gap-1 p-2">
                     {sessions.map((session) => (
-                      <button
+                      <div
                         className={cn(
-                          "w-full rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted",
+                          "group flex w-full items-center gap-1 rounded-md px-1 py-1 text-left text-xs transition-colors hover:bg-muted",
                           session.id === currentSessionId && "bg-muted"
                         )}
                         key={session.id}
-                        onClick={() => onSessionSelect(session.id)}
-                        type="button"
                       >
-                        <div className="truncate">{session.title}</div>
-                      </button>
+                        <button
+                          className="flex-1 truncate rounded px-1 py-0.5 text-left"
+                          onClick={() => onSessionSelect(session.id)}
+                          type="button"
+                        >
+                          {session.title}
+                        </button>
+                        <Button
+                          className="h-5 w-5 opacity-0 transition-opacity group-hover:opacity-100"
+                          onClick={() => onSessionDelete?.(session.id)}
+                          size="icon-sm"
+                          title="删除会话"
+                          variant="ghost"
+                        >
+                          <Trash2 className="size-3" />
+                        </Button>
+                      </div>
                     ))}
                     {sessions.length === 0 && (
                       <div className="flex flex-col items-center gap-2 py-4 text-center text-muted-foreground text-xs">
@@ -128,6 +149,7 @@ export function ProjectView({
             <ChatView
               agentName={agentName}
               currentSessionId={currentSessionId}
+              files={filesForMention}
               isGenerating={isGenerating}
               messages={messages}
               onAbort={onAbort}
@@ -136,6 +158,7 @@ export function ProjectView({
               onSessionSelect={onSessionSelect}
               sessions={sessions}
               showSessionList={false}
+              skills={skills}
             />
           ) : (
             <FilePreview file={fileInfo ?? null} />
