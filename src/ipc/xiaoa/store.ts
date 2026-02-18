@@ -1,6 +1,12 @@
-import * as fs from "node:fs";
-import * as path from "node:path";
-import * as readline from "node:readline";
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
+import { join } from "node:path";
 import { app } from "electron";
 import type { z } from "zod";
 import type { messageSchema, sessionSchema } from "./schemas";
@@ -11,29 +17,29 @@ type Session = z.infer<typeof sessionSchema>;
 // 获取小A数据根目录
 function getXiaoaRoot(): string {
   const userDataPath = app.getPath("userData");
-  return path.join(userDataPath, "xiaoa");
+  return join(userDataPath, "xiaoa");
 }
 
 // 获取会话目录
 function getSessionsDir(): string {
-  return path.join(getXiaoaRoot(), "sessions");
+  return join(getXiaoaRoot(), "sessions");
 }
 
 // 获取会话元数据文件路径
 function getSessionsIndexPath(): string {
-  return path.join(getSessionsDir(), "index.json");
+  return join(getSessionsDir(), "index.json");
 }
 
 // 获取会话消息文件路径
 function getSessionMessagesPath(sessionId: string): string {
-  return path.join(getSessionsDir(), `${sessionId}.jsonl`);
+  return join(getSessionsDir(), `${sessionId}.jsonl`);
 }
 
 // 确保目录存在
 function ensureSessionsDir(): void {
   const dir = getSessionsDir();
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
   }
 }
 
@@ -45,12 +51,12 @@ function generateId(): string {
 // 读取会话索引
 function readSessionsIndex(): Session[] {
   const indexPath = getSessionsIndexPath();
-  if (!fs.existsSync(indexPath)) {
+  if (!existsSync(indexPath)) {
     return [];
   }
 
   try {
-    const content = fs.readFileSync(indexPath, "utf-8");
+    const content = readFileSync(indexPath, "utf-8");
     return JSON.parse(content) as Session[];
   } catch {
     return [];
@@ -61,7 +67,7 @@ function readSessionsIndex(): Session[] {
 function writeSessionsIndex(sessions: Session[]): void {
   ensureSessionsDir();
   const indexPath = getSessionsIndexPath();
-  fs.writeFileSync(indexPath, JSON.stringify(sessions, null, 2), "utf-8");
+  writeFileSync(indexPath, JSON.stringify(sessions, null, 2), "utf-8");
 }
 
 // 列出所有会话
@@ -96,7 +102,7 @@ export function createSession(title?: string): Session {
 
   // 创建空的消息文件
   const messagesPath = getSessionMessagesPath(id);
-  fs.writeFileSync(messagesPath, "", "utf-8");
+  writeFileSync(messagesPath, "", "utf-8");
 
   return session;
 }
@@ -146,8 +152,8 @@ export function deleteSession(id: string): boolean {
 
   // 删除消息文件
   const messagesPath = getSessionMessagesPath(id);
-  if (fs.existsSync(messagesPath)) {
-    fs.unlinkSync(messagesPath);
+  if (existsSync(messagesPath)) {
+    unlinkSync(messagesPath);
   }
 
   return true;
@@ -176,7 +182,7 @@ export function addMessage(
   // 追加到 JSONL 文件
   const messagesPath = getSessionMessagesPath(sessionId);
   const line = JSON.stringify(message);
-  fs.appendFileSync(messagesPath, `${line}\n`, "utf-8");
+  appendFileSync(messagesPath, `${line}\n`, "utf-8");
 
   // 更新会话时间戳
   touchSession(sessionId);
@@ -187,19 +193,12 @@ export function addMessage(
 // 获取会话的所有消息
 export function getMessages(sessionId: string): Message[] {
   const messagesPath = getSessionMessagesPath(sessionId);
-  if (!fs.existsSync(messagesPath)) {
+  if (!existsSync(messagesPath)) {
     return [];
   }
 
   const messages: Message[] = [];
-  const fileStream = fs.createReadStream(messagesPath, { encoding: "utf-8" });
-  const _rl = readline.createInterface({
-    input: fileStream,
-    crlfDelay: Number.POSITIVE_INFINITY,
-  });
-
-  // 同步读取所有行
-  const content = fs.readFileSync(messagesPath, "utf-8");
+  const content = readFileSync(messagesPath, "utf-8");
   const lines = content.split("\n").filter((line) => line.trim());
 
   for (const line of lines) {

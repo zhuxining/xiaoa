@@ -1,5 +1,12 @@
-import * as fs from "node:fs";
-import * as path from "node:path";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { join } from "node:path";
 import { app } from "electron";
 import type { z } from "zod";
 import type { agentConfigSchema, workspaceSchema } from "./schemas";
@@ -17,34 +24,34 @@ const DEFAULT_AGENT_CONFIG: AgentConfig = {
 // 获取工作区根目录
 function getWorkspacesRoot(): string {
   const userDataPath = app.getPath("userData");
-  return path.join(userDataPath, "workspaces");
+  return join(userDataPath, "workspaces");
 }
 
 // 获取工作区目录
 function getWorkspaceDir(workspaceId: string): string {
-  return path.join(getWorkspacesRoot(), workspaceId);
+  return join(getWorkspacesRoot(), workspaceId);
 }
 
 // 获取工作区配置文件路径
 function getWorkspaceConfigPath(workspaceId: string): string {
-  return path.join(getWorkspaceDir(workspaceId), "workspace.json");
+  return join(getWorkspaceDir(workspaceId), "workspace.json");
 }
 
 // 确保工作区目录存在
 function ensureWorkspaceDir(workspaceId: string): void {
   const dir = getWorkspaceDir(workspaceId);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
 
     // 创建子目录
     const subdirs = ["skills", "memories/daily", "knowledge", "sessions"];
     for (const subdir of subdirs) {
-      fs.mkdirSync(path.join(dir, subdir), { recursive: true });
+      mkdirSync(join(dir, subdir), { recursive: true });
     }
 
     // 创建默认 MEMORY.md
-    const memoryPath = path.join(dir, "memories", "MEMORY.md");
-    fs.writeFileSync(
+    const memoryPath = join(dir, "memories", "MEMORY.md");
+    writeFileSync(
       memoryPath,
       "# 长期记忆\n\n## 用户偏好\n\n## 重要决策\n",
       "utf-8"
@@ -60,18 +67,18 @@ function generateId(): string {
 // 读取所有工作区列表
 export function listWorkspaces(): Workspace[] {
   const root = getWorkspacesRoot();
-  if (!fs.existsSync(root)) {
+  if (!existsSync(root)) {
     return [];
   }
 
   const workspaces: Workspace[] = [];
-  const dirs = fs.readdirSync(root);
+  const dirs = readdirSync(root);
 
   for (const dir of dirs) {
-    const configPath = path.join(root, dir, "workspace.json");
-    if (fs.existsSync(configPath)) {
+    const configPath = join(root, dir, "workspace.json");
+    if (existsSync(configPath)) {
       try {
-        const content = fs.readFileSync(configPath, "utf-8");
+        const content = readFileSync(configPath, "utf-8");
         workspaces.push(JSON.parse(content) as Workspace);
       } catch {
         // 忽略损坏的配置
@@ -85,12 +92,12 @@ export function listWorkspaces(): Workspace[] {
 // 获取单个工作区
 export function getWorkspace(id: string): Workspace | null {
   const configPath = getWorkspaceConfigPath(id);
-  if (!fs.existsSync(configPath)) {
+  if (!existsSync(configPath)) {
     return null;
   }
 
   try {
-    const content = fs.readFileSync(configPath, "utf-8");
+    const content = readFileSync(configPath, "utf-8");
     return JSON.parse(content) as Workspace;
   } catch {
     return null;
@@ -119,7 +126,7 @@ export function createWorkspace(
   };
 
   const configPath = getWorkspaceConfigPath(id);
-  fs.writeFileSync(configPath, JSON.stringify(workspace, null, 2), "utf-8");
+  writeFileSync(configPath, JSON.stringify(workspace, null, 2), "utf-8");
 
   return workspace;
 }
@@ -157,7 +164,7 @@ export function updateWorkspace(
   };
 
   const configPath = getWorkspaceConfigPath(id);
-  fs.writeFileSync(configPath, JSON.stringify(updated, null, 2), "utf-8");
+  writeFileSync(configPath, JSON.stringify(updated, null, 2), "utf-8");
 
   return updated;
 }
@@ -165,12 +172,12 @@ export function updateWorkspace(
 // 删除工作区
 export function deleteWorkspace(id: string): boolean {
   const dir = getWorkspaceDir(id);
-  if (!fs.existsSync(dir)) {
+  if (!existsSync(dir)) {
     return false;
   }
 
   try {
-    fs.rmSync(dir, { recursive: true, force: true });
+    rmSync(dir, { recursive: true, force: true });
     return true;
   } catch {
     return false;

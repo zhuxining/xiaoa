@@ -1,5 +1,5 @@
-import * as fs from "node:fs";
-import * as path from "node:path";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { app } from "electron";
 import type { z } from "zod";
 import type { globalConfigSchema } from "./schemas";
@@ -22,15 +22,15 @@ const DEFAULT_CONFIG: GlobalConfig = {
 // 配置文件路径
 function getConfigPath(): string {
   const userDataPath = app.getPath("userData");
-  return path.join(userDataPath, "config.json");
+  return join(userDataPath, "config.json");
 }
 
 // 确保配置目录存在
 function ensureConfigDir(): void {
   const configPath = getConfigPath();
-  const configDir = path.dirname(configPath);
-  if (!fs.existsSync(configDir)) {
-    fs.mkdirSync(configDir, { recursive: true });
+  const configDir = dirname(configPath);
+  if (!existsSync(configDir)) {
+    mkdirSync(configDir, { recursive: true });
   }
 }
 
@@ -38,14 +38,14 @@ function ensureConfigDir(): void {
 export function readConfig(): GlobalConfig {
   const configPath = getConfigPath();
 
-  if (!fs.existsSync(configPath)) {
+  if (!existsSync(configPath)) {
     ensureConfigDir();
     writeConfig(DEFAULT_CONFIG);
     return DEFAULT_CONFIG;
   }
 
   try {
-    const content = fs.readFileSync(configPath, "utf-8");
+    const content = readFileSync(configPath, "utf-8");
     const config = JSON.parse(content) as GlobalConfig;
     return { ...DEFAULT_CONFIG, ...config };
   } catch {
@@ -58,7 +58,7 @@ export function readConfig(): GlobalConfig {
 export function writeConfig(config: GlobalConfig): void {
   ensureConfigDir();
   const configPath = getConfigPath();
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2), "utf-8");
+  writeFileSync(configPath, JSON.stringify(config, null, 2), "utf-8");
 }
 
 // 更新配置（部分更新）

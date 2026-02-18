@@ -1,5 +1,12 @@
-import * as fs from "node:fs";
-import * as path from "node:path";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
+import { join } from "node:path";
 import { app } from "electron";
 import type { z } from "zod";
 import type { skillSchema } from "./schemas";
@@ -9,24 +16,24 @@ type Skill = z.infer<typeof skillSchema>;
 // 获取工作区根目录
 function getWorkspacesRoot(): string {
   const userDataPath = app.getPath("userData");
-  return path.join(userDataPath, "workspaces");
+  return join(userDataPath, "workspaces");
 }
 
 // 获取工作区技能目录
 function getSkillsDir(workspaceId: string): string {
-  return path.join(getWorkspacesRoot(), workspaceId, "skills");
+  return join(getWorkspacesRoot(), workspaceId, "skills");
 }
 
 // 获取技能文件路径
 function getSkillPath(workspaceId: string, skillId: string): string {
-  return path.join(getSkillsDir(workspaceId), `${skillId}.json`);
+  return join(getSkillsDir(workspaceId), `${skillId}.json`);
 }
 
 // 确保技能目录存在
 function ensureSkillsDir(workspaceId: string): void {
   const dir = getSkillsDir(workspaceId);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
   }
 }
 
@@ -38,20 +45,20 @@ function generateId(): string {
 // 列出工作区的所有技能
 export function listSkills(workspaceId: string): Skill[] {
   const dir = getSkillsDir(workspaceId);
-  if (!fs.existsSync(dir)) {
+  if (!existsSync(dir)) {
     return [];
   }
 
   const skills: Skill[] = [];
-  const files = fs.readdirSync(dir);
+  const files = readdirSync(dir);
 
   for (const file of files) {
     if (!file.endsWith(".json")) {
       continue;
     }
-    const skillPath = path.join(dir, file);
+    const skillPath = join(dir, file);
     try {
-      const content = fs.readFileSync(skillPath, "utf-8");
+      const content = readFileSync(skillPath, "utf-8");
       skills.push(JSON.parse(content) as Skill);
     } catch {
       // 忽略损坏的文件
@@ -64,12 +71,12 @@ export function listSkills(workspaceId: string): Skill[] {
 // 获取单个技能
 export function getSkill(workspaceId: string, id: string): Skill | null {
   const skillPath = getSkillPath(workspaceId, id);
-  if (!fs.existsSync(skillPath)) {
+  if (!existsSync(skillPath)) {
     return null;
   }
 
   try {
-    const content = fs.readFileSync(skillPath, "utf-8");
+    const content = readFileSync(skillPath, "utf-8");
     return JSON.parse(content) as Skill;
   } catch {
     return null;
@@ -99,7 +106,7 @@ export function createSkill(
   };
 
   const skillPath = getSkillPath(workspaceId, id);
-  fs.writeFileSync(skillPath, JSON.stringify(skill, null, 2), "utf-8");
+  writeFileSync(skillPath, JSON.stringify(skill, null, 2), "utf-8");
 
   return skill;
 }
@@ -130,7 +137,7 @@ export function updateSkill(
   };
 
   const skillPath = getSkillPath(workspaceId, id);
-  fs.writeFileSync(skillPath, JSON.stringify(updated, null, 2), "utf-8");
+  writeFileSync(skillPath, JSON.stringify(updated, null, 2), "utf-8");
 
   return updated;
 }
@@ -138,12 +145,12 @@ export function updateSkill(
 // 删除技能
 export function deleteSkill(workspaceId: string, id: string): boolean {
   const skillPath = getSkillPath(workspaceId, id);
-  if (!fs.existsSync(skillPath)) {
+  if (!existsSync(skillPath)) {
     return false;
   }
 
   try {
-    fs.unlinkSync(skillPath);
+    unlinkSync(skillPath);
     return true;
   } catch {
     return false;

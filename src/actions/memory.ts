@@ -9,7 +9,7 @@ export interface Memory {
 
 // 获取记忆
 export async function getMemory(workspaceId: string): Promise<Memory> {
-  return ipc.client.memory.get({ workspaceId });
+  return await ipc.client.memory.get({ workspaceId });
 }
 
 // 保存记忆
@@ -17,5 +17,5 @@ export async function saveMemory(
   workspaceId: string,
   content: string
 ): Promise<Memory> {
-  return ipc.client.memory.save({ workspaceId, content });
+  return await ipc.client.memory.save({ workspaceId, content });
 }

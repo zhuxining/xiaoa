@@ -38,31 +38,31 @@ export interface UpdateWorkspaceInput {
 
 // 获取所有工作区
 export async function getWorkspaces(): Promise<Workspace[]> {
-  return ipc.client.workspace.list();
+  return await ipc.client.workspace.list();
 }
 
 // 获取单个工作区
 export async function getWorkspace(id: string): Promise<Workspace | null> {
-  return ipc.client.workspace.get({ id });
+  return await ipc.client.workspace.get({ id });
 }
 
 // 创建工作区
 export async function createWorkspace(
   input: CreateWorkspaceInput
 ): Promise<Workspace> {
-  return ipc.client.workspace.create(input);
+  return await ipc.client.workspace.create(input);
 }
 
 // 更新工作区
 export async function updateWorkspace(
   input: UpdateWorkspaceInput
 ): Promise<Workspace | null> {
-  return ipc.client.workspace.update(input);
+  return await ipc.client.workspace.update(input);
 }
 
 // 删除工作区
 export async function deleteWorkspace(
   id: string
 ): Promise<{ success: boolean; id: string }> {
-  return ipc.client.workspace.delete({ id });
+  return await ipc.client.workspace.delete({ id });
 }

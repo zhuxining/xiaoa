@@ -26,35 +26,35 @@ export interface TestApiKeyResult {
 
 // 获取全局配置
 export async function getConfig(): Promise<GlobalConfig> {
-  return ipc.client.config.get();
+  return await ipc.client.config.get();
 }
 
 // 更新全局配置
 export async function updateConfig(
   updates: Partial<GlobalConfig>
 ): Promise<GlobalConfig> {
-  return ipc.client.config.update(updates);
+  return await ipc.client.config.update(updates);
 }
 
 // 更新 LLM 配置
 export async function updateLLMConfig(
   updates: Partial<LLMConfig>
 ): Promise<GlobalConfig> {
-  return ipc.client.config.updateLLM(updates);
+  return await ipc.client.config.updateLLM(updates);
 }
 
 // 更新偏好设置
 export async function updatePreferences(
   updates: Partial<AppPreferences>
 ): Promise<GlobalConfig> {
-  return ipc.client.config.updatePreferences(updates);
+  return await ipc.client.config.updatePreferences(updates);
 }
 
 // 设置活跃工作区
 export async function setActiveWorkspace(
   workspaceId: string | null
 ): Promise<GlobalConfig> {
-  return ipc.client.config.setActiveWorkspace(workspaceId);
+  return await ipc.client.config.setActiveWorkspace(workspaceId);
 }
 
 // 测试 API Key 连接
@@ -63,5 +63,5 @@ export async function testApiKey(
   apiKey: string,
   endpoint?: string
 ): Promise<TestApiKeyResult> {
-  return ipc.client.config.testApiKey({ provider, apiKey, endpoint });
+  return await ipc.client.config.testApiKey({ provider, apiKey, endpoint });
 }

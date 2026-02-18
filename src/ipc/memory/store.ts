@@ -1,5 +1,11 @@
-import * as fs from "node:fs";
-import * as path from "node:path";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
+import { join } from "node:path";
 import { app } from "electron";
 import type { z } from "zod";
 import type { memorySchema } from "./schemas";
@@ -19,19 +25,19 @@ const DEFAULT_MEMORY = `# 长期记忆
 // 获取工作区根目录
 function getWorkspacesRoot(): string {
   const userDataPath = app.getPath("userData");
-  return path.join(userDataPath, "workspaces");
+  return join(userDataPath, "workspaces");
 }
 
 // 获取记忆文件路径
 function getMemoryPath(workspaceId: string): string {
-  return path.join(getWorkspacesRoot(), workspaceId, "memories", "MEMORY.md");
+  return join(getWorkspacesRoot(), workspaceId, "memories", "MEMORY.md");
 }
 
 // 确保记忆目录存在
 function ensureMemoryDir(workspaceId: string): void {
-  const dir = path.join(getWorkspacesRoot(), workspaceId, "memories");
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+  const dir = join(getWorkspacesRoot(), workspaceId, "memories");
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
   }
 }
 
@@ -39,7 +45,7 @@ function ensureMemoryDir(workspaceId: string): void {
 export function getMemory(workspaceId: string): Memory {
   const memoryPath = getMemoryPath(workspaceId);
 
-  if (!fs.existsSync(memoryPath)) {
+  if (!existsSync(memoryPath)) {
     return {
       workspaceId,
       content: DEFAULT_MEMORY,
@@ -48,8 +54,8 @@ export function getMemory(workspaceId: string): Memory {
   }
 
   try {
-    const content = fs.readFileSync(memoryPath, "utf-8");
-    const stats = fs.statSync(memoryPath);
+    const content = readFileSync(memoryPath, "utf-8");
+    const stats = statSync(memoryPath);
     return {
       workspaceId,
       content,
@@ -69,7 +75,7 @@ export function saveMemory(workspaceId: string, content: string): Memory {
   ensureMemoryDir(workspaceId);
 
   const memoryPath = getMemoryPath(workspaceId);
-  fs.writeFileSync(memoryPath, content, "utf-8");
+  writeFileSync(memoryPath, content, "utf-8");
 
   return {
     workspaceId,
