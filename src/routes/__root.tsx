@@ -21,7 +21,7 @@ import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { WorkspaceSwitcher } from "@/components/layout/workspace-switcher";
 import { Button } from "@/components/ui/button";
 import { CreateWorkspaceDialog } from "@/components/workspace/create-workspace-dialog";
-import { useWorkspaceShell } from "./use-workspace-shell";
+import { useWorkspaceShell } from "@/hooks/use-workspace-shell";
 
 function Root() {
   const {
