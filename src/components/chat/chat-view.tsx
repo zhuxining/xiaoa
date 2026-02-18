@@ -1,9 +1,10 @@
+import type { AgentMessage, AgentTool } from "@mariozechner/pi-agent-core";
 import { cn } from "@/utils/tailwind";
 import type { FileMenuItem } from "./file-menu";
 import { MessageInput } from "./message-input";
-import { MessageList } from "./message-list";
 import { PermissionBar } from "./permission-bar";
 import type { PermissionRequest } from "./permission-dialog";
+import { PiMessageList } from "./pi-message-list";
 import { SessionList } from "./session-list";
 import type { SkillMenuItem } from "./skill-menu";
 
@@ -14,13 +15,6 @@ export interface Session {
   updatedAt: Date;
 }
 
-export interface Message {
-  content: string;
-  createdAt: Date;
-  id: string;
-  role: "user" | "assistant";
-}
-
 interface ChatViewProps {
   agentAvatar?: string;
   agentName?: string;
@@ -28,7 +22,8 @@ interface ChatViewProps {
   currentSessionId?: string;
   files?: FileMenuItem[];
   isGenerating?: boolean;
-  messages: Message[];
+  /** Agent 消息列表（pi-agent-core AgentMessage[]） */
+  messages: AgentMessage[];
   onAbort?: () => void;
   onMessageSend: (message: string) => void;
   onPermissionAllow?: (request: PermissionRequest) => void;
@@ -40,6 +35,10 @@ interface ChatViewProps {
   sessions: Session[];
   showSessionList?: boolean;
   skills?: SkillMenuItem[];
+  /** 流式消息（追加到 messages 末尾） */
+  streamingMessage?: AgentMessage | null;
+  /** 可用工具列表 */
+  tools?: AgentTool[];
 }
 
 export function ChatView({
@@ -47,10 +46,10 @@ export function ChatView({
   currentSessionId,
   messages,
   isGenerating,
-  agentName,
-  agentAvatar,
+  streamingMessage,
   skills = [],
   files = [],
+  tools = [],
   permissionRequest,
   onSessionSelect,
   onSessionCreate,
@@ -74,10 +73,11 @@ export function ChatView({
         />
       )}
       <div className="flex flex-1 flex-col">
-        <MessageList
-          agentAvatar={agentAvatar}
-          agentName={agentName}
+        <PiMessageList
+          isStreaming={isGenerating}
           messages={messages}
+          streamingMessage={streamingMessage}
+          tools={tools}
         />
         <MessageInput
           files={files}

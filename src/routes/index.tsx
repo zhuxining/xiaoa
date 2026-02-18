@@ -1,3 +1,5 @@
+import type { AgentMessage } from "@mariozechner/pi-agent-core";
+import type { TextContent } from "@mariozechner/pi-ai";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { FileText, Globe, Wrench } from "lucide-react";
@@ -13,6 +15,13 @@ import { createSisson, getSissonMessages, listSissons } from "@/actions/sisson";
 import { ChatView } from "@/components/chat/chat-view";
 import type { PermissionRequest } from "@/components/chat/permission-dialog";
 import type { SkillMenuItem } from "@/components/chat/skill-menu";
+
+/**
+ * 创建文本内容块
+ */
+function _textContent(text: string): TextContent {
+  return { type: "text", text };
+}
 
 const SKILLS: SkillMenuItem[] = [
   {
@@ -35,31 +44,75 @@ const SKILLS: SkillMenuItem[] = [
   },
 ];
 
+/**
+ * 处理 ChatEvent，更新消息状态
+ *
+ * 支持 pi-agent-core 事件类型：
+ * - message_start/message_delta/message_end: 文本流式输出
+ * - tool_start/tool_end/tool_call/tool_result: 工具执行
+ * - compaction: 上下文压缩
+ * - permission_request/permission_resolved: 权限确认
+ */
 function applyHomeChatEvent(
   event: ChatEvent,
-  onDelta: (delta: string) => void,
-  onReset: () => void,
-  onPermissionRequest: (event: ChatEvent) => void,
-  onToolEnd: () => void
+  callbacks: {
+    onDelta: (delta: string) => void;
+    onPermissionRequest: (event: ChatEvent) => void;
+    onReset: () => void;
+    onToolEnd: () => void;
+  }
 ): void {
-  if (event.type === "message_start") {
-    onReset();
-    return;
-  }
-  if (event.type === "message_delta") {
-    onDelta(event.content ?? "");
-    return;
-  }
-  if (event.type === "permission_request") {
-    onPermissionRequest(event);
-    return;
-  }
-  if (event.type === "permission_resolved") {
-    onToolEnd();
-    return;
-  }
-  if (event.type === "tool_end" || event.type === "run_error") {
-    onToolEnd();
+  const { onDelta, onPermissionRequest, onReset, onToolEnd } = callbacks;
+
+  switch (event.type) {
+    case "message_start":
+      onReset();
+      break;
+
+    case "message_delta":
+      if (event.content) {
+        onDelta(event.content);
+      }
+      break;
+
+    case "message_end":
+      // 消息结束，等待下一轮
+      break;
+
+    case "tool_start":
+    case "tool_call":
+      // 工具开始/调用中，由 pi-web-ui MessageList 自动渲染
+      break;
+
+    case "tool_end":
+    case "tool_result":
+      onToolEnd();
+      break;
+
+    case "compaction":
+      // 上下文压缩事件，记录日志
+      console.log(
+        `[compaction] messages: ${event.messagesBefore} -> ${event.messagesAfter}`
+      );
+      break;
+
+    case "permission_request":
+      onPermissionRequest(event);
+      break;
+
+    case "permission_resolved":
+      onToolEnd();
+      break;
+
+    case "run_error":
+      onToolEnd();
+      console.error("[run_error]", event.error);
+      break;
+
+    case "run_end":
+    case "run_aborted":
+      // 运行结束/中止，由 eventResult.running 处理
+      break;
   }
 }
 
@@ -100,12 +153,37 @@ function HomePage() {
     enabled: !!currentSessionId,
   });
 
-  const messages = messagesData.map((m) => ({
-    id: m.id,
-    role: m.role,
-    content: m.content,
-    createdAt: new Date(m.timestamp),
-  }));
+  // 转换为 AgentMessage[] 格式
+  // UserMessage: content 可以是 string
+  // AssistantMessage: content 必须是 TextContent[]，需要额外字段
+  const messages: AgentMessage[] = messagesData.map((m) => {
+    if (m.role === "user") {
+      return {
+        role: "user" as const,
+        content: m.content,
+        timestamp: m.timestamp,
+      };
+    }
+    // assistant: 需要完整的 AssistantMessage 字段
+    return {
+      role: "assistant" as const,
+      content: [{ type: "text" as const, text: m.content }],
+      timestamp: m.timestamp,
+      // 必需字段（历史消息用默认值）
+      api: "openai-completions" as const,
+      provider: "openai" as const,
+      model: "unknown",
+      usage: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+        totalTokens: 0,
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+      },
+      stopReason: "stop" as const,
+    };
+  });
 
   const createSessionMutation = useMutation({
     mutationFn: () => createSisson({ scope: "global" }),
@@ -124,18 +202,35 @@ function HomePage() {
   const [permissionRequest, setPermissionRequest] =
     useState<PermissionRequest | null>(null);
 
-  const displayMessages =
+  // 流式消息（AgentMessage 格式）
+  // AssistantMessage: 需要完整的字段，但流式时 usage 等可能不完整
+  const streamingMessage: AgentMessage | null =
     isGenerating && streamingContent
-      ? [
-          ...messages,
-          {
-            id: "streaming-assistant",
-            role: "assistant" as const,
-            content: streamingContent,
-            createdAt: new Date(),
+      ? {
+          role: "assistant",
+          content: [{ type: "text", text: streamingContent }],
+          timestamp: Date.now(),
+          // 流式消息的临时字段
+          api: "openai-completions" as const,
+          provider: "openai" as const,
+          model: "streaming",
+          usage: {
+            input: 0,
+            output: 0,
+            cacheRead: 0,
+            cacheWrite: 0,
+            totalTokens: 0,
+            cost: {
+              input: 0,
+              output: 0,
+              cacheRead: 0,
+              cacheWrite: 0,
+              total: 0,
+            },
           },
-        ]
-      : messages;
+          stopReason: "stop" as const,
+        }
+      : null;
 
   useEffect(() => {
     if (!currentSessionId) {
@@ -209,11 +304,10 @@ function HomePage() {
     }
 
     for (const event of eventResult.events) {
-      applyHomeChatEvent(
-        event,
-        (delta) => setStreamingContent((prev) => prev + delta),
-        () => setStreamingContent(""),
-        (permissionEvent) => {
+      applyHomeChatEvent(event, {
+        onDelta: (delta) => setStreamingContent((prev) => prev + delta),
+        onReset: () => setStreamingContent(""),
+        onPermissionRequest: (permissionEvent) => {
           setPermissionRequest({
             id: permissionEvent.permissionId ?? `perm-${permissionEvent.seq}`,
             type: permissionEvent.permissionType ?? "execute",
@@ -224,8 +318,8 @@ function HomePage() {
             risk: permissionEvent.permissionRisk,
           });
         },
-        () => setPermissionRequest(null)
-      );
+        onToolEnd: () => setPermissionRequest(null),
+      });
     }
 
     if (!eventResult.running) {
@@ -333,7 +427,7 @@ function HomePage() {
       agentName="小A"
       currentSessionId={currentSessionId}
       isGenerating={isGenerating}
-      messages={displayMessages}
+      messages={messages}
       onAbort={handleAbort}
       onMessageSend={handleMessageSend}
       onPermissionAllow={handlePermissionAllow}
@@ -344,6 +438,7 @@ function HomePage() {
       permissionRequest={permissionRequest}
       sessions={sessions}
       skills={SKILLS}
+      streamingMessage={streamingMessage}
     />
   );
 }

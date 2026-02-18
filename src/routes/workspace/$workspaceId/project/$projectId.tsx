@@ -1,4 +1,4 @@
-// biome-ignore lint/style/useFilenamingConvention: TanStack Router requires $paramName format for route params
+import type { AgentMessage } from "@mariozechner/pi-agent-core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createFileRoute,
@@ -321,25 +321,64 @@ function ProjectPage() {
     enabled: !!currentSessionId,
   });
 
-  const messages = messagesData.map((message) => ({
-    id: message.id,
-    role: message.role,
-    content: message.content,
-    createdAt: new Date(message.timestamp),
-  }));
+  // 转换为 AgentMessage[] 格式
+  const messages: AgentMessage[] = messagesData.map((m) => {
+    if (m.role === "user") {
+      return {
+        role: "user" as const,
+        content: m.content,
+        timestamp: m.timestamp,
+      };
+    }
+    return {
+      role: "assistant" as const,
+      content: [{ type: "text" as const, text: m.content }],
+      timestamp: m.timestamp,
+      api: "openai-completions" as const,
+      provider: "openai" as const,
+      model: "unknown",
+      usage: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+        totalTokens: 0,
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+      },
+      stopReason: "stop" as const,
+    };
+  });
 
-  const displayMessages =
+  const streamingMessage: AgentMessage | null =
     isGenerating && streamingContent
-      ? [
-          ...messages,
-          {
-            id: "streaming-assistant",
-            role: "assistant" as const,
-            content: streamingContent,
-            createdAt: new Date(),
+      ? {
+          role: "assistant",
+          content: [{ type: "text", text: streamingContent }],
+          timestamp: Date.now(),
+          api: "openai-completions" as const,
+          provider: "openai" as const,
+          model: "streaming",
+          usage: {
+            input: 0,
+            output: 0,
+            cacheRead: 0,
+            cacheWrite: 0,
+            totalTokens: 0,
+            cost: {
+              input: 0,
+              output: 0,
+              cacheRead: 0,
+              cacheWrite: 0,
+              total: 0,
+            },
           },
-        ]
-      : messages;
+          stopReason: "stop" as const,
+        }
+      : null;
+
+  const displayMessages: AgentMessage[] = streamingMessage
+    ? [...messages, streamingMessage]
+    : messages;
 
   const createSessionMutation = useMutation({
     mutationFn: () =>

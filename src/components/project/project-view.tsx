@@ -1,5 +1,6 @@
+import type { AgentMessage } from "@mariozechner/pi-agent-core";
 import { Plus, Trash2 } from "lucide-react";
-import type { Message, Session } from "@/components/chat/chat-view";
+import type { Session } from "@/components/chat/chat-view";
 import { ChatView } from "@/components/chat/chat-view";
 import type { FileMenuItem } from "@/components/chat/file-menu";
 import type { PermissionRequest } from "@/components/chat/permission-dialog";
@@ -32,7 +33,7 @@ interface ProjectViewProps {
   files: FileNode[];
   filesForMention?: FileMenuItem[];
   isGenerating?: boolean;
-  messages: Message[];
+  messages: AgentMessage[];
   onAbort?: () => void;
   onFileSelect: (node: FileNode) => void;
   onMessageSend: (message: string) => void;
