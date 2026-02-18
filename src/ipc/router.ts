@@ -3,6 +3,7 @@ import { config } from "./config";
 import { shell } from "./shell";
 import { theme } from "./theme";
 import { window } from "./window";
+import { workspace } from "./workspace";
 
 export const router = {
   theme,
@@ -10,4 +11,5 @@ export const router = {
   app,
   shell,
   config,
+  workspace,
 };

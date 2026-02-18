@@ -1,13 +1,24 @@
-import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  createRootRoute,
+  Link,
+  Outlet,
+  useNavigate,
+} from "@tanstack/react-router";
 import {
   Bot,
   Brain,
   Database,
   FileText,
   FolderOpen,
+  Loader2,
   Settings,
   Wrench,
 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { getConfig, setActiveWorkspace } from "@/actions/config";
+import { createWorkspace, getWorkspaces } from "@/actions/workspace";
 import { AppLayout } from "@/components/layout/app-layout";
 import {
   Sidebar,
@@ -18,79 +29,209 @@ import {
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { WorkspaceSwitcher } from "@/components/layout/workspace-switcher";
 import { Button } from "@/components/ui/button";
-
-const WORKSPACES = [{ id: "default", name: "默认工作区" }];
-
-// Mock projects - 后续从状态管理获取
-const PROJECTS = [{ id: "demo", name: "示例项目" }];
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 function Root() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  // 加载工作区列表
+  const { data: workspaces = [], isLoading: isLoadingWorkspaces } = useQuery({
+    queryKey: ["workspaces"],
+    queryFn: getWorkspaces,
+  });
+
+  // 加载全局配置
+  const { data: config } = useQuery({
+    queryKey: ["config"],
+    queryFn: getConfig,
+  });
+
+  // 当前活跃工作区
+  const activeWorkspaceId = config?.activeWorkspaceId ?? null;
+  const currentWorkspaceId =
+    activeWorkspaceId && workspaces.some((w) => w.id === activeWorkspaceId)
+      ? activeWorkspaceId
+      : (workspaces[0]?.id ?? null);
+
+  const _currentWorkspace = workspaces.find((w) => w.id === currentWorkspaceId);
+
+  // 新建工作区对话框状态
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [newWorkspaceName, setNewWorkspaceName] = useState("");
+
+  // 创建工作区
+  const createMutation = useMutation({
+    mutationFn: (name: string) => createWorkspace({ name }),
+    onSuccess: async (workspace) => {
+      // 设置为活跃工作区
+      await setActiveWorkspace(workspace.id);
+      // 刷新数据
+      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+      queryClient.invalidateQueries({ queryKey: ["config"] });
+      // 关闭对话框
+      setCreateDialogOpen(false);
+      setNewWorkspaceName("");
+      toast.success("工作区创建成功");
+      // 导航到新工作区的 Agent 配置页
+      navigate({ to: `/workspace/${workspace.id}/agent` });
+    },
+    onError: (error) => {
+      toast.error(`创建失败: ${error.message}`);
+    },
+  });
+
+  // 切换工作区
+  const handleWorkspaceChange = async (id: string) => {
+    await setActiveWorkspace(id);
+    queryClient.invalidateQueries({ queryKey: ["config"] });
+    // 导航到新工作区的 Agent 配置页
+    navigate({ to: `/workspace/${id}/agent` });
+  };
+
+  // 处理创建工作区
+  const handleCreate = () => {
+    if (!newWorkspaceName.trim()) {
+      toast.error("请输入工作区名称");
+      return;
+    }
+    createMutation.mutate(newWorkspaceName.trim());
+  };
+
+  // 项目列表（后续从状态管理获取）
+  const projects: { id: string; name: string }[] = [];
+
   return (
-    <AppLayout
-      sidebar={
-        <Sidebar>
-          <SidebarHeader>
-            <WorkspaceSwitcher
-              currentWorkspaceId="default"
-              onWorkspaceChange={() => {
-                // TODO: 实现工作区切换
+    <>
+      <AppLayout
+        sidebar={
+          <Sidebar>
+            <SidebarHeader>
+              {isLoadingWorkspaces ? (
+                <div className="flex items-center justify-center p-2">
+                  <Loader2 className="size-4 animate-spin" />
+                </div>
+              ) : (
+                <WorkspaceSwitcher
+                  currentWorkspaceId={currentWorkspaceId ?? ""}
+                  onWorkspaceChange={handleWorkspaceChange}
+                  onWorkspaceCreate={() => setCreateDialogOpen(true)}
+                  workspaces={workspaces.map((w) => ({
+                    id: w.id,
+                    name: w.name,
+                    avatar: w.agent.avatar,
+                  }))}
+                />
+              )}
+            </SidebarHeader>
+            <SidebarContent>
+              {currentWorkspaceId && (
+                <>
+                  <SidebarNav
+                    items={[
+                      {
+                        to: "/",
+                        icon: <Bot className="size-4" />,
+                        label: "小A",
+                      },
+                      {
+                        to: `/workspace/${currentWorkspaceId}/agent`,
+                        icon: <Brain className="size-4" />,
+                        label: "Agent 配置",
+                      },
+                      {
+                        to: `/workspace/${currentWorkspaceId}/skills`,
+                        icon: <Wrench className="size-4" />,
+                        label: "技能管理",
+                      },
+                      {
+                        to: `/workspace/${currentWorkspaceId}/memories`,
+                        icon: <FileText className="size-4" />,
+                        label: "记忆",
+                      },
+                      {
+                        to: `/workspace/${currentWorkspaceId}/knowledge`,
+                        icon: <Database className="size-4" />,
+                        label: "知识库",
+                      },
+                    ]}
+                    title="工作区"
+                  />
+                  <SidebarNav
+                    items={projects.map((p) => ({
+                      to: `/workspace/${currentWorkspaceId}/project/${p.id}`,
+                      icon: <FolderOpen className="size-4" />,
+                      label: p.name,
+                    }))}
+                    title="项目"
+                  />
+                </>
+              )}
+            </SidebarContent>
+            <SidebarFooter>
+              <Link to="/settings">
+                <Button
+                  className="w-full justify-start gap-2"
+                  size="sm"
+                  variant="ghost"
+                >
+                  <Settings className="size-4" />
+                  设置
+                </Button>
+              </Link>
+            </SidebarFooter>
+          </Sidebar>
+        }
+      >
+        <Outlet />
+      </AppLayout>
+
+      {/* 新建工作区对话框 */}
+      <Dialog onOpenChange={setCreateDialogOpen} open={createDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>新建工作区</DialogTitle>
+            <DialogDescription>
+              创建一个新的工作区来配置你的 Agent
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              onChange={(e) => setNewWorkspaceName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleCreate();
+                }
               }}
-              workspaces={WORKSPACES}
+              placeholder="工作区名称"
+              value={newWorkspaceName}
             />
-          </SidebarHeader>
-          <SidebarContent>
-            <SidebarNav
-              items={[
-                { to: "/", icon: <Bot className="size-4" />, label: "小A" },
-                {
-                  to: "/workspace/default/agent",
-                  icon: <Brain className="size-4" />,
-                  label: "Agent 配置",
-                },
-                {
-                  to: "/workspace/default/skills",
-                  icon: <Wrench className="size-4" />,
-                  label: "技能管理",
-                },
-                {
-                  to: "/workspace/default/memories",
-                  icon: <FileText className="size-4" />,
-                  label: "记忆",
-                },
-                {
-                  to: "/workspace/default/knowledge",
-                  icon: <Database className="size-4" />,
-                  label: "知识库",
-                },
-              ]}
-              title="工作区"
-            />
-            <SidebarNav
-              items={PROJECTS.map((p) => ({
-                to: `/workspace/default/project/${p.id}`,
-                icon: <FolderOpen className="size-4" />,
-                label: p.name,
-              }))}
-              title="项目"
-            />
-          </SidebarContent>
-          <SidebarFooter>
-            <Link to="/settings">
-              <Button
-                className="w-full justify-start gap-2"
-                size="sm"
-                variant="ghost"
-              >
-                <Settings className="size-4" />
-                设置
-              </Button>
-            </Link>
-          </SidebarFooter>
-        </Sidebar>
-      }
-    >
-      <Outlet />
-    </AppLayout>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={() => setCreateDialogOpen(false)}
+              variant="outline"
+            >
+              取消
+            </Button>
+            <Button disabled={createMutation.isPending} onClick={handleCreate}>
+              {createMutation.isPending && (
+                <Loader2 className="mr-2 size-4 animate-spin" />
+              )}
+              创建
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
