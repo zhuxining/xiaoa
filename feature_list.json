@@ -130,7 +130,7 @@
             "验证会话列表新增一条",
             "验证对话区清空并显示欢迎状态"
           ],
-          "passes": false
+          "passes": true
         },
         {
           "id": "P1-011",
@@ -142,7 +142,7 @@
             "检查 ~/.xiaoa/xiaoa/sessions/ 目录下有对应的 .jsonl 文件",
             "重启应用后验证会话和消息仍然存在"
           ],
-          "passes": false
+          "passes": true
         },
         {
           "id": "P1-012",
@@ -180,7 +180,7 @@
             "输入新名称",
             "验证工作区名称更新"
           ],
-          "passes": false
+          "passes": true
         },
         {
           "id": "P1-015",
@@ -194,7 +194,7 @@
             "验证工作区从列表中移除",
             "验证 ~/.xiaoa/workspaces/{id}/ 目录被删除"
           ],
-          "passes": false
+          "passes": true
         },
         {
           "id": "P1-016",

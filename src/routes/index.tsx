@@ -1,6 +1,13 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { FileText, Globe, Wrench } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import {
+  addMessage,
+  createSession,
+  getMessages,
+  getSessions,
+} from "@/actions/xiaoa";
 import { ChatView } from "@/components/chat/chat-view";
 import type { PermissionRequest } from "@/components/chat/permission-dialog";
 import type { SkillMenuItem } from "@/components/chat/skill-menu";
@@ -28,117 +35,174 @@ const SKILLS: SkillMenuItem[] = [
 ];
 
 function HomePage() {
-  const [sessions] = useState([
-    {
-      id: "1",
-      title: "如何写一篇好文章",
-      updatedAt: new Date(),
-      messageCount: 5,
+  const queryClient = useQueryClient();
+
+  // 获取会话列表
+  const { data: sessionsData = [] } = useQuery({
+    queryKey: ["xiaoa", "sessions"],
+    queryFn: getSessions,
+  });
+
+  // 转换会话数据格式
+  const sessions = sessionsData.map((s) => ({
+    id: s.id,
+    title: s.title,
+    updatedAt: new Date(s.updatedAt),
+    messageCount: s.messageCount,
+  }));
+
+  // 当前选中的会话 ID
+  const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(
+    undefined
+  );
+
+  // 如果没有选中会话且有会话列表，自动选中第一个
+  useEffect(() => {
+    if (!currentSessionId && sessions.length > 0) {
+      setCurrentSessionId(sessions[0].id);
+    }
+  }, [currentSessionId, sessions]);
+
+  // 获取当前会话的消息
+  const { data: messagesData = [] } = useQuery({
+    queryKey: ["xiaoa", "messages", currentSessionId],
+    queryFn: () => (currentSessionId ? getMessages(currentSessionId) : []),
+    enabled: !!currentSessionId,
+  });
+
+  // 转换消息数据格式
+  const messages = messagesData.map((m) => ({
+    id: m.id,
+    role: m.role,
+    content: m.content,
+    createdAt: new Date(m.timestamp),
+  }));
+
+  // 创建会话
+  const createSessionMutation = useMutation({
+    mutationFn: createSession,
+    onSuccess: (newSession) => {
+      // 刷新会话列表
+      queryClient.invalidateQueries({ queryKey: ["xiaoa", "sessions"] });
+      // 切换到新会话
+      setCurrentSessionId(newSession.id);
     },
-    { id: "2", title: "数据分析入门", updatedAt: new Date(), messageCount: 3 },
-  ]);
-  const [currentSessionId, setCurrentSessionId] = useState("1");
-  const [messages, setMessages] = useState([
-    {
-      id: "1",
-      role: "user" as const,
-      content: "你好，小A！",
-      createdAt: new Date(),
+  });
+
+  // 添加消息
+  const addMessageMutation = useMutation({
+    mutationFn: addMessage,
+    onSuccess: () => {
+      // 刷新消息和会话列表
+      queryClient.invalidateQueries({
+        queryKey: ["xiaoa", "messages", currentSessionId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["xiaoa", "sessions"] });
     },
-    {
-      id: "2",
-      role: "assistant" as const,
-      content:
-        "你好！我是小A，很高兴为您服务。有什么我可以帮助您的吗？\n\n提示：输入 / 可以快速调用技能",
-      createdAt: new Date(),
-    },
-  ]);
+  });
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [permissionRequest, setPermissionRequest] =
     useState<PermissionRequest | null>(null);
 
-  const handleSessionSelect = (id: string) => {
+  const handleSessionSelect = useCallback((id: string) => {
     setCurrentSessionId(id);
-  };
+  }, []);
 
-  const handleSessionCreate = () => {
-    // TODO: 实现创建会话逻辑
-  };
+  const handleSessionCreate = useCallback(() => {
+    createSessionMutation.mutate({});
+  }, [createSessionMutation]);
 
-  const handleMessageSend = (content: string) => {
-    const newMessage = {
-      id: Date.now().toString(),
-      role: "user" as const,
-      content,
-      createdAt: new Date(),
-    };
-    setMessages((prev) => [...prev, newMessage]);
+  const handleMessageSend = useCallback(
+    (content: string) => {
+      if (!currentSessionId) {
+        return;
+      }
 
-    // 模拟 AI 响应
-    setIsGenerating(true);
+      // 添加用户消息
+      addMessageMutation.mutate({
+        sessionId: currentSessionId,
+        role: "user",
+        content,
+      });
 
-    // 模拟权限请求
-    if (content.includes("搜索") || content.includes("网页")) {
+      // 模拟 AI 响应
+      setIsGenerating(true);
+
+      // 模拟权限请求
+      if (content.includes("搜索") || content.includes("网页")) {
+        setTimeout(() => {
+          setPermissionRequest({
+            id: "perm-1",
+            type: "network",
+            title: "访问网络",
+            description: "Agent 请求访问网络以搜索信息",
+            details: `目标 URL: https://www.google.com/search?q=${encodeURIComponent(content)}`,
+            risk: "medium",
+          });
+          setIsGenerating(false);
+        }, 500);
+        return;
+      }
+
       setTimeout(() => {
-        setPermissionRequest({
-          id: "perm-1",
-          type: "network",
-          title: "访问网络",
-          description: "Agent 请求访问网络以搜索信息",
-          details: `目标 URL: https://www.google.com/search?q=${encodeURIComponent(content)}`,
-          risk: "medium",
+        // 添加助手消息
+        addMessageMutation.mutate({
+          sessionId: currentSessionId,
+          role: "assistant",
+          content: "这是一个模拟的响应。实际的 Agent 集成将在后续实现。",
         });
         setIsGenerating(false);
-      }, 500);
-      return;
-    }
+      }, 1000);
+    },
+    [currentSessionId, addMessageMutation]
+  );
 
-    setTimeout(() => {
-      const assistantMessage = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant" as const,
-        content: "这是一个模拟的响应。实际的 Agent 集成将在后续实现。",
-        createdAt: new Date(),
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-      setIsGenerating(false);
-    }, 1000);
-  };
-
-  const handleAbort = () => {
+  const handleAbort = useCallback(() => {
     setIsGenerating(false);
-  };
+  }, []);
 
-  const handleSkillSelect = (skill: SkillMenuItem) => {
+  const handleSkillSelect = useCallback((skill: SkillMenuItem) => {
     console.log("Selected skill:", skill);
-  };
+  }, []);
 
-  const handlePermissionAllow = (request: PermissionRequest) => {
-    console.log("Permission allowed:", request);
-    setPermissionRequest(null);
+  const handlePermissionAllow = useCallback(
+    (request: PermissionRequest) => {
+      console.log("Permission allowed:", request);
+      setPermissionRequest(null);
 
-    // 模拟执行操作后的响应
-    const assistantMessage = {
-      id: Date.now().toString(),
-      role: "assistant" as const,
-      content: `已获授权执行 ${request.title}。正在处理...`,
-      createdAt: new Date(),
-    };
-    setMessages((prev) => [...prev, assistantMessage]);
-  };
+      if (!currentSessionId) {
+        return;
+      }
 
-  const handlePermissionDeny = (request: PermissionRequest) => {
-    console.log("Permission denied:", request);
-    setPermissionRequest(null);
+      // 添加助手响应
+      addMessageMutation.mutate({
+        sessionId: currentSessionId,
+        role: "assistant",
+        content: `已获授权执行 ${request.title}。正在处理...`,
+      });
+    },
+    [currentSessionId, addMessageMutation]
+  );
 
-    const assistantMessage = {
-      id: Date.now().toString(),
-      role: "assistant" as const,
-      content: `操作被拒绝：${request.title}`,
-      createdAt: new Date(),
-    };
-    setMessages((prev) => [...prev, assistantMessage]);
-  };
+  const handlePermissionDeny = useCallback(
+    (request: PermissionRequest) => {
+      console.log("Permission denied:", request);
+      setPermissionRequest(null);
+
+      if (!currentSessionId) {
+        return;
+      }
+
+      // 添加助手响应
+      addMessageMutation.mutate({
+        sessionId: currentSessionId,
+        role: "assistant",
+        content: `操作被拒绝：${request.title}`,
+      });
+    },
+    [currentSessionId, addMessageMutation]
+  );
 
   return (
     <ChatView

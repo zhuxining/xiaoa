@@ -97,6 +97,42 @@ function Root() {
     navigate({ to: `/workspace/${id}/agent` });
   };
 
+  // 重命名工作区
+  const _handleWorkspaceRename = async (id: string, name: string) => {
+    try {
+      const { updateWorkspace } = await import("@/actions/workspace");
+      await updateWorkspace({ id, name });
+      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+      toast.success("工作区重命名成功");
+    } catch (error) {
+      toast.error(`重命名失败: ${(error as Error).message}`);
+    }
+  };
+
+  // 删除工作区
+  const _handleWorkspaceDelete = async (id: string) => {
+    try {
+      const { deleteWorkspace } = await import("@/actions/workspace");
+      const result = await deleteWorkspace(id);
+      if (result.success) {
+        // 如果删除的是当前工作区，切换到第一个工作区
+        if (currentWorkspaceId === id && workspaces.length > 1) {
+          const nextWorkspace = workspaces.find((w) => w.id !== id);
+          if (nextWorkspace) {
+            await setActiveWorkspace(nextWorkspace.id);
+          }
+        }
+        queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+        queryClient.invalidateQueries({ queryKey: ["config"] });
+        toast.success("工作区删除成功");
+        // 导航到首页
+        navigate({ to: "/" });
+      }
+    } catch (error) {
+      toast.error(`删除失败: ${(error as Error).message}`);
+    }
+  };
+
   // 处理创建工作区
   const handleCreate = () => {
     if (!newWorkspaceName.trim()) {
@@ -124,6 +160,8 @@ function Root() {
                   currentWorkspaceId={currentWorkspaceId ?? ""}
                   onWorkspaceChange={handleWorkspaceChange}
                   onWorkspaceCreate={() => setCreateDialogOpen(true)}
+                  onWorkspaceDelete={_handleWorkspaceDelete}
+                  onWorkspaceRename={_handleWorkspaceRename}
                   workspaces={workspaces.map((w) => ({
                     id: w.id,
                     name: w.name,
