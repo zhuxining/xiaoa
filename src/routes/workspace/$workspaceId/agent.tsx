@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import type { AgentConfig } from "@/actions/workspace";
+import type { AgentConfig, WorkspacePermissions } from "@/actions/workspace";
 import { getWorkspace, updateWorkspace } from "@/actions/workspace";
 import { AvatarUpload } from "@/components/shared/avatar-upload";
 import { FormSection } from "@/components/shared/form-section";
@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 const MODELS = [
@@ -44,11 +45,23 @@ function AgentConfigPage() {
     systemPrompt: "",
     model: "claude-sonnet-4-5-20250514",
   });
+  const [permissions, setPermissions] = useState<WorkspacePermissions>({
+    mode: "review",
+    dangerousAutoConfirm: false,
+  });
 
   // 同步服务器数据到本地状态
   useEffect(() => {
     if (workspace?.agent) {
       setAgent(workspace.agent);
+    }
+    if (workspace?.permissions) {
+      setPermissions({
+        mode: workspace.permissions.mode ?? "review",
+        dangerousAutoConfirm:
+          workspace.permissions.dangerousAutoConfirm ?? false,
+        allowedWritePaths: workspace.permissions.allowedWritePaths,
+      });
     }
   }, [workspace]);
 
@@ -58,6 +71,7 @@ function AgentConfigPage() {
       updateWorkspace({
         id: workspaceId,
         agent,
+        permissions,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId] });
@@ -70,7 +84,10 @@ function AgentConfigPage() {
   });
 
   // 检查是否有更改
-  const hasChanges = JSON.stringify(workspace?.agent) !== JSON.stringify(agent);
+  const hasChanges =
+    JSON.stringify(workspace?.agent) !== JSON.stringify(agent) ||
+    JSON.stringify(workspace?.permissions ?? null) !==
+      JSON.stringify(permissions);
 
   const handleSave = () => {
     if (!agent.name.trim()) {
@@ -163,6 +180,49 @@ function AgentConfigPage() {
                   ))}
                 </SelectContent>
               </Select>
+            </Field>
+          </FormSection>
+          <FormSection
+            description="控制 Agent 执行工具时的权限策略"
+            title="权限模式"
+          >
+            <Field orientation="horizontal">
+              <FieldLabel className="w-24 shrink-0">模式</FieldLabel>
+              <Select
+                onValueChange={(mode) =>
+                  setPermissions((prev) => ({
+                    ...prev,
+                    mode: mode as WorkspacePermissions["mode"],
+                  }))
+                }
+                value={permissions.mode}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="选择权限模式" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="explore">Explore（仅读取）</SelectItem>
+                  <SelectItem value="review">Review（危险操作确认）</SelectItem>
+                  <SelectItem value="auto">Auto（自动执行）</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field orientation="horizontal">
+              <FieldLabel className="w-24 shrink-0">危险自动执行</FieldLabel>
+              <div className="flex flex-1 items-center justify-between rounded-md border px-3 py-2">
+                <FieldDescription className="m-0">
+                  Auto 模式下是否自动通过高风险操作
+                </FieldDescription>
+                <Switch
+                  checked={permissions.dangerousAutoConfirm ?? false}
+                  onCheckedChange={(checked) =>
+                    setPermissions((prev) => ({
+                      ...prev,
+                      dangerousAutoConfirm: checked,
+                    }))
+                  }
+                />
+              </div>
             </Field>
           </FormSection>
         </div>

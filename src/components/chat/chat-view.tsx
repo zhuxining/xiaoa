@@ -1,9 +1,9 @@
-import { useState } from "react";
 import { cn } from "@/utils/tailwind";
 import type { FileMenuItem } from "./file-menu";
 import { MessageInput } from "./message-input";
 import { MessageList } from "./message-list";
-import { PermissionDialog, type PermissionRequest } from "./permission-dialog";
+import { PermissionBar } from "./permission-bar";
+import type { PermissionRequest } from "./permission-dialog";
 import { SessionList } from "./session-list";
 import type { SkillMenuItem } from "./skill-menu";
 
@@ -62,12 +62,6 @@ export function ChatView({
   showSessionList = true,
   className,
 }: ChatViewProps) {
-  const [_permissionOpen, setPermissionOpen] = useState(false);
-
-  // 当 permissionRequest 变化时打开对话框
-  const currentPermission = permissionRequest;
-  const isPermissionOpen = permissionRequest !== null;
-
   return (
     <div className={cn("flex h-full", className)} data-slot="chat-view">
       {showSessionList && (
@@ -93,20 +87,13 @@ export function ChatView({
           onSkillSelect={onSkillSelect}
           skills={skills}
         />
+        <PermissionBar
+          key={permissionRequest?.id ?? "permission-none"}
+          onAllow={onPermissionAllow}
+          onDeny={onPermissionDeny}
+          request={permissionRequest ?? null}
+        />
       </div>
-      <PermissionDialog
-        onAllow={(req) => {
-          onPermissionAllow?.(req);
-          setPermissionOpen(false);
-        }}
-        onDeny={(req) => {
-          onPermissionDeny?.(req);
-          setPermissionOpen(false);
-        }}
-        onOpenChange={setPermissionOpen}
-        open={isPermissionOpen}
-        request={currentPermission ?? null}
-      />
     </div>
   );
 }

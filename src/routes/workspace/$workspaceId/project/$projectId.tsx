@@ -12,6 +12,7 @@ import {
   abortChat,
   type ChatEvent,
   getChatEvents,
+  respondChatPermission,
   sendChat,
 } from "@/actions/chat";
 import {
@@ -48,9 +49,6 @@ export interface ProjectSearch {
 }
 
 const ARGUMENT_HINT_REGEX = /(\[[^\]]+\](?:\s+\[[^\]]+\])*)/;
-const WRITE_REQUEST_REGEX =
-  /写入|修改|创建|删除|rename|write|edit|delete|move/i;
-const EXECUTE_REQUEST_REGEX = /执行|run|shell|command|终端/i;
 
 type PermissionMode = NonNullable<WorkspacePermissions["mode"]>;
 
@@ -89,32 +87,6 @@ function inferFileType(
     return "text";
   }
   return "code";
-}
-
-function inferPermissionRequest(content: string): PermissionRequest | null {
-  if (WRITE_REQUEST_REGEX.test(content)) {
-    return {
-      id: `perm-${Date.now()}`,
-      type: "file_write",
-      title: "写入文件",
-      description: "请求执行文件写入/修改操作",
-      details: content,
-      risk: "high",
-    };
-  }
-
-  if (EXECUTE_REQUEST_REGEX.test(content)) {
-    return {
-      id: `perm-${Date.now()}`,
-      type: "execute",
-      title: "执行命令",
-      description: "请求执行命令或脚本",
-      details: content,
-      risk: "high",
-    };
-  }
-
-  return null;
 }
 
 function applyProjectChatEvent(
@@ -167,7 +139,6 @@ function ProjectPage() {
     useState<PermissionMode>("review");
   const [permissionRequest, setPermissionRequest] =
     useState<PermissionRequest | null>(null);
-  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
 
   const { data: workspace } = useQuery({
     queryKey: ["workspace", workspaceId],
@@ -300,7 +271,6 @@ function ProjectPage() {
       setActiveRunId(null);
       setEventCursor(0);
       setPermissionRequest(null);
-      setPendingMessage(null);
       return;
     }
 
@@ -309,7 +279,6 @@ function ProjectPage() {
     setActiveRunId(null);
     setEventCursor(0);
     setPermissionRequest(null);
-    setPendingMessage(null);
   }, [currentSessionId]);
 
   const updatePermissionMutation = useMutation({
@@ -508,6 +477,23 @@ function ProjectPage() {
     }
 
     for (const event of eventResult.events) {
+      if (event.type === "permission_request") {
+        setPermissionRequest({
+          id: event.permissionId ?? `perm-${event.seq}`,
+          type: event.permissionType ?? "execute",
+          title: event.permissionTitle ?? "权限确认",
+          description: event.permissionDescription ?? "Agent 请求执行操作",
+          details: event.permissionDetails,
+          risk: event.permissionRisk,
+        });
+        continue;
+      }
+
+      if (event.type === "permission_resolved") {
+        setPermissionRequest(null);
+        continue;
+      }
+
       applyProjectChatEvent(
         event,
         (delta) => setStreamingContent((prev) => prev + delta),
@@ -614,26 +600,6 @@ function ProjectPage() {
       return;
     }
 
-    const request = inferPermissionRequest(content);
-    const isDangerous = request?.risk === "high";
-    const dangerousAutoConfirm =
-      workspace?.permissions?.dangerousAutoConfirm ?? false;
-
-    if (permissionMode === "explore" && isDangerous) {
-      toast.error("Explore 模式下禁止危险操作（仅允许只读）。");
-      return;
-    }
-
-    if (
-      request &&
-      ((permissionMode === "review" && isDangerous) ||
-        (permissionMode === "auto" && isDangerous && !dangerousAutoConfirm))
-    ) {
-      setPendingMessage(content);
-      setPermissionRequest(request);
-      return;
-    }
-
     dispatchChat(content);
   };
 
@@ -714,18 +680,33 @@ function ProjectPage() {
         onFileSelect={handleFileSelect}
         onMessageSend={handleMessageSend}
         onPermissionAllow={() => {
-          if (!(pendingMessage && currentSessionId)) {
+          if (!(currentSessionId && activeRunId && permissionRequest)) {
             setPermissionRequest(null);
             return;
           }
-          setPermissionRequest(null);
-          const message = pendingMessage;
-          setPendingMessage(null);
-          dispatchChat(message);
+
+          respondChatPermission({
+            scope: "workspace",
+            workspaceId,
+            sessionId: currentSessionId,
+            runId: activeRunId,
+            requestId: permissionRequest.id,
+            decision: "allow",
+            alwaysAllowInSession: permissionRequest.rememberInSession ?? false,
+          });
         }}
         onPermissionDeny={() => {
+          if (currentSessionId && activeRunId && permissionRequest) {
+            respondChatPermission({
+              scope: "workspace",
+              workspaceId,
+              sessionId: currentSessionId,
+              runId: activeRunId,
+              requestId: permissionRequest.id,
+              decision: "deny",
+            });
+          }
           setPermissionRequest(null);
-          setPendingMessage(null);
           toast.error("已拒绝本次危险操作");
         }}
         onPermissionModeChange={(mode) => {

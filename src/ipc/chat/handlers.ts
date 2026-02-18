@@ -3,10 +3,17 @@ import {
   chatAbortInputSchema,
   chatGetEventsInputSchema,
   chatGetEventsResultSchema,
+  chatRespondPermissionInputSchema,
+  chatRespondPermissionResultSchema,
   chatSendInputSchema,
   chatSendResultSchema,
 } from "./schemas";
-import { abortChatRun, getChatEvents, startChatRun } from "./store";
+import {
+  abortChatRun,
+  getChatEvents,
+  respondChatPermission,
+  startChatRun,
+} from "./store";
 
 export const send = os
   .input(chatSendInputSchema)
@@ -24,4 +31,11 @@ export const events = os
   .output(chatGetEventsResultSchema)
   .handler(({ input }) => {
     return getChatEvents(input);
+  });
+
+export const respondPermission = os
+  .input(chatRespondPermissionInputSchema)
+  .output(chatRespondPermissionResultSchema)
+  .handler(({ input }) => {
+    return respondChatPermission(input);
   });

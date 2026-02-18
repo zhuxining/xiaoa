@@ -6,6 +6,7 @@ import {
   abortChat,
   type ChatEvent,
   getChatEvents,
+  respondChatPermission,
   sendChat,
 } from "@/actions/chat";
 import { createSisson, getSissonMessages, listSissons } from "@/actions/sisson";
@@ -38,7 +39,7 @@ function applyHomeChatEvent(
   event: ChatEvent,
   onDelta: (delta: string) => void,
   onReset: () => void,
-  onToolStart: (toolName: string, runId: string, seq: number) => void,
+  onPermissionRequest: (event: ChatEvent) => void,
   onToolEnd: () => void
 ): void {
   if (event.type === "message_start") {
@@ -49,8 +50,12 @@ function applyHomeChatEvent(
     onDelta(event.content ?? "");
     return;
   }
-  if (event.type === "tool_start") {
-    onToolStart(event.toolName ?? "unknown", event.runId, event.seq);
+  if (event.type === "permission_request") {
+    onPermissionRequest(event);
+    return;
+  }
+  if (event.type === "permission_resolved") {
+    onToolEnd();
     return;
   }
   if (event.type === "tool_end" || event.type === "run_error") {
@@ -208,14 +213,15 @@ function HomePage() {
         event,
         (delta) => setStreamingContent((prev) => prev + delta),
         () => setStreamingContent(""),
-        (toolName, runId, seq) => {
+        (permissionEvent) => {
           setPermissionRequest({
-            id: `${runId}:${seq}`,
-            type: "network",
-            title: `执行工具 ${toolName}`,
-            description: "Main 进程正在执行工具步骤",
-            details: `runId=${runId}`,
-            risk: "medium",
+            id: permissionEvent.permissionId ?? `perm-${permissionEvent.seq}`,
+            type: permissionEvent.permissionType ?? "execute",
+            title: permissionEvent.permissionTitle ?? "权限确认",
+            description:
+              permissionEvent.permissionDescription ?? "Agent 请求执行操作",
+            details: permissionEvent.permissionDetails,
+            risk: permissionEvent.permissionRisk,
           });
         },
         () => setPermissionRequest(null)
@@ -287,15 +293,40 @@ function HomePage() {
     console.log("Selected skill:", skill);
   }, []);
 
-  const handlePermissionAllow = useCallback((request: PermissionRequest) => {
-    console.log("Permission allowed:", request);
-    setPermissionRequest(null);
-  }, []);
+  const handlePermissionAllow = useCallback(
+    (request: PermissionRequest) => {
+      if (!(currentSessionId && activeRunId)) {
+        setPermissionRequest(null);
+        return;
+      }
+      respondChatPermission({
+        scope: "global",
+        sessionId: currentSessionId,
+        runId: activeRunId,
+        requestId: request.id,
+        decision: "allow",
+        alwaysAllowInSession: request.rememberInSession ?? false,
+      });
+      setPermissionRequest(null);
+    },
+    [activeRunId, currentSessionId]
+  );
 
-  const handlePermissionDeny = useCallback((request: PermissionRequest) => {
-    console.log("Permission denied:", request);
-    setPermissionRequest(null);
-  }, []);
+  const handlePermissionDeny = useCallback(
+    (request: PermissionRequest) => {
+      if (currentSessionId && activeRunId) {
+        respondChatPermission({
+          scope: "global",
+          sessionId: currentSessionId,
+          runId: activeRunId,
+          requestId: request.id,
+          decision: "deny",
+        });
+      }
+      setPermissionRequest(null);
+    },
+    [activeRunId, currentSessionId]
+  );
 
   return (
     <ChatView

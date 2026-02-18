@@ -1,4 +1,5 @@
 import { AlertTriangle, FileText, Globe, Shield } from "lucide-react";
+import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,6 +11,8 @@ import {
   AlertDialogMedia,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/utils/tailwind";
 
@@ -22,6 +25,7 @@ export interface PermissionRequest {
   description: string;
   details?: string;
   risk?: "low" | "medium" | "high";
+  rememberInSession?: boolean;
 }
 
 interface PermissionDialogProps {
@@ -69,6 +73,8 @@ export function PermissionDialog({
   onDeny,
   className,
 }: PermissionDialogProps) {
+  const [rememberInSession, setRememberInSession] = useState(false);
+
   if (!request) {
     return null;
   }
@@ -77,7 +83,10 @@ export function PermissionDialog({
   const risk = request.risk ?? config.defaultRisk;
 
   const handleAllow = () => {
-    onAllow(request);
+    onAllow({
+      ...request,
+      rememberInSession,
+    });
     onOpenChange(false);
   };
 
@@ -111,6 +120,19 @@ export function PermissionDialog({
             {risk === "medium" && "中"}
             {risk === "high" && "高"}
           </span>
+        </div>
+
+        <div className="flex items-center gap-2 rounded-md border px-3 py-2">
+          <Checkbox
+            checked={rememberInSession}
+            id="remember-in-session"
+            onCheckedChange={(checked) =>
+              setRememberInSession(checked === true)
+            }
+          />
+          <Label className="cursor-pointer" htmlFor="remember-in-session">
+            本次会话始终允许此类操作
+          </Label>
         </div>
 
         <AlertDialogFooter>
