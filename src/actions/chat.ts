@@ -71,6 +71,20 @@ export interface ChatRespondPermissionInput {
   alwaysAllowInSession?: boolean;
 }
 
+export interface ChatSteerInput {
+  scope: ChatScope;
+  workspaceId?: string;
+  sessionId: string;
+  message: string;
+}
+
+export interface ChatFollowUpInput {
+  scope: ChatScope;
+  workspaceId?: string;
+  sessionId: string;
+  message: string;
+}
+
 export async function sendChat(
   input: ChatSendInput
 ): Promise<{ runId: string }> {
@@ -93,4 +107,16 @@ export async function respondChatPermission(
   input: ChatRespondPermissionInput
 ): Promise<{ applied: boolean }> {
   return await ipc.client.chat.respondPermission(input);
+}
+
+export async function steerChat(
+  input: ChatSteerInput
+): Promise<{ queued: boolean }> {
+  return await ipc.client.chat.steer(input);
+}
+
+export async function followUpChat(
+  input: ChatFollowUpInput
+): Promise<{ queued: boolean }> {
+  return await ipc.client.chat.followUp(input);
 }

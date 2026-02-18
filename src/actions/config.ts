@@ -1,34 +1,17 @@
+import type { z } from "zod";
+import type {
+  appPreferencesSchema,
+  globalConfigSchema,
+  llmConfigSchema,
+  testApiKeyResultSchema,
+} from "@/ipc/config/schemas";
 import { ipc } from "@/ipc/manager";
 
-// 类型定义
-export interface LLMConfig {
-  provider:
-    | "anthropic"
-    | "openai"
-    | "openrouter"
-    | "deepseek"
-    | "ollama"
-    | "custom";
-  apiKey?: string;
-  model: string;
-  endpoint?: string;
-}
-
-export interface AppPreferences {
-  theme: "light" | "dark" | "system";
-  language: string;
-}
-
-export interface GlobalConfig {
-  activeWorkspaceId: string | null;
-  llm: LLMConfig;
-  preferences: AppPreferences;
-}
-
-export interface TestApiKeyResult {
-  success: boolean;
-  error?: string;
-}
+// 类型定义 - 从 schemas 推导
+export type LLMConfig = z.infer<typeof llmConfigSchema>;
+export type AppPreferences = z.infer<typeof appPreferencesSchema>;
+export type GlobalConfig = z.infer<typeof globalConfigSchema>;
+export type TestApiKeyResult = z.infer<typeof testApiKeyResultSchema>;
 
 // 获取全局配置
 export async function getConfig(): Promise<GlobalConfig> {

@@ -1,15 +1,32 @@
 import { z } from "zod";
 
+// All supported providers (pi-ai KnownProvider + custom OpenAI-compatible)
+export const providerSchema = z.enum([
+  // pi-ai native providers
+  "anthropic",
+  "openai",
+  "azure-openai-responses",
+  "openai-codex",
+  "google",
+  "google-vertex",
+  "google-gemini-cli",
+  "xai",
+  "groq",
+  "cerebras",
+  "openrouter",
+  "vercel-ai-gateway",
+  "mistral",
+  "minimax",
+  "kimi-coding",
+  // Custom OpenAI-compatible providers
+  "deepseek",
+  "ollama",
+  "custom",
+]);
+
 // LLM 配置
 export const llmConfigSchema = z.object({
-  provider: z.enum([
-    "anthropic",
-    "openai",
-    "openrouter",
-    "deepseek",
-    "ollama",
-    "custom",
-  ]),
+  provider: providerSchema,
   apiKey: z.string().optional(),
   model: z.string(),
   endpoint: z.string().optional(),
@@ -37,14 +54,7 @@ export const updatePreferencesInputSchema = appPreferencesSchema.partial();
 
 // API Key 测试
 export const testApiKeyInputSchema = z.object({
-  provider: z.enum([
-    "anthropic",
-    "openai",
-    "openrouter",
-    "deepseek",
-    "ollama",
-    "custom",
-  ]),
+  provider: providerSchema,
   apiKey: z.string(),
   endpoint: z.string().optional(),
 });

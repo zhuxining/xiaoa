@@ -89,6 +89,30 @@ export const chatRespondPermissionResultSchema = z.object({
   applied: z.boolean(),
 });
 
+// Steering: 中途打断 Agent 执行
+export const chatSteerInputSchema = z.object({
+  scope: chatScopeSchema,
+  workspaceId: z.string().optional(),
+  sessionId: z.string(),
+  message: z.string().min(1),
+});
+
+export const chatSteerResultSchema = z.object({
+  queued: z.boolean(),
+});
+
+// Follow-up: Agent 完成后追加新任务
+export const chatFollowUpInputSchema = z.object({
+  scope: chatScopeSchema,
+  workspaceId: z.string().optional(),
+  sessionId: z.string(),
+  message: z.string().min(1),
+});
+
+export const chatFollowUpResultSchema = z.object({
+  queued: z.boolean(),
+});
+
 export type ChatScope = z.infer<typeof chatScopeSchema>;
 export type ChatEventType = z.infer<typeof chatEventTypeSchema>;
 export type ChatEvent = z.infer<typeof chatEventSchema>;

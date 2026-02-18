@@ -1,18 +1,24 @@
 import { os } from "@orpc/server";
 import {
   chatAbortInputSchema,
+  chatFollowUpInputSchema,
+  chatFollowUpResultSchema,
   chatGetEventsInputSchema,
   chatGetEventsResultSchema,
   chatRespondPermissionInputSchema,
   chatRespondPermissionResultSchema,
   chatSendInputSchema,
   chatSendResultSchema,
+  chatSteerInputSchema,
+  chatSteerResultSchema,
 } from "./schemas";
 import {
   abortChatRun,
+  followUpChatRun,
   getChatEvents,
   respondChatPermission,
   startChatRun,
+  steerChatRun,
 } from "./store";
 
 export const send = os
@@ -38,4 +44,18 @@ export const respondPermission = os
   .output(chatRespondPermissionResultSchema)
   .handler(({ input }) => {
     return respondChatPermission(input);
+  });
+
+export const steer = os
+  .input(chatSteerInputSchema)
+  .output(chatSteerResultSchema)
+  .handler(({ input }) => {
+    return steerChatRun(input);
+  });
+
+export const followUp = os
+  .input(chatFollowUpInputSchema)
+  .output(chatFollowUpResultSchema)
+  .handler(({ input }) => {
+    return followUpChatRun(input);
   });

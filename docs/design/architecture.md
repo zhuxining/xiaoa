@@ -1178,281 +1178,76 @@ await client.theme.set({ mode: "dark" });
 
 ## 9. Agent 集成架构（pi-agent-core）
 
-基于 `@mariozechner/pi-agent-core`（来自 [pi-mono](https://github.com/badlogic/pi-mono) 仓库）实现 Agent 能力。该 SDK 提供 Agent 循环、工具执行、事件流等核心机制，小A在此之上实现记忆、知识库、权限等业务逻辑。
+基于 `@mariozechner/pi-agent-core`（来自 [pi-mono](https://github.com/badlogic/pi-mono) 仓库）实现 Agent 能力。
 
-### 9.1 依赖关系
+> **详细实现文档**：[pi-agent-integration.md](./pi-agent-integration.md)
 
-```text
-@mariozechner/pi-ai              ← 多 Provider LLM 统一接口（Model, Message, streamSimple）
-  └── @mariozechner/pi-agent-core ← Agent 循环 + 工具执行 + 事件流
-        └── 小A                    ← 业务层：记忆、知识库、权限、UI
-```
-
-`pi-ai` 提供 Provider 无关的 LLM 抽象（Anthropic / OpenAI / Google / Bedrock 等），`pi-agent-core` 在此之上封装了有状态的 Agent 类。
-
-### 9.2 核心消息流
+### 9.1 架构概览
 
 ```text
-用户输入
-    │
-    ▼
-agent.prompt("你好")
-    │
-    ▼
-AgentMessage[]（含自定义消息类型）
-    │
-    ▼  transformContext() — 上下文裁剪、记忆注入、Pre-compaction flush
-AgentMessage[]（变换后）
-    │
-    ▼  convertToLlm() — 过滤自定义消息，转为 LLM 可消费的 Message[]
-Message[]（user / assistant / toolResult）
-    │
-    ▼  streamFn() — streamSimple() 直调 或 streamProxy() 代理
-LLM Provider
-    │
-    ▼  SSE 事件流
-AgentEvent stream
-    │
-    ▼  agent.subscribe(callback)
-UI 更新（Renderer 进程）
+src/ipc/chat/
+├── agent/                      # Agent 核心
+│   ├── create-agent.ts         # Agent 工厂 + SDK 钩子配置
+│   ├── convert-to-llm.ts       # 消息转换（过滤自定义类型）
+│   └── transform-context.ts    # 上下文管理（Compaction）
+│
+├── tools/                      # 工具定义（TypeBox schema）
+│   ├── file-tools.ts           # file_read, file_write, file_list
+│   ├── memory-tools.ts         # memory_search, memory_write
+│   ├── knowledge-tools.ts      # knowledge_read
+│   └── permission-guard.ts     # 权限包装器
+│
+├── permission/                 # 三级权限系统
+│   ├── permission-store.ts     # allowlist 状态
+│   ├── permission-policy.ts    # 策略判定
+│   └── permission-request.ts   # Promise 等待模型
+│
+└── run/                        # 运行时管理
+    ├── run-types.ts            # ActiveRun 接口
+    ├── run-store.ts            # 状态 Map
+    └── run-executor.ts         # IPC endpoints
 ```
 
-### 9.3 Agent 实例化
+### 9.2 关键 SDK 钩子
 
-Agent 在 Main 进程中创建，通过 oRPC 的 `chat.send` / `chat.abort` 暴露给 Renderer。
+| 钩子 | 职责 | 实现 |
+|------|------|------|
+| `convertToLlm` | 将 AgentMessage 转为 LLM Message | 过滤 `permission_request` / `memory_update`，转换 `compaction_summary` |
+| `transformContext` | 上下文变换 | Pre-compaction flush + 字符数裁剪 |
+| `getApiKey` | 按 Provider 获取 Key | 从 `credentials.providers[provider]` 读取 |
 
-```typescript
-import { Agent } from "@mariozechner/pi-agent-core";
-import { getModel } from "@mariozechner/pi-ai";
+### 9.3 自定义消息类型
 
-const agent = new Agent({
-  initialState: {
-    systemPrompt: buildSystemPrompt(workspace, memoryContent),
-    model: getModel(provider, modelId),
-    thinkingLevel: "off",
-    tools: buildTools(workspace, project),
-    messages: [],
-  },
-  convertToLlm: xiaoaConvertToLlm,
-  transformContext: xiaoaTransformContext,
-  getApiKey: async (provider) => getDecryptedKey(provider),
-});
-```
-
-**关键回调**：
-
-| 回调 | 职责 | 小A 实现 |
-| --- | --- | --- |
-| `convertToLlm` | 将 AgentMessage（含自定义类型）转为 LLM Message | 过滤 notification / artifact 等自定义消息 |
-| `transformContext` | 每次 LLM 调用前变换上下文 | Pre-compaction flush（写入 Daily Log）+ 上下文裁剪 |
-| `getApiKey` | 按 Provider 获取 API Key | 从 credentials.enc 解密读取 |
-
-### 9.4 工具定义
-
-工具使用 `AgentTool` 接口，参数 schema 使用 TypeBox（非 Zod）：
-
-```typescript
-import type { AgentTool } from "@mariozechner/pi-agent-core";
-import { Type } from "@sinclair/typebox";
-
-// 记忆搜索工具
-const memorySearchSchema = Type.Object({
-  query: Type.String({ description: "搜索关键词" }),
-  limit: Type.Optional(Type.Number({ description: "最大结果数，默认 5" })),
-});
-
-export function createMemorySearchTool(workspaceId: string): AgentTool<typeof memorySearchSchema> {
-  return {
-    name: "memory_search",
-    label: "搜索记忆",
-    description: "搜索 Daily Log 和 MEMORY.md 中的历史记忆，返回匹配片段",
-    parameters: memorySearchSchema,
-    execute: async (_toolCallId, { query, limit }, signal) => {
-      const results = await fts5Search(workspaceId, query, limit ?? 5);
-      return {
-        content: [{ type: "text", text: formatSearchResults(results) }],
-        details: { resultCount: results.length },
-      };
-    },
-  };
-}
-```
-
-**小A 内置工具规划**：
-
-| 工具 | 说明 | 风险等级 |
-| --- | --- | --- |
-| `file_read` | 读取项目文件 | safe |
-| `file_write` | 创建/修改文件 | moderate |
-| `file_list` | 列出目录结构 | safe |
-| `memory_search` | FTS5 搜索记忆（MEMORY.md + Daily Log） | safe |
-| `memory_write` | 写入 Daily Log 或更新 MEMORY.md | moderate |
-| `knowledge_read` | 读取知识库解析后的内容 | safe |
-
-工具的风险等级与 Section 5 权限模型联动：Agent 执行 moderate/dangerous 工具时，在 Review 模式下需用户确认。
-
-### 9.5 自定义消息类型（Declaration Merging）
-
-通过 TypeScript declaration merging 扩展 `AgentMessage`，携带小A特有的消息类型：
+通过 declaration merging 扩展：
 
 ```typescript
 declare module "@mariozechner/pi-agent-core" {
   interface CustomAgentMessages {
-    /** 权限请求：Agent 需要用户确认操作 */
-    permissionRequest: {
-      role: "permission-request";
-      action: string;
-      risk: ActionRisk;
-      details: string;
-      timestamp: number;
-    };
-    /** 压缩摘要：替代被裁剪的历史消息 */
-    compactionSummary: {
-      role: "compaction-summary";
-      summary: string;
-      timestamp: number;
-    };
+    permission_request: PermissionRequestMessage;   // UI-only
+    compaction_summary: CompactionSummaryMessage;   // 转为 user 消息
+    memory_update: MemoryUpdateMessage;            // UI-only
   }
 }
 ```
 
-这些自定义消息在 `convertToLlm` 中被转换或过滤：
+### 9.4 IPC Endpoints
 
-```typescript
-function xiaoaConvertToLlm(messages: AgentMessage[]): Message[] {
-  return messages
-    .map((m) => {
-      switch (m.role) {
-        case "compaction-summary":
-          return { role: "user", content: `<context-summary>${m.summary}</context-summary>`, timestamp: m.timestamp };
-        case "permission-request":
-          return undefined; // UI-only，不发给 LLM
-        case "user":
-        case "assistant":
-        case "toolResult":
-          return m;
-        default:
-          return undefined;
-      }
-    })
-    .filter(Boolean);
-}
-```
+| 端点 | 说明 |
+|------|------|
+| `chat.send` | 发起对话，返回 `{ runId }` |
+| `chat.abort` | 中断当前对话 |
+| `chat.events` | 获取事件流（`afterSeq` 增量拉取） |
+| `chat.respondPermission` | 响应权限请求 |
+| `chat.steer` | 中途打断（Steering） |
+| `chat.followUp` | 完成后追加（Follow-up） |
 
-### 9.6 System Prompt 组装
+### 9.5 Fallback Agent
 
-```typescript
-function buildSystemPrompt(workspace: Workspace, memoryContent: string): string {
-  const parts: string[] = [];
+未配置 LLM Key 时，使用模式匹配执行工具（只读操作）。
 
-  // 1. Agent 人设
-  parts.push(workspace.agent.systemPrompt);
+### 9.6 Provider 支持
 
-  // 2. 长期记忆（MEMORY.md 全文注入）
-  if (memoryContent) {
-    parts.push(`# 你的记忆\n\n${memoryContent}`);
-  }
-
-  // 3. 知识库摘要（L0: name + description 列表，按需用工具读取全文）
-  const knowledgeList = getKnowledgeSummaries(workspace.id);
-  if (knowledgeList.length > 0) {
-    parts.push(`# 知识库\n\n${knowledgeList.map(k => `- ${k.name}: ${k.description}`).join("\n")}`);
-  }
-
-  // 4. 技能列表（仅 model-invocable 的技能，L0: name + description）
-  const skills = getModelInvocableSkills(workspace.id);
-  if (skills.length > 0) {
-    parts.push(`# 可用技能\n\n${skills.map(s => `- /${s.name}: ${s.description}`).join("\n")}`);
-  }
-
-  // 5. 行为规则（权限提示、记忆写入指引等）
-  parts.push(BEHAVIOR_RULES);
-
-  // 6. 时间和环境
-  parts.push(`当前时间: ${new Date().toLocaleString("zh-CN")}`);
-
-  return parts.join("\n\n");
-}
-```
-
-### 9.7 事件流与 UI 集成
-
-Agent 事件通过 oRPC 流式推送到 Renderer：
-
-```text
-AgentEvent 类型：
-├── agent_start / agent_end       — Agent 生命周期
-├── turn_start / turn_end         — 每轮 LLM 调用
-├── message_start / message_end   — 消息边界
-├── message_update                — 流式文本增量（text_delta）
-├── tool_execution_start          — 工具开始执行
-├── tool_execution_update         — 工具执行进度（流式输出）
-└── tool_execution_end            — 工具执行完成
-```
-
-Renderer 端通过 `agent.subscribe()` 监听事件更新 UI：
-
-```typescript
-agent.subscribe((event: AgentEvent) => {
-  switch (event.type) {
-    case "message_update":
-      // event.assistantMessageEvent.type === "text_delta"
-      // 追加文本到对话气泡
-      break;
-    case "tool_execution_start":
-      // 显示工具执行状态
-      break;
-    case "agent_end":
-      // 流式结束，最终渲染
-      break;
-  }
-});
-```
-
-### 9.8 上下文管理与 Compaction
-
-当对话 context 接近模型上限时，执行 Pre-compaction flush + 消息压缩：
-
-```text
-transformContext() 被调用
-    │
-    ▼
-1. 估算 token 用量（chars / 4 启发式）
-    │
-    ▼
-2. 是否超过阈值？ contextTokens > contextWindow - reserveTokens
-    │ 否 → 直接返回
-    │ 是 ↓
-    ▼
-3. Pre-compaction flush
-   → 提取近期对话中的关键信息
-   → 写入 memories/daily/YYYY-MM-DD.md
-    │
-    ▼
-4. 找到裁剪点（从最新消息往回累计，保留 keepRecentTokens）
-    │
-    ▼
-5. 裁剪点之前的消息 → LLM 生成摘要
-    │
-    ▼
-6. 替换为 CompactionSummaryMessage
-   → convertToLlm 时转为 <context-summary>...</context-summary>
-```
-
-### 9.9 Steering 与 Follow-up
-
-`pi-agent-core` 提供两种队列机制用于对话中的用户干预：
-
-- **Steering（转向）**：工具执行期间打断 Agent，注入新指令。剩余未执行的工具会被跳过
-- **Follow-up（追问）**：Agent 完成当前回复后自动追加新任务，无需用户手动发送
-
-```typescript
-// 用户在 Agent 执行文件写入时中途打断
-agent.steer({ role: "user", content: "等一下，先不要写入", timestamp: Date.now() });
-
-// Agent 完成后自动追问（如自动保存记忆）
-agent.followUp({ role: "user", content: "[auto] 请总结本轮对话要点到 Daily Log", timestamp: Date.now() });
-```
+支持 18+ Provider：Anthropic / OpenAI / Google / xAI / Groq / Mistral / DeepSeek / Ollama / Custom 等。
 
 ---
 
