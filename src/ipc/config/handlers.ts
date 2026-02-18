@@ -92,6 +92,19 @@ export const testApiKey = os
           };
         }
 
+        case "deepseek": {
+          const response = await fetch("https://api.deepseek.com/v1/models", {
+            headers: { Authorization: `Bearer ${apiKey}` },
+          });
+          if (response.ok) {
+            return { success: true };
+          }
+          return {
+            success: false,
+            error: `连接失败: ${response.status} ${response.statusText}`,
+          };
+        }
+
         case "openrouter": {
           const response = await fetch("https://openrouter.ai/api/v1/models", {
             headers: {

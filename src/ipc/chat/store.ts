@@ -16,7 +16,10 @@ import { readConfig } from "@/ipc/config/store";
 import { getKnowledgeContent, listKnowledge } from "@/ipc/knowledge/store";
 import { getMemory } from "@/ipc/memory/store";
 import { listProjects } from "@/ipc/project/store";
-import { addMessage as addGlobalMessage } from "@/ipc/sisson/global-store";
+import {
+  addMessage as addGlobalMessage,
+  getMessages as getGlobalMessages,
+} from "@/ipc/sisson/global-store";
 import {
   addMessage as addWorkspaceMessage,
   getMessages as getWorkspaceMessages,
@@ -565,18 +568,46 @@ function toLlmMessages(
   workspaceId: string | null,
   sessionId: string
 ): LlmMessage[] {
+  const toEntry = (message: {
+    role: string;
+    content: string;
+    timestamp: number;
+  }): LlmMessage => {
+    if (message.role === "assistant") {
+      // AssistantMessage.content must be an array, not a string
+      return {
+        role: "assistant",
+        content: [{ type: "text", text: message.content }],
+        api: "",
+        provider: "",
+        model: "",
+        usage: {
+          input: 0,
+          output: 0,
+          cacheRead: 0,
+          cacheWrite: 0,
+          totalTokens: 0,
+          cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+        },
+        stopReason: "stop",
+        timestamp: message.timestamp,
+      } as unknown as LlmMessage;
+    }
+    return {
+      role: "user",
+      content: message.content,
+      timestamp: message.timestamp,
+    };
+  };
+
+  // Exclude the last message (current user prompt already added by agent.prompt())
   if (scope === "global") {
-    return [];
+    return getGlobalMessages(sessionId).slice(0, -1).map(toEntry);
   }
 
-  return getWorkspaceMessages(workspaceId || "", sessionId).map((message) => ({
-    role: "user",
-    content:
-      message.role === "assistant"
-        ? `助手历史回复：${message.content}`
-        : message.content,
-    timestamp: message.timestamp,
-  }));
+  return getWorkspaceMessages(workspaceId || "", sessionId)
+    .slice(0, -1)
+    .map(toEntry);
 }
 
 function shouldUsePiAgent(_run: ActiveRun): boolean {
@@ -590,9 +621,33 @@ function shouldUsePiAgent(_run: ActiveRun): boolean {
 type GetModelArgs = Parameters<typeof getModel>;
 type GetModelReturn = ReturnType<typeof getModel>;
 
+const DEEPSEEK_MODELS: Record<string, { name: string; reasoning: boolean }> = {
+  "deepseek-chat": { name: "DeepSeek Chat (V3)", reasoning: false },
+  "deepseek-reasoner": { name: "DeepSeek Reasoner (R1)", reasoning: true },
+};
+
 function getModelFromConfig(): GetModelReturn {
   const config = readConfig();
   const provider = config.llm.provider;
+
+  if (provider === "deepseek") {
+    const meta = DEEPSEEK_MODELS[config.llm.model] ?? {
+      name: config.llm.model,
+      reasoning: false,
+    };
+    return {
+      id: config.llm.model,
+      name: meta.name,
+      api: "openai-completions",
+      provider: "deepseek",
+      baseUrl: "https://api.deepseek.com/v1",
+      reasoning: meta.reasoning,
+      input: ["text"],
+      cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+      contextWindow: 64_000,
+      maxTokens: 8000,
+    } as unknown as GetModelReturn;
+  }
 
   if (
     provider !== "anthropic" &&
@@ -602,10 +657,18 @@ function getModelFromConfig(): GetModelReturn {
     throw new Error(`当前 provider 暂不支持 pi-agent-core: ${provider}`);
   }
 
-  return getModel(
+  const model = getModel(
     provider as GetModelArgs[0],
     config.llm.model as unknown as GetModelArgs[1]
   );
+
+  if (!model) {
+    throw new Error(
+      `模型 "${config.llm.model}" 在 ${provider} 中不存在，请在设置中选择有效的模型`
+    );
+  }
+
+  return model;
 }
 
 export function createTools(context: ToolContext): AgentTool[] {
@@ -1081,7 +1144,7 @@ function handleAgentStreamEvent(run: ActiveRun, event: unknown): void {
     return;
   }
 
-  if (e.type === "message_end") {
+  if (e.type === "message_end" && e.message?.role === "assistant") {
     const text = extractMessageText(e.message);
     if (text) {
       run.assistantBuffer = text;
@@ -1090,18 +1153,18 @@ function handleAgentStreamEvent(run: ActiveRun, event: unknown): void {
 }
 
 async function runPiAgent(run: ActiveRun): Promise<void> {
-  if (!run.workspaceId) {
-    throw new Error("global 会话暂不启用 pi-agent-core");
-  }
-
   const context: ToolContext = {
     run,
     projectRoot: resolveProjectRoot(run),
   };
 
-  const tools = patchToolsWithPermission(run, createTools(context));
+  const tools = run.workspaceId
+    ? patchToolsWithPermission(run, createTools(context))
+    : [];
   const model = getModelFromConfig();
-  const systemPrompt = composeSystemPrompt(run.workspaceId);
+  const systemPrompt = run.workspaceId
+    ? composeSystemPrompt(run.workspaceId)
+    : "你是一个专业、务实的助手。";
   const history = toLlmMessages(run.scope, run.workspaceId, run.sessionId);
   const compacted = maybeCompactMessages(run, history);
 

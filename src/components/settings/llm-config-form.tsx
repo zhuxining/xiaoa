@@ -23,18 +23,22 @@ const PROVIDERS = [
   { id: "openai", name: "OpenAI" },
   { id: "anthropic", name: "Anthropic" },
   { id: "openrouter", name: "OpenRouter" },
+  { id: "deepseek", name: "DeepSeek" },
   { id: "ollama", name: "Ollama" },
   { id: "custom", name: "自定义" },
 ];
 
 const MODELS_BY_PROVIDER: Record<string, string[]> = {
-  openai: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
+  openai: ["gpt-4o", "gpt-4o-mini", "gpt-4.1", "gpt-4-turbo", "gpt-4"],
   anthropic: [
-    "claude-sonnet-4-5-20250514",
-    "claude-opus-4-5-20250929",
+    "claude-sonnet-4-5-20250929",
+    "claude-sonnet-4-5",
+    "claude-opus-4-5",
     "claude-haiku-4-5-20251001",
+    "claude-haiku-4-5",
   ],
-  openrouter: ["anthropic/claude-sonnet-4", "openai/gpt-4o"],
+  openrouter: ["anthropic/claude-3.5-sonnet", "openai/gpt-4o"],
+  deepseek: ["deepseek-chat", "deepseek-reasoner"],
   ollama: ["llama3.1", "llama3.2", "mistral", "codellama"],
   custom: [],
 };

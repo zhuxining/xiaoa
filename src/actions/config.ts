@@ -2,7 +2,13 @@ import { ipc } from "@/ipc/manager";
 
 // 类型定义
 export interface LLMConfig {
-  provider: "anthropic" | "openai" | "openrouter" | "ollama" | "custom";
+  provider:
+    | "anthropic"
+    | "openai"
+    | "openrouter"
+    | "deepseek"
+    | "ollama"
+    | "custom";
   apiKey?: string;
   model: string;
   endpoint?: string;

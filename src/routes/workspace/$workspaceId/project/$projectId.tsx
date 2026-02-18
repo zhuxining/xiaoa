@@ -463,8 +463,8 @@ function ProjectPage() {
             running: false,
             runId: null,
           },
-    enabled: !!currentSessionId && isGenerating,
-    refetchInterval: isGenerating ? 250 : false,
+    enabled: !!currentSessionId && isGenerating && !!activeRunId,
+    refetchInterval: isGenerating && !!activeRunId ? 250 : false,
   });
 
   useEffect(() => {

@@ -28,7 +28,7 @@ const DEFAULT_CONFIG: GlobalConfig = {
   activeWorkspaceId: null,
   llm: {
     provider: "anthropic",
-    model: "claude-sonnet-4-5-20250514",
+    model: "claude-sonnet-4-5-20250929",
   },
   preferences: {
     theme: "system",

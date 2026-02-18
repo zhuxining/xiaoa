@@ -2,7 +2,14 @@ import { z } from "zod";
 
 // LLM 配置
 export const llmConfigSchema = z.object({
-  provider: z.enum(["anthropic", "openai", "openrouter", "ollama", "custom"]),
+  provider: z.enum([
+    "anthropic",
+    "openai",
+    "openrouter",
+    "deepseek",
+    "ollama",
+    "custom",
+  ]),
   apiKey: z.string().optional(),
   model: z.string(),
   endpoint: z.string().optional(),
@@ -30,7 +37,14 @@ export const updatePreferencesInputSchema = appPreferencesSchema.partial();
 
 // API Key 测试
 export const testApiKeyInputSchema = z.object({
-  provider: z.enum(["anthropic", "openai", "openrouter", "ollama", "custom"]),
+  provider: z.enum([
+    "anthropic",
+    "openai",
+    "openrouter",
+    "deepseek",
+    "ollama",
+    "custom",
+  ]),
   apiKey: z.string(),
   endpoint: z.string().optional(),
 });
