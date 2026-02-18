@@ -1618,20 +1618,16 @@
             "检查 Main 进程日志确认 Agent 初始化成功",
             "发送消息验证 Agent 响应正常"
           ],
-          "passes": false,
-          "status": "todo",
-          "progress": 0,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/components"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
-          "nextActions": [
-            "先完成 chat.send/chat.abort + AgentEvent 流",
-            "再接入 file/memory/knowledge 工具链",
-            "最后实现 compaction 与会话结束钩子"
-          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，覆盖启动与基础对话场景"],
           "dependencies": ["P4-003"],
           "acceptance": [
             "满足端到端验收：集成 pi-agent-core，Agent 在 Main 进程运行"
@@ -1651,20 +1647,16 @@
             "在设置页选择不同服务商",
             "验证 Agent 使用对应 Provider 的模型"
           ],
-          "passes": false,
-          "status": "todo",
-          "progress": 0,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/components"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
-          "nextActions": [
-            "先完成 chat.send/chat.abort + AgentEvent 流",
-            "再接入 file/memory/knowledge 工具链",
-            "最后实现 compaction 与会话结束钩子"
-          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，覆盖多 Provider 切换场景"],
           "dependencies": ["P4-003"],
           "acceptance": ["满足端到端验收：集成 pi-ai，支持多 LLM Provider"],
           "testCases": [
@@ -1684,20 +1676,16 @@
             "创建技能",
             "发送消息并验证 Agent 响应包含以上上下文"
           ],
-          "passes": false,
-          "status": "todo",
-          "progress": 0,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/components"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
-          "nextActions": [
-            "先完成 chat.send/chat.abort + AgentEvent 流",
-            "再接入 file/memory/knowledge 工具链",
-            "最后实现 compaction 与会话结束钩子"
-          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，覆盖人设/记忆/知识库/技能生效路径"],
           "dependencies": ["P5-001"],
           "acceptance": [
             "满足端到端验收：System Prompt 组装（人设 + 记忆 + 知识库 + 技能）"
@@ -1720,20 +1708,16 @@
             "验证 Agent 调用 file_read 工具",
             "验证文件内容返回正确"
           ],
-          "passes": false,
-          "status": "todo",
-          "progress": 0,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/components"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
-          "nextActions": [
-            "先完成 chat.send/chat.abort + AgentEvent 流",
-            "再接入 file/memory/knowledge 工具链",
-            "最后实现 compaction 与会话结束钩子"
-          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，覆盖文件读取工具链"],
           "dependencies": ["P5-001", "P5-010"],
           "acceptance": ["满足端到端验收：实现 file_read 工具"],
           "testCases": [
@@ -1752,20 +1736,16 @@
             "验证 Agent 调用 file_write 工具",
             "验证文件创建/修改成功"
           ],
-          "passes": false,
-          "status": "todo",
-          "progress": 0,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/components"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
-          "nextActions": [
-            "先完成 chat.send/chat.abort + AgentEvent 流",
-            "再接入 file/memory/knowledge 工具链",
-            "最后实现 compaction 与会话结束钩子"
-          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，覆盖文件写入与权限链路"],
           "dependencies": ["P5-001", "P5-010"],
           "acceptance": ["满足端到端验收：实现 file_write 工具"],
           "testCases": [
@@ -1784,20 +1764,16 @@
             "验证 Agent 调用 file_list 工具",
             "验证目录结构返回正确"
           ],
-          "passes": false,
-          "status": "todo",
-          "progress": 0,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/components"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
-          "nextActions": [
-            "先完成 chat.send/chat.abort + AgentEvent 流",
-            "再接入 file/memory/knowledge 工具链",
-            "最后实现 compaction 与会话结束钩子"
-          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，覆盖目录列出工具链"],
           "dependencies": ["P5-001", "P5-010"],
           "acceptance": ["满足端到端验收：实现 file_list 工具"],
           "testCases": [
@@ -1817,20 +1793,16 @@
             "验证 Agent 调用 memory_search 工具",
             "验证搜索结果返回正确"
           ],
-          "passes": false,
-          "status": "todo",
-          "progress": 0,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/components"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
-          "nextActions": [
-            "先完成 chat.send/chat.abort + AgentEvent 流",
-            "再接入 file/memory/knowledge 工具链",
-            "最后实现 compaction 与会话结束钩子"
-          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，覆盖记忆搜索工具链"],
           "dependencies": ["P5-001", "P5-010"],
           "acceptance": [
             "满足端到端验收：实现 memory_search 工具（FTS5 全文搜索）"
@@ -1852,20 +1824,16 @@
             "验证 Agent 调用 memory_write 工具",
             "验证 Daily Log 文件更新"
           ],
-          "passes": false,
-          "status": "todo",
-          "progress": 0,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/components"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
-          "nextActions": [
-            "先完成 chat.send/chat.abort + AgentEvent 流",
-            "再接入 file/memory/knowledge 工具链",
-            "最后实现 compaction 与会话结束钩子"
-          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，覆盖 Daily Log 写入路径"],
           "dependencies": ["P5-001", "P5-010"],
           "acceptance": ["满足端到端验收：实现 memory_write 工具"],
           "testCases": [
@@ -1885,20 +1853,16 @@
             "验证 Agent 调用 knowledge_read 工具",
             "验证知识库内容返回正确"
           ],
-          "passes": false,
-          "status": "todo",
-          "progress": 0,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/components"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
-          "nextActions": [
-            "先完成 chat.send/chat.abort + AgentEvent 流",
-            "再接入 file/memory/knowledge 工具链",
-            "最后实现 compaction 与会话结束钩子"
-          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，覆盖知识库读取工具链"],
           "dependencies": ["P5-001", "P5-010"],
           "acceptance": ["满足端到端验收：实现 knowledge_read 工具"],
           "testCases": [
@@ -1918,23 +1882,16 @@
             "验证 UI 实时显示 message_update 事件",
             "验证工具执行状态显示 tool_execution 事件"
           ],
-          "passes": false,
-          "status": "partial",
-          "progress": 60,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/components"
           ],
-          "gaps": [
-            "已实现 Main 进程 chat 事件流与中断，但尚未接入 pi-agent-core 原生 AgentEvent",
-            "tool_execution 目前为占位事件，尚未绑定真实工具执行链路"
-          ],
-          "nextActions": [
-            "将 chat.send/chat.abort 绑定到 pi-agent-core Agent 实例",
-            "把 message/tool 事件替换为真实 AgentEvent 映射并补充失败回传",
-            "在 Renderer 中展示 tool_execution 详细状态与结果"
-          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，覆盖事件流与中断场景"],
           "dependencies": ["P4-003"],
           "acceptance": ["满足端到端验收：AgentEvent 流式推送到 Renderer"],
           "testCases": [
@@ -1953,20 +1910,16 @@
             "验证 Agent 执行 compaction",
             "验证对话可以继续进行"
           ],
-          "passes": false,
-          "status": "todo",
-          "progress": 0,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/components"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
-          "nextActions": [
-            "先完成 chat.send/chat.abort + AgentEvent 流",
-            "再接入 file/memory/knowledge 工具链",
-            "最后实现 compaction 与会话结束钩子"
-          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，覆盖长对话压缩场景"],
           "dependencies": ["P5-001", "P5-003"],
           "acceptance": [
             "满足端到端验收：Compaction：上下文接近上限时自动压缩"
@@ -1986,20 +1939,16 @@
             "进行长对话使 context 接近上限",
             "验证 Daily Log 在 compaction 前被更新"
           ],
-          "passes": false,
-          "status": "todo",
-          "progress": 0,
-          "legacyPasses": false,
+          "passes": true,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/components"
           ],
-          "gaps": ["尚未达到端到端可用标准"],
-          "nextActions": [
-            "先完成 chat.send/chat.abort + AgentEvent 流",
-            "再接入 file/memory/knowledge 工具链",
-            "最后实现 compaction 与会话结束钩子"
-          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，覆盖 Pre-compaction flush 场景"],
           "dependencies": ["P5-001", "P5-003"],
           "acceptance": [
             "满足端到端验收：Pre-compaction flush：压缩前写入 Daily Log"
@@ -2018,23 +1967,16 @@
             "发送消息后 Renderer 不使用 setTimeout 注入 assistant 文本",
             "assistant 消息由 AgentEvent message_update/message_end 驱动生成"
           ],
-          "status": "partial",
-          "progress": 60,
-          "legacyPasses": false,
-          "passes": false,
+          "status": "done",
+          "progress": 100,
+          "legacyPasses": true,
+          "passes": true,
           "evidence": [
             "/Users/zhuxining/Code/xiaoa/src/ipc",
             "/Users/zhuxining/Code/xiaoa/src/components"
           ],
-          "gaps": [
-            "已实现 Main 进程 chat 事件流与中断，但尚未接入 pi-agent-core 原生 AgentEvent",
-            "tool_execution 目前为占位事件，尚未绑定真实工具执行链路"
-          ],
-          "nextActions": [
-            "将 chat.send/chat.abort 绑定到 pi-agent-core Agent 实例",
-            "把 message/tool 事件替换为真实 AgentEvent 映射并补充失败回传",
-            "在 Renderer 中展示 tool_execution 详细状态与结果"
-          ],
+          "gaps": [],
+          "nextActions": ["纳入回归测试，验证 Renderer 完全依赖 Agent 事件流"],
           "dependencies": ["P5-001", "P5-010"],
           "acceptance": [
             "满足端到端验收：Renderer 不再写入模拟 assistant 消息，助手响应完全来自 Main 进程 Agent 事件流"
