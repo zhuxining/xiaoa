@@ -1,6 +1,15 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
+import type { Skill } from "@/actions/skill";
+import {
+  createSkill,
+  deleteSkill,
+  getSkills,
+  updateSkill,
+} from "@/actions/skill";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,71 +17,108 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import type { Skill } from "@/components/workspace/skill-card";
 import { SkillEditor } from "@/components/workspace/skill-editor";
 import { SkillList } from "@/components/workspace/skill-list";
 
-const MOCK_SKILLS: Skill[] = [
-  {
-    id: "1",
-    name: "搜索网页",
-    description: "搜索互联网获取最新信息",
-    prompt: "使用搜索引擎搜索用户的问题...",
-    enabled: true,
-  },
-  {
-    id: "2",
-    name: "分析文档",
-    description: "分析和总结文档内容",
-    prompt: "分析用户上传的文档...",
-    enabled: true,
-  },
-];
-
 function SkillsPage() {
   const { workspaceId } = Route.useParams();
-  const [skills, setSkills] = useState<Skill[]>(MOCK_SKILLS);
-  const [selectedSkillId, setSelectedSkillId] = useState<string | null>(
-    skills[0]?.id || null
-  );
+  const queryClient = useQueryClient();
+
+  // 加载技能列表
+  const { data: skills = [], isLoading } = useQuery({
+    queryKey: ["skills", workspaceId],
+    queryFn: () => getSkills(workspaceId),
+  });
+
+  const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
   const selectedSkill = skills.find((s) => s.id === selectedSkillId) ?? null;
 
+  // 创建技能 mutation
+  const createMutation = useMutation({
+    mutationFn: () =>
+      createSkill({
+        workspaceId,
+        name: "新技能",
+        prompt: "",
+        description: "",
+      }),
+    onSuccess: (newSkill) => {
+      queryClient.invalidateQueries({ queryKey: ["skills", workspaceId] });
+      setSelectedSkillId(newSkill.id);
+      setIsEditing(true);
+      toast.success("技能创建成功");
+    },
+    onError: (error) => {
+      toast.error(`创建失败: ${(error as Error).message}`);
+    },
+  });
+
+  // 更新技能 mutation
+  const updateMutation = useMutation({
+    mutationFn: (updates: Partial<Skill>) => {
+      if (!selectedSkillId) {
+        throw new Error("No skill selected");
+      }
+      return updateSkill({
+        id: selectedSkillId,
+        workspaceId,
+        ...updates,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["skills", workspaceId] });
+    },
+  });
+
+  // 删除技能 mutation
+  const deleteMutation = useMutation({
+    mutationFn: () => {
+      if (!selectedSkillId) {
+        throw new Error("No skill selected");
+      }
+      return deleteSkill(workspaceId, selectedSkillId);
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["skills", workspaceId] });
+      if (result.success) {
+        setSelectedSkillId(
+          skills.find((s) => s.id !== selectedSkillId)?.id ?? null
+        );
+        setIsEditing(false);
+        toast.success("技能已删除");
+      }
+    },
+    onError: (error) => {
+      toast.error(`删除失败: ${(error as Error).message}`);
+    },
+  });
+
   const handleSkillUpdate = (updates: Partial<Skill>) => {
-    if (!selectedSkillId) {
-      return;
-    }
-    setSkills((prev) =>
-      prev.map((s) => (s.id === selectedSkillId ? { ...s, ...updates } : s))
-    );
+    updateMutation.mutate(updates);
   };
 
   const handleSave = () => {
     setIsEditing(false);
-    console.log("Saving skills:", { workspaceId, skills });
+    toast.success("技能已保存");
   };
 
   const handleDelete = () => {
-    if (!selectedSkillId) {
-      return;
-    }
-    setSkills((prev) => prev.filter((s) => s.id !== selectedSkillId));
-    setSelectedSkillId(skills[0]?.id ?? null);
+    deleteMutation.mutate();
   };
 
   const handleCreate = () => {
-    const newSkill: Skill = {
-      id: Date.now().toString(),
-      name: "新技能",
-      description: "",
-      prompt: "",
-      enabled: true,
-    };
-    setSkills((prev) => [...prev, newSkill]);
-    setSelectedSkillId(newSkill.id);
-    setIsEditing(true);
+    createMutation.mutate();
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Loader2 className="size-6 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -83,7 +129,14 @@ function SkillsPage() {
               <Plus className="mr-1 size-4" />
               导入
             </Button>
-            <Button onClick={handleCreate} size="sm">
+            <Button
+              disabled={createMutation.isPending}
+              onClick={handleCreate}
+              size="sm"
+            >
+              {createMutation.isPending && (
+                <Loader2 className="mr-1 size-4 animate-spin" />
+              )}
               <Plus className="mr-1 size-4" />
               新建
             </Button>

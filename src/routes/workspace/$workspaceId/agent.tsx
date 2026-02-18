@@ -1,5 +1,10 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import type { AgentConfig } from "@/actions/workspace";
+import { getWorkspace, updateWorkspace } from "@/actions/workspace";
 import { AvatarUpload } from "@/components/shared/avatar-upload";
 import { FormSection } from "@/components/shared/form-section";
 import { PageHeader } from "@/components/shared/page-header";
@@ -16,13 +21,6 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-interface AgentConfig {
-  name: string;
-  avatar?: string;
-  persona: string;
-  model: string;
-}
-
 const MODELS = [
   { id: "claude-sonnet-4-5-20250514", name: "Claude Sonnet 4.5" },
   { id: "claude-opus-4-5-20250929", name: "Claude Opus 4.6" },
@@ -32,20 +30,86 @@ const MODELS = [
 
 function AgentConfigPage() {
   const { workspaceId } = Route.useParams();
-  const [config, setConfig] = useState<AgentConfig>({
-    name: "小A",
-    persona: "你是一个友好、专业的 AI 助手，致力于帮助用户解决问题。",
+  const queryClient = useQueryClient();
+
+  // 加载工作区数据
+  const { data: workspace, isLoading } = useQuery({
+    queryKey: ["workspace", workspaceId],
+    queryFn: () => getWorkspace(workspaceId),
+  });
+
+  // 本地编辑状态
+  const [agent, setAgent] = useState<AgentConfig>({
+    name: "",
+    systemPrompt: "",
     model: "claude-sonnet-4-5-20250514",
   });
 
+  // 同步服务器数据到本地状态
+  useEffect(() => {
+    if (workspace?.agent) {
+      setAgent(workspace.agent);
+    }
+  }, [workspace]);
+
+  // 保存 mutation
+  const saveMutation = useMutation({
+    mutationFn: () =>
+      updateWorkspace({
+        id: workspaceId,
+        agent,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId] });
+      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+      toast.success("Agent 配置已保存");
+    },
+    onError: (error) => {
+      toast.error(`保存失败: ${(error as Error).message}`);
+    },
+  });
+
+  // 检查是否有更改
+  const hasChanges = JSON.stringify(workspace?.agent) !== JSON.stringify(agent);
+
   const handleSave = () => {
-    console.log("Saving agent config:", { workspaceId, config });
+    if (!agent.name.trim()) {
+      toast.error("请输入 Agent 名称");
+      return;
+    }
+    saveMutation.mutate();
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Loader2 className="size-6 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!workspace) {
+    return (
+      <div className="flex h-full items-center justify-center text-muted-foreground">
+        工作区不存在
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full flex-col">
       <PageHeader
-        actions={<Button onClick={handleSave}>保存</Button>}
+        actions={
+          <Button
+            disabled={!hasChanges || saveMutation.isPending}
+            onClick={handleSave}
+          >
+            {saveMutation.isPending && (
+              <Loader2 className="mr-2 size-4 animate-spin" />
+            )}
+            保存
+          </Button>
+        }
         description="自定义你的 AI 助手"
         title="Agent 配置"
       />
@@ -55,17 +119,17 @@ function AgentConfigPage() {
             <Field orientation="horizontal">
               <FieldLabel className="w-24 shrink-0">头像</FieldLabel>
               <AvatarUpload
-                fallback={config.name?.charAt(0) || "A"}
-                onChange={(avatar) => setConfig({ ...config, avatar })}
-                value={config.avatar}
+                fallback={agent.name?.charAt(0) || "A"}
+                onChange={(avatar) => setAgent({ ...agent, avatar })}
+                value={agent.avatar}
               />
             </Field>
             <Field orientation="horizontal">
               <FieldLabel className="w-24 shrink-0">名称</FieldLabel>
               <Input
-                onChange={(e) => setConfig({ ...config, name: e.target.value })}
+                onChange={(e) => setAgent({ ...agent, name: e.target.value })}
                 placeholder="Agent 名称"
-                value={config.name}
+                value={agent.name}
               />
             </Field>
             <Field>
@@ -75,18 +139,18 @@ function AgentConfigPage() {
               </FieldDescription>
               <Textarea
                 onChange={(e) =>
-                  setConfig({ ...config, persona: e.target.value })
+                  setAgent({ ...agent, systemPrompt: e.target.value })
                 }
                 placeholder="你是一个..."
                 rows={4}
-                value={config.persona}
+                value={agent.systemPrompt}
               />
             </Field>
             <Field orientation="horizontal">
               <FieldLabel className="w-24 shrink-0">模型</FieldLabel>
               <Select
-                onValueChange={(model) => setConfig({ ...config, model })}
-                value={config.model}
+                onValueChange={(model) => setAgent({ ...agent, model })}
+                value={agent.model}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="选择模型" />

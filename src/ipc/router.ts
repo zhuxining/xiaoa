@@ -1,6 +1,7 @@
 import { app } from "./app";
 import { config } from "./config";
 import { shell } from "./shell";
+import { skill } from "./skill";
 import { theme } from "./theme";
 import { window } from "./window";
 import { workspace } from "./workspace";
@@ -14,4 +15,5 @@ export const router = {
   config,
   workspace,
   xiaoa,
+  skill,
 };
