@@ -9,78 +9,231 @@
 小A 是一个面向非 Coding 群体的 Agent 工作站。
 技术栈: Electron Forge + React 19 | TailwindCSS 4 + shadcn/ui | TanStack Router + Query | oRPC | pi-agent-core + pi-ai
 
+**当前版本**: v0.53.0 pi-mono Agent 架构重构
+
 ---
 
-## 2026-02-18
+## 2026-02-19
 
-### 已完成
-- [x] 项目初始化
-- [x] 基础路由结构 (TanStack Router 文件路由)
-- [x] 基础布局组件 (左侧栏 + 主内容区)
-- [x] shadcn/ui 组件集成
-- [x] 国际化配置 (i18next, zh-CN)
-- [x] 设计文档 (docs/design/architecture.md)
-- [x] 建立长期运行机制 (feature_list.json, claude-progress.txt, init.sh)
-- [x] 全局配置持久化 (config.json 读写)
-- [x] API Key 测试连接功能
-- [x] 设置页面集成 TanStack Query
-- [x] 工作区 CRUD 和数据存储
-- [x] 小A会话持久化 (JSONL 格式)
-- [x] 工作区重命名和删除 UI
-- [x] Agent 配置页面 (名称/头像/人设/模型)
-- [x] 技能 CRUD 功能
-- [x] 记忆管理页面 (MEMORY.md 编辑器)
+### 架构重构概述
 
-### 功能清单完成状态
-- P1-001 ✅ 左侧栏布局
-- P1-002 ✅ 主内容区动态切换
-- P1-003 ✅ 全局配置 UI
-- P1-004 ✅ API Key 测试连接
-- P1-006 ✅ 主题切换
-- P1-007 ✅ 语言切换
-- P1-008 ✅ 小A对话视图
-- P1-009 ✅ 会话列表 UI
-- P1-010 ✅ 创建小A会话
-- P1-011 ✅ 小A会话持久化
-- P1-012 ✅ 创建工作区
-- P1-013 ✅ 切换工作区
-- P1-014 ✅ 重命名工作区
-- P1-015 ✅ 删除工作区
-- P1-016 ✅ 全局配置存储
-- P1-017 ✅ 工作区配置存储
-- P2-001 ✅ Agent 名称配置
-- P2-002 ✅ Agent 头像配置
-- P2-003 ✅ Agent 人设编辑
-- P2-004 ✅ Agent 模型选择
-- P2-005 ✅ 技能列表
-- P2-006 ✅ 创建技能
-- P2-007 ✅ 编辑技能
-- P2-008 ✅ 删除技能
-- P2-012 ✅ 记忆编辑器
-- P2-013 ✅ Markdown 格式支持
+本次重构目标是将 pi-mono v0.53.0 的 Agent 能力完整集成到小A中，主要包括：
+- 新建 `src/agent/` 集成层，接入 `createAgentSession`
+- 用 pi-web-ui `<message-list>` 替换消息列表
+- 实现权限策略模块和文件/bash 工具
+- 会话管理从数据库改为直接读取 pi SessionManager JSONL
 
-### 进行中
-- [ ] P1-005: API Key 加密存储
-- [ ] P2-009~011: 技能导入/导出/参考资料
-- [ ] P2-014~019: 知识库管理
+### 核心变更
 
-### 下一步
-1. 实现知识库管理功能 (P2-014~019)
-2. 完成 P1-005 API Key 加密存储
+**全面采用 pi 生态**：
+
+| 能力 | 方案 |
+|------|------|
+| 工作区 Agent | `@mariozechner/pi-coding-agent` `createAgentSession()` |
+| 全局 Agent | `@mariozechner/pi-agent-core` `Agent` 类 |
+| 文件/Bash 工具 | 自定义工具（内部调用 pi 内置工具逻辑）+ 权限对话 |
+| 自定义工具 | `customTools`：memory_search, memory_write, knowledge_read |
+| 权限控制 | 工具 `execute()` 内部调用权限请求（Promise + IPC） |
+| 会话持久化 | pi `SessionManager`（agentDir 指向 `~/.xiaoa/agent/`）|
+| Compaction | pi-coding-agent 自动处理 |
+| Skill 系统 | SKILL.md 文件（`~/.xiaoa/agent/skills/`），ResourceLoader 发现 |
+| 认证 | `AuthStorage.inMemory() + setFallbackResolver()` 桥接 |
+| Chat UI | pi-web-ui `<message-list>` Web Component |
+
+**废弃**（全部推翻）：
+
+- `src/ipc/chat/store.ts` + 所有子模块（agent/, tools/, permission/, run/）
+- `src/ipc/sisson/`（替换为基于 pi SessionManager 的 `src/ipc/session/`）
+- 手动 Compaction、手动 System Prompt 组装、`patchToolsWithPermission`
+
+---
+
+## Phase 1: 核心骨架 + 基础消息渲染 (8 tasks)
+
+**目标**: 新建 src/agent/ 集成层，接入 createAgentSession，用 pi-web-ui <message-list> 替换消息列表
+
+| ID | 描述 | 状态 | 进度 |
+|----|------|------|------|
+| P1-001 | 新建 src/agent/run/ 运行时模块（run-types / run-store / run-executor） | todo | 0% |
+| P1-002 | 实现 auth-bridge.ts（AuthStorage + setFallbackResolver） | todo | 0% |
+| P1-003 | 实现 workspace-session.ts（createAgentSession 封装） | todo | 0% |
+| P1-004 | 精简 src/ipc/chat/ 为极薄 IPC 层（3 文件） | todo | 0% |
+| P1-005 | 新建 pi-message-list.tsx（<message-list> React 19 wrapper） | todo | 0% |
+| P1-006 | 新建 tool-renderers.ts（注册 file/bash 自定义渲染器） | todo | 0% |
+| P1-007 | 更新 routes/index.tsx（AgentMessage[] 状态重建 + PiMessageList） | todo | 0% |
+| P1-008 | 导入 pi-web-ui/app.css | todo | 0% |
+
+---
+
+## Phase 2: 权限守卫 + 工具层 (6 tasks)
+
+**目标**: 实现权限策略模块和文件/bash 工具，权限对话通过 Promise + IPC 与 PermissionDialog 通信
+
+| ID | 描述 | 状态 | 进度 |
+|----|------|------|------|
+| P2-001 | 实现 permission-policy.ts（explore/review/auto 策略） | todo | 0% |
+| P2-002 | 实现 permission-request.ts（Promise + IPC 权限桥接） | todo | 0% |
+| P2-003 | 实现 file-tools.ts（含权限逻辑的文件工具） | todo | 0% |
+| P2-004 | 实现 bash-tool.ts（含风险判定的 bash 工具） | todo | 0% |
+| P2-005 | 实现 memory-tools.ts 和 knowledge-tools.ts | todo | 0% |
+| P2-006 | 实现 tools/index.ts（buildAllTools 组装） | todo | 0% |
+
+---
+
+## Phase 3: 会话 IPC + 会话列表 (3 tasks)
+
+**目标**: 用 src/ipc/session/ 替换 src/ipc/sisson/，直接读取 pi SessionManager JSONL
+
+| ID | 描述 | 状态 | 进度 |
+|----|------|------|------|
+| P3-001 | 新建 src/ipc/session/（handlers / schemas / index） | todo | 0% |
+| P3-002 | 新建 src/actions/session.ts | todo | 0% |
+| P3-003 | 更新 session-list.tsx 适配新 session IPC | todo | 0% |
+
+---
+
+## Phase 4: Skill 系统迁移 (2 tasks)
+
+**目标**: Skill 存储改为文件操作，存放于 ~/.xiaoa/agent/skills/
+
+| ID | 描述 | 状态 | 进度 |
+|----|------|------|------|
+| P4-001 | 重写 skill/store.ts 为文件操作 | todo | 0% |
+| P4-002 | 验证 Skill 自动注入 | todo | 0% |
+
+---
+
+## Phase 5: 全局 Agent + Provider 设置 (3 tasks)
+
+**目标**: 完善全局 Agent（无项目上下文），集成 pi-web-ui ModelSelector 和 SettingsDialog
+
+| ID | 描述 | 状态 | 进度 |
+|----|------|------|------|
+| P5-001 | 实现 global-session.ts（无项目 Agent） | todo | 0% |
+| P5-002 | 集成 ModelSelector | todo | 0% |
+| P5-003 | 集成 SettingsDialog | todo | 0% |
+
+---
+
+## Phase 6: ArtifactsPanel + 会话分支 UI (2 tasks)
+
+**目标**: 集成 pi-web-ui ArtifactsPanel 支持 AI 生成可交互制品
+
+| ID | 描述 | 状态 | 进度 |
+|----|------|------|------|
+| P6-001 | 集成 artifacts-panel Web Component | todo | 0% |
+| P6-002 | 会话分支可视化（SessionManager 分支能力） | todo | 0% |
 
 ---
 
 ## 功能完成统计
 
-| Phase | 总数 | 完成 | 进度 |
-|-------|------|------|------|
-| Phase 1: 基础骨架 | 17 | 16 | 94% |
-| Phase 2: Agent配置 | 19 | 10 | 53% |
-| Phase 3: 项目与文件 | 6 | 0 | 0% |
-| Phase 4: 对话系统 | 8 | 0 | 0% |
-| Phase 5: Agent集成 | 12 | 0 | 0% |
-| Phase 6: 权限模型 | 6 | 0 | 0% |
-| **总计** | **68** | **26** | **38%** |
+| Phase | 名称 | 总数 | 完成 | 进度 |
+|-------|------|------|------|------|
+| Phase 1 | 核心骨架 + 基础消息渲染 | 8 | 0 | 0% |
+| Phase 2 | 权限守卫 + 工具层 | 6 | 0 | 0% |
+| Phase 3 | 会话 IPC + 会话列表 | 3 | 0 | 0% |
+| Phase 4 | Skill 系统迁移 | 2 | 0 | 0% |
+| Phase 5 | 全局 Agent + Provider 设置 | 3 | 0 | 0% |
+| Phase 6 | ArtifactsPanel + 会话分支 UI | 2 | 0 | 0% |
+| **总计** | | **24** | **0** | **0%** |
+
+---
+
+## 依赖关系图
+
+```
+Phase 1 (核心骨架):
+  P1-002 (auth-bridge) ── P1-003 (workspace-session)
+  P1-001 (run模块) ──┬── P1-003 (workspace-session) ──┬── P3-001 (session IPC)
+                     │                                │
+                     └── P1-004 (chat IPC) ───────────┴── P3-002 (session actions)
+                            │
+                            └── P1-007 (routes更新)
+                                  │
+  P1-005 (message-list) ─────────┤
+       │
+       └── P1-006 (tool-renderers)
+
+Phase 2 (权限守卫 + 工具层):
+  P2-001 (permission-policy) ──┐
+                                ├── P2-002 (permission-request) ──┬── P2-003 (file-tools)
+                                │                                  └── P2-004 (bash-tool)
+  P1-001 (run模块) ────────────┘
+
+  P2-003 + P2-004 + P2-005 ── P2-006 (tools/index)
+  P2-005 (memory/knowledge) ── P5-001 (global-session)
+
+Phase 3 (会话 IPC):
+  P3-002 (session actions) ── P3-003 (session-list UI)
+
+Phase 4 (Skill 迁移):
+  P1-003 (workspace-session) ── P4-001 (skill store)
+  P4-001 (skill store) ── P4-002 (skill injection)
+
+Phase 6 (扩展 UI):
+  P1-005 (message-list) ── P6-001 (artifacts-panel)
+  P3-001 (session IPC) ── P6-002 (branch UI)
+```
+
+---
+
+## 关键文件路径
+
+### 新增目录（Phase 1-6）
+
+```
+src/
+├── agent/                              # pi Agent 集成层（全新）
+│   ├── index.ts                        # 公开 API
+│   ├── types.ts                        # AgentMessage 声明合并
+│   │
+│   ├── workspace-session.ts            # createAgentSession() 封装
+│   ├── global-session.ts               # Agent 封装（全局无项目 Agent）
+│   │
+│   ├── auth/
+│   │   └── auth-bridge.ts              # AuthStorage + setFallbackResolver
+│   │
+│   ├── tools/
+│   │   ├── index.ts                    # 组装所有工具
+│   │   ├── file-tools.ts               # 权限感知的文件工具
+│   │   ├── bash-tool.ts                # 权限感知的 bash 工具
+│   │   ├── memory-tools.ts             # memory_search, memory_write
+│   │   └── knowledge-tools.ts          # knowledge_read
+│   │
+│   ├── permission/
+│   │   ├── permission-policy.ts        # 策略（explore/review/auto）
+│   │   └── permission-request.ts       # 权限请求封装
+│   │
+│   └── run/
+│       ├── run-types.ts                # ActiveRun 接口
+│       ├── run-store.ts                # Map 状态
+│       └── run-executor.ts             # AgentSessionEvent → ChatEvent 桥接
+│
+└── ipc/
+    ├── chat/                           # 极薄 IPC 层（3 文件）
+    │   ├── handlers.ts
+    │   ├── schemas.ts
+    │   └── index.ts
+    │
+    └── session/                        # 会话 IPC（替换 sisson/）
+        ├── handlers.ts
+        ├── schemas.ts
+        └── index.ts
+```
+
+### 存储路径
+
+```
+~/.xiaoa/
+├── agent/                      # pi Agent 存储根目录
+│   ├── sessions/               # 会话 JSONL 文件
+│   │   └── <encoded-cwd>/      # 按项目路径编码
+│   │       └── *.jsonl
+│   └── skills/                 # Skill 文件
+│       └── <name>/
+│           └── SKILL.md
+```
 
 ---
 
@@ -105,6 +258,55 @@ bun run check        # 代码质量检查
 - 状态管理使用 TanStack Query (无全局状态库)
 - Agent 运行在 Main 进程，Renderer 通过 oRPC 交互
 - 工具定义使用 TypeBox (非 Zod)
+- 新增 src/agent/ 集成层，封装 pi-agent-core SDK
+- pi-web-ui 是 LitElement Web Components，通过 React wrapper 集成
+
+### 关键 API
+
+```typescript
+// createAgentSession
+import { createAgentSession } from "@mariozechner/pi-coding-agent";
+
+const { session } = await createAgentSession({
+  cwd: string,                   // 项目根目录
+  agentDir: string,              // ~/.xiaoa/agent/
+  model: Model<any>,             // 从 pi-ai getModel() 获取
+  thinkingLevel: ThinkingLevel,  // "off"|"minimal"|"low"|"medium"|"high"|"xhigh"
+  tools: Tool[],                 // 文件/bash 工具
+  customTools: ToolDefinition[], // memory, knowledge
+  authStorage: AuthStorage,      // 认证适配
+});
+
+// AgentSession API
+session.subscribe(listener)      // 订阅 AgentSessionEvent
+session.prompt(text, options?)   // 发送消息
+session.steer(text, images?)     // 中途打断
+session.followUp(text, images?)  // 追加后续任务
+session.abort()                  // 中止执行
+session.dispose()                // 清理
+```
+
+---
+
+## 历史记录
+
+### 2026-02-18 及之前（v0.2.0）
+- 项目初始化完成
+- 基础路由结构 (TanStack Router 文件路由)
+- 基础布局组件 (左侧栏 + 主内容区)
+- shadcn/ui 组件集成
+- 国际化配置 (i18next, zh-CN)
+- 全局配置持久化 (config.json 读写)
+- API Key 测试连接功能
+- 工作区 CRUD 和数据存储
+- Agent 配置页面
+- 技能 CRUD 功能
+- 记忆管理页面
+- 知识库管理
+- 对话系统基础功能
+- 权限模型 (Explore/Review/Auto)
+
+**注意**: 上述功能在 v0.53.0 架构重构后需要重新验证和适配。
 
 ---
 

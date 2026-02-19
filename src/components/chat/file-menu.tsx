@@ -90,7 +90,6 @@ export function FileMenu({
           <div className="flex items-center gap-2 text-muted-foreground">
             <Search className="size-3" />
             <input
-              autoFocus
               className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={handleKeyDown}

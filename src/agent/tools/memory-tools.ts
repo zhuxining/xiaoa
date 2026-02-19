@@ -6,10 +6,13 @@
  * - memory_write: 追加 Daily Log
  */
 
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
+import { appendFile, mkdir, readdir, readFile } from "node:fs/promises";
+import { basename, join } from "node:path";
 import type { AgentTool, AgentToolResult } from "@mariozechner/pi-agent-core";
 import { Type } from "@sinclair/typebox";
+
+/** 换行符正则表达式 */
+const NEWLINE_REGEX = /\n/;
 
 /**
  * 记忆搜索工具参数 Schema
@@ -44,21 +47,21 @@ const memoryWriteSchema = Type.Object({
  */
 function getXiaoaAgentDir(): string {
   const home = process.env.HOME ?? process.env.USERPROFILE ?? "";
-  return path.join(home, ".xiaoa", "agent");
+  return join(home, ".xiaoa", "agent");
 }
 
 /**
  * 获取 MEMORY.md 路径
  */
 function getMemoryPath(): string {
-  return path.join(getXiaoaAgentDir(), "MEMORY.md");
+  return join(getXiaoaAgentDir(), "MEMORY.md");
 }
 
 /**
  * 获取 Daily Log 目录
  */
 function getDailyLogDir(): string {
-  return path.join(getXiaoaAgentDir(), "logs");
+  return join(getXiaoaAgentDir(), "logs");
 }
 
 /**
@@ -66,7 +69,7 @@ function getDailyLogDir(): string {
  */
 function getTodayLogPath(): string {
   const today = new Date().toISOString().slice(0, 10);
-  return path.join(getDailyLogDir(), `${today}.md`);
+  return join(getDailyLogDir(), `${today}.md`);
 }
 
 /**
@@ -74,10 +77,33 @@ function getTodayLogPath(): string {
  */
 async function ensureDir(dir: string): Promise<void> {
   try {
-    await fs.mkdir(dir, { recursive: true });
+    await mkdir(dir, { recursive: true });
   } catch {
     // ignore
   }
+}
+
+/**
+ * 搜索文件中匹配的行
+ */
+function searchInContent(
+  content: string,
+  queryLower: string,
+  maxMatches: number
+): string[] {
+  const lines = content.split(NEWLINE_REGEX);
+  const matches: string[] = [];
+
+  for (const line of lines) {
+    if (line.toLowerCase().includes(queryLower)) {
+      matches.push(line.trim());
+      if (matches.length >= maxMatches) {
+        break;
+      }
+    }
+  }
+
+  return matches;
 }
 
 /**
@@ -101,18 +127,8 @@ export function createMemorySearchTool(): AgentTool<typeof memorySearchSchema> {
       // 搜索 MEMORY.md
       try {
         const memoryPath = getMemoryPath();
-        const content = await fs.readFile(memoryPath, "utf-8");
-        const lines = content.split("\n");
-        const matches: string[] = [];
-
-        for (const line of lines) {
-          if (line.toLowerCase().includes(queryLower)) {
-            matches.push(line.trim());
-            if (matches.length >= limit) {
-              break;
-            }
-          }
-        }
+        const content = await readFile(memoryPath, "utf-8");
+        const matches = searchInContent(content, queryLower, limit);
 
         if (matches.length > 0) {
           results.push({
@@ -127,7 +143,7 @@ export function createMemorySearchTool(): AgentTool<typeof memorySearchSchema> {
       // 搜索 Daily Logs
       try {
         const logDir = getDailyLogDir();
-        const files = await fs.readdir(logDir);
+        const files = await readdir(logDir);
 
         for (const file of files.slice(0, 7)) {
           // 最近 7 天
@@ -135,19 +151,9 @@ export function createMemorySearchTool(): AgentTool<typeof memorySearchSchema> {
             continue;
           }
 
-          const filePath = path.join(logDir, file);
-          const content = await fs.readFile(filePath, "utf-8");
-          const lines = content.split("\n");
-          const matches: string[] = [];
-
-          for (const line of lines) {
-            if (line.toLowerCase().includes(queryLower)) {
-              matches.push(line.trim());
-              if (matches.length >= 3) {
-                break;
-              }
-            }
-          }
+          const filePath = join(logDir, file);
+          const content = await readFile(filePath, "utf-8");
+          const matches = searchInContent(content, queryLower, 3);
 
           if (matches.length > 0) {
             results.push({
@@ -210,10 +216,10 @@ export function createMemoryWriteTool(): AgentTool<typeof memoryWriteSchema> {
 
       // 追加到今日日志
       const logPath = getTodayLogPath();
-      await fs.appendFile(logPath, entry, "utf-8");
+      await appendFile(logPath, entry, "utf-8");
 
       return {
-        content: [{ type: "text", text: `已记录到 ${path.basename(logPath)}` }],
+        content: [{ type: "text", text: `已记录到 ${basename(logPath)}` }],
         details: { file: logPath },
       };
     },
@@ -235,7 +241,7 @@ export async function appendDailyLog(
   const entry = `\n## ${timestamp}${tagStr}\n\n${content}\n`;
 
   const logPath = getTodayLogPath();
-  await fs.appendFile(logPath, entry, "utf-8");
+  await appendFile(logPath, entry, "utf-8");
 
   return logPath;
 }

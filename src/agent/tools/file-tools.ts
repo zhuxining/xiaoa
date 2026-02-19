@@ -7,8 +7,8 @@
  * - createFileListTool: 列出目录内容
  */
 
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { dirname, isAbsolute, join, normalize, relative } from "node:path";
 import type { AgentTool, AgentToolResult } from "@mariozechner/pi-agent-core";
 import { Type } from "@sinclair/typebox";
 import { requestPermission } from "../permission";
@@ -56,13 +56,13 @@ function validatePath(
   }
 
   // 解析绝对路径
-  const absolutePath = path.isAbsolute(targetPath)
-    ? path.normalize(targetPath)
-    : path.normalize(path.join(workspaceRoot, targetPath));
+  const absolutePath = isAbsolute(targetPath)
+    ? normalize(targetPath)
+    : normalize(join(workspaceRoot, targetPath));
 
   // 检查是否在工作区内
-  const relativePath = path.relative(workspaceRoot, absolutePath);
-  if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
+  const relativePath = relative(workspaceRoot, absolutePath);
+  if (relativePath.startsWith("..") || isAbsolute(relativePath)) {
     return {
       valid: false,
       error: `路径越界: ${targetPath} 不在工作区内`,
@@ -93,7 +93,7 @@ export function createFileReadTool(
         run.workspaceRootPath,
         params.path
       );
-      if (!valid) {
+      if (!(valid && absolutePath)) {
         return {
           content: [{ type: "text", text: `错误: ${error}` }],
           details: undefined,
@@ -110,7 +110,7 @@ export function createFileReadTool(
       }
 
       try {
-        const content = await fs.readFile(absolutePath!, "utf-8");
+        const content = await readFile(absolutePath, "utf-8");
         return {
           content: [{ type: "text", text: content }],
           details: undefined,
@@ -147,7 +147,7 @@ export function createFileWriteTool(
         run.workspaceRootPath,
         params.path
       );
-      if (!valid) {
+      if (!(valid && absolutePath)) {
         return {
           content: [{ type: "text", text: `错误: ${error}` }],
           details: undefined,
@@ -165,11 +165,11 @@ export function createFileWriteTool(
 
       try {
         // 确保目录存在
-        const dir = path.dirname(absolutePath!);
-        await fs.mkdir(dir, { recursive: true });
+        const dir = dirname(absolutePath);
+        await mkdir(dir, { recursive: true });
 
         // 写入文件
-        await fs.writeFile(absolutePath!, params.content, "utf-8");
+        await writeFile(absolutePath, params.content, "utf-8");
 
         return {
           content: [{ type: "text", text: `成功写入: ${params.path}` }],
@@ -207,7 +207,7 @@ export function createFileListTool(
         run.workspaceRootPath,
         params.path
       );
-      if (!valid) {
+      if (!(valid && absolutePath)) {
         return {
           content: [{ type: "text", text: `错误: ${error}` }],
           details: undefined,
@@ -224,15 +224,16 @@ export function createFileListTool(
       }
 
       try {
-        const entries = await fs.readdir(absolutePath!, {
+        const entries = await readdir(absolutePath, {
           withFileTypes: true,
         });
         const lines = entries.map((entry) => {
-          const prefix = entry.isDirectory()
-            ? "📁 "
-            : entry.isFile()
-              ? "📄 "
-              : "❓ ";
+          let prefix = "❓ ";
+          if (entry.isDirectory()) {
+            prefix = "📁 ";
+          } else if (entry.isFile()) {
+            prefix = "📄 ";
+          }
           return `${prefix}${entry.name}`;
         });
 

@@ -25,6 +25,7 @@ interface ParsedSkillMarkdown {
   argumentHint?: string;
   description?: string;
   icon?: string;
+  id?: string;
   name?: string;
   prompt: string;
 }
@@ -123,7 +124,7 @@ function parseSkillMarkdown(content: string): ParsedSkillMarkdown {
       parsed.argumentHint = normalized;
     } else if (key === "id") {
       // 保留 ID
-      (parsed as any).id = normalized;
+      parsed.id = normalized;
     }
   }
 
@@ -187,7 +188,7 @@ function readSkillFromDir(skillDir: string): Skill | null {
     const stat = statSync(skillFilePath);
 
     // 如果没有 ID，生成一个
-    const id = (parsed as any).id || generateId();
+    const id = parsed.id || generateId();
 
     // 获取参考文件
     const refsDir = getReferencesDir(skillDir);

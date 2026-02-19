@@ -97,4 +97,4 @@ export async function createGlobalSession(
 }
 
 // Re-export for convenience
-export { createAuthBridge, getXiaoaAgentDir };
+export { createAuthBridge, getXiaoaAgentDir } from "./auth/auth-bridge";

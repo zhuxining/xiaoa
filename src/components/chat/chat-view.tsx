@@ -88,24 +88,29 @@ export function ChatView({
 
   // 打开模型选择器
   const handleOpenModelSelector = async () => {
-    // 将当前模型转换为 pi-ai Model 格式
+    // 将当前模型转换为 pi-ai Model 格式（pi-ai Model 类型定义不完整）
     const model = currentModel
-      ? {
+      ? ({
           id: currentModel.id,
           name: currentModel.name,
-          provider: { id: "anthropic", name: "Anthropic" } as any,
+          provider: { id: "anthropic", name: "Anthropic" },
           contextLength: 200_000,
           inputPrice: 3,
           outputPrice: 15,
-        }
+          // biome-ignore lint/suspicious/noExplicitAny: pi-ai Model 类型定义不完整
+        } as unknown as Record<string, unknown>)
       : null;
 
-    await ModelSelector.open(model as any, (selectedModel) => {
-      onModelChange?.({
-        id: selectedModel.id,
-        name: selectedModel.name,
-      });
-    });
+    // biome-ignore lint/suspicious/noExplicitAny: ModelSelector.open 需要 pi-ai Model 类型
+    await ModelSelector.open(
+      model as unknown as Record<string, unknown>,
+      (selectedModel) => {
+        onModelChange?.({
+          id: selectedModel.id,
+          name: selectedModel.name,
+        });
+      }
+    );
   };
 
   // 打开设置对话框

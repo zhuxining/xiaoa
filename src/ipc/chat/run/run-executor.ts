@@ -24,7 +24,6 @@ import {
   sleep,
 } from "./run-store";
 
-// biome-ignore lint/performance/noBarrelFile: Re-export for backward compatibility
 export { extractMessageText } from "./run-store";
 
 import type { ActiveRun, ToolContext } from "./run-types";

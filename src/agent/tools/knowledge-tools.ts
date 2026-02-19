@@ -6,10 +6,16 @@
  * - knowledge_list: 列出知识条目
  */
 
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
+import { readdir, readFile } from "node:fs/promises";
+import { join } from "node:path";
 import type { AgentTool, AgentToolResult } from "@mariozechner/pi-agent-core";
 import { Type } from "@sinclair/typebox";
+
+/** Markdown 文件扩展名正则 */
+const MD_EXTENSION_REGEX = /\.md$/;
+
+/** 换行符正则表达式 */
+const NEWLINE_REGEX = /\n/;
 
 /**
  * 知识读取工具参数 Schema
@@ -30,7 +36,7 @@ const knowledgeListSchema = Type.Object({});
  */
 function getKnowledgeDir(): string {
   const home = process.env.HOME ?? process.env.USERPROFILE ?? "";
-  return path.join(home, ".xiaoa", "agent", "knowledge");
+  return join(home, ".xiaoa", "agent", "knowledge");
 }
 
 /**
@@ -60,10 +66,10 @@ export function createKnowledgeReadTool(): AgentTool<
       }
 
       const knowledgeDir = getKnowledgeDir();
-      const filePath = path.join(knowledgeDir, `${id}.md`);
+      const filePath = join(knowledgeDir, `${id}.md`);
 
       try {
-        const content = await fs.readFile(filePath, "utf-8");
+        const content = await readFile(filePath, "utf-8");
         return {
           content: [{ type: "text", text: content }],
           details: undefined,
@@ -76,6 +82,32 @@ export function createKnowledgeReadTool(): AgentTool<
       }
     },
   };
+}
+
+/**
+ * 提取知识条目标题
+ */
+function extractTitle(content: string, fallbackId: string): string {
+  const lines = content.split(NEWLINE_REGEX);
+  let title = fallbackId;
+
+  // 检查 frontmatter 中的 title
+  if (lines[0] === "---") {
+    for (let i = 1; i < lines.length; i++) {
+      if (lines[i] === "---") {
+        break;
+      }
+      if (lines[i].startsWith("title:")) {
+        title = lines[i].slice(6).trim();
+        break;
+      }
+    }
+  } else if (lines[0]?.startsWith("# ")) {
+    // 使用第一个标题
+    title = lines[0].slice(2).trim();
+  }
+
+  return title;
 }
 
 /**
@@ -97,8 +129,8 @@ export function createKnowledgeListTool(): AgentTool<
       const knowledgeDir = getKnowledgeDir();
 
       try {
-        const files = await fs.readdir(knowledgeDir);
-        const mdFiles = files.filter((f) => f.endsWith(".md"));
+        const files = await readdir(knowledgeDir);
+        const mdFiles = files.filter((f) => MD_EXTENSION_REGEX.test(f));
 
         if (mdFiles.length === 0) {
           return {
@@ -107,34 +139,13 @@ export function createKnowledgeListTool(): AgentTool<
           };
         }
 
-        // 提取标题（从 frontmatter 或第一行）
+        // 提取标题
         const entries: string[] = [];
         for (const file of mdFiles) {
-          const id = file.replace(/\.md$/, "");
+          const id = file.replace(MD_EXTENSION_REGEX, "");
           try {
-            const content = await fs.readFile(
-              path.join(knowledgeDir, file),
-              "utf-8"
-            );
-            const lines = content.split("\n");
-            let title = id;
-
-            // 检查 frontmatter 中的 title
-            if (lines[0] === "---") {
-              for (let i = 1; i < lines.length; i++) {
-                if (lines[i] === "---") {
-                  break;
-                }
-                if (lines[i].startsWith("title:")) {
-                  title = lines[i].slice(6).trim();
-                  break;
-                }
-              }
-            } else if (lines[0].startsWith("# ")) {
-              // 使用第一个标题
-              title = lines[0].slice(2).trim();
-            }
-
+            const content = await readFile(join(knowledgeDir, file), "utf-8");
+            const title = extractTitle(content, id);
             entries.push(`- **${id}**: ${title}`);
           } catch {
             entries.push(`- **${id}**`);

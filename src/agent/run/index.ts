@@ -6,7 +6,6 @@
  * - run-store.ts: 状态管理（eventBuffers, activeRuns）
  * - run-executor.ts: AgentSessionEvent → ChatEvent 桥接
  */
-// biome-ignore lint/performance/noBarrelFile: Re-export for public API
 
 export {
   abortChatRun,

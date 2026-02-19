@@ -93,6 +93,7 @@ async function rebuildMessages(filePath: string): Promise<AgentMessage[]> {
         api: (entry.api as string) ?? "unknown",
         provider: (entry.provider as string) ?? "unknown",
         model: (entry.model as string) ?? "unknown",
+        // biome-ignore lint/suspicious/noExplicitAny: usage 从 JSONL 解析，类型不确定
         usage: (entry.usage as any) ?? {
           input: 0,
           output: 0,

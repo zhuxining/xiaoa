@@ -56,7 +56,7 @@ function generatePermissionId(): string {
  * @param args - 工具参数
  * @returns 用户决策
  */
-export async function requestPermission(
+export function requestPermission(
   run: ActiveRun,
   toolName: string,
   args: unknown

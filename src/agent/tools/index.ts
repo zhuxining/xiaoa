@@ -20,14 +20,17 @@ import {
 } from "./knowledge-tools";
 import { createMemorySearchTool, createMemoryWriteTool } from "./memory-tools";
 
+/** 通用工具类型（参数为对象） */
+type GenericTool = AgentTool<Record<string, unknown>>;
+
 /**
  * 工具组装结果
  */
 export interface AllTools {
   /** 自定义工具（记忆/知识） */
-  customTools: AgentTool<any>[];
+  customTools: GenericTool[];
   /** LLM 可调用的工具（文件/bash） */
-  tools: AgentTool<any>[];
+  tools: GenericTool[];
 }
 
 /**
@@ -38,23 +41,23 @@ export interface AllTools {
  */
 export function buildAllTools(run: ActiveRun): AllTools {
   // 工作区工具（需要 workspaceRootPath）
-  const tools: AgentTool<any>[] = [];
+  const tools: GenericTool[] = [];
 
   if (run.workspaceRootPath) {
     tools.push(
-      createFileReadTool(run),
-      createFileWriteTool(run),
-      createFileListTool(run),
-      createBashTool(run)
+      createFileReadTool(run) as GenericTool,
+      createFileWriteTool(run) as GenericTool,
+      createFileListTool(run) as GenericTool,
+      createBashTool(run) as GenericTool
     );
   }
 
   // 全局可用工具（不需要工作区）
-  const customTools: AgentTool<any>[] = [
-    createMemorySearchTool(),
-    createMemoryWriteTool(),
-    createKnowledgeReadTool(),
-    createKnowledgeListTool(),
+  const customTools: GenericTool[] = [
+    createMemorySearchTool() as GenericTool,
+    createMemoryWriteTool() as GenericTool,
+    createKnowledgeReadTool() as GenericTool,
+    createKnowledgeListTool() as GenericTool,
   ];
 
   return { tools, customTools };

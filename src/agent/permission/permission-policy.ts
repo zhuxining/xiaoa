@@ -9,6 +9,9 @@
 
 import type { ActiveRun } from "../run";
 
+/** 命令分隔正则表达式 */
+const WHITESPACE_REGEX = /\s+/;
+
 /**
  * 权限策略类型
  */
@@ -159,7 +162,7 @@ function getBashCommandRisk(args: unknown): ToolRisk {
   }
 
   const command = (args as { command: string }).command.toLowerCase();
-  const cmdParts = command.split(/\s+/);
+  const cmdParts = command.split(WHITESPACE_REGEX);
   const baseCmd = cmdParts[0];
 
   // 检查高危命令

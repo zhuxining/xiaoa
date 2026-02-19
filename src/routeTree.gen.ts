@@ -8,188 +8,188 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as WorkspaceWorkspaceIdSkillsRouteImport } from './routes/workspace/$workspaceId/skills'
-import { Route as WorkspaceWorkspaceIdMemoriesRouteImport } from './routes/workspace/$workspaceId/memories'
-import { Route as WorkspaceWorkspaceIdKnowledgeRouteImport } from './routes/workspace/$workspaceId/knowledge'
-import { Route as WorkspaceWorkspaceIdAgentRouteImport } from './routes/workspace/$workspaceId/agent'
-import { Route as WorkspaceWorkspaceIdProjectProjectIdRouteImport } from './routes/workspace/$workspaceId/project/$projectId'
+import { Route as rootRouteImport } from "./routes/__root";
+import { Route as IndexRouteImport } from "./routes/index";
+import { Route as SettingsRouteImport } from "./routes/settings";
+import { Route as WorkspaceWorkspaceIdAgentRouteImport } from "./routes/workspace/$workspaceId/agent";
+import { Route as WorkspaceWorkspaceIdKnowledgeRouteImport } from "./routes/workspace/$workspaceId/knowledge";
+import { Route as WorkspaceWorkspaceIdMemoriesRouteImport } from "./routes/workspace/$workspaceId/memories";
+import { Route as WorkspaceWorkspaceIdProjectProjectIdRouteImport } from "./routes/workspace/$workspaceId/project/$projectId";
+import { Route as WorkspaceWorkspaceIdSkillsRouteImport } from "./routes/workspace/$workspaceId/skills";
 
 const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
+	id: "/settings",
+	path: "/settings",
+	getParentRoute: () => rootRouteImport,
+} as any);
 const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
+	id: "/",
+	path: "/",
+	getParentRoute: () => rootRouteImport,
+} as any);
 const WorkspaceWorkspaceIdSkillsRoute =
-  WorkspaceWorkspaceIdSkillsRouteImport.update({
-    id: '/workspace/$workspaceId/skills',
-    path: '/workspace/$workspaceId/skills',
-    getParentRoute: () => rootRouteImport,
-  } as any)
+	WorkspaceWorkspaceIdSkillsRouteImport.update({
+		id: "/workspace/$workspaceId/skills",
+		path: "/workspace/$workspaceId/skills",
+		getParentRoute: () => rootRouteImport,
+	} as any);
 const WorkspaceWorkspaceIdMemoriesRoute =
-  WorkspaceWorkspaceIdMemoriesRouteImport.update({
-    id: '/workspace/$workspaceId/memories',
-    path: '/workspace/$workspaceId/memories',
-    getParentRoute: () => rootRouteImport,
-  } as any)
+	WorkspaceWorkspaceIdMemoriesRouteImport.update({
+		id: "/workspace/$workspaceId/memories",
+		path: "/workspace/$workspaceId/memories",
+		getParentRoute: () => rootRouteImport,
+	} as any);
 const WorkspaceWorkspaceIdKnowledgeRoute =
-  WorkspaceWorkspaceIdKnowledgeRouteImport.update({
-    id: '/workspace/$workspaceId/knowledge',
-    path: '/workspace/$workspaceId/knowledge',
-    getParentRoute: () => rootRouteImport,
-  } as any)
+	WorkspaceWorkspaceIdKnowledgeRouteImport.update({
+		id: "/workspace/$workspaceId/knowledge",
+		path: "/workspace/$workspaceId/knowledge",
+		getParentRoute: () => rootRouteImport,
+	} as any);
 const WorkspaceWorkspaceIdAgentRoute =
-  WorkspaceWorkspaceIdAgentRouteImport.update({
-    id: '/workspace/$workspaceId/agent',
-    path: '/workspace/$workspaceId/agent',
-    getParentRoute: () => rootRouteImport,
-  } as any)
+	WorkspaceWorkspaceIdAgentRouteImport.update({
+		id: "/workspace/$workspaceId/agent",
+		path: "/workspace/$workspaceId/agent",
+		getParentRoute: () => rootRouteImport,
+	} as any);
 const WorkspaceWorkspaceIdProjectProjectIdRoute =
-  WorkspaceWorkspaceIdProjectProjectIdRouteImport.update({
-    id: '/workspace/$workspaceId/project/$projectId',
-    path: '/workspace/$workspaceId/project/$projectId',
-    getParentRoute: () => rootRouteImport,
-  } as any)
+	WorkspaceWorkspaceIdProjectProjectIdRouteImport.update({
+		id: "/workspace/$workspaceId/project/$projectId",
+		path: "/workspace/$workspaceId/project/$projectId",
+		getParentRoute: () => rootRouteImport,
+	} as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/settings': typeof SettingsRoute
-  '/workspace/$workspaceId/agent': typeof WorkspaceWorkspaceIdAgentRoute
-  '/workspace/$workspaceId/knowledge': typeof WorkspaceWorkspaceIdKnowledgeRoute
-  '/workspace/$workspaceId/memories': typeof WorkspaceWorkspaceIdMemoriesRoute
-  '/workspace/$workspaceId/skills': typeof WorkspaceWorkspaceIdSkillsRoute
-  '/workspace/$workspaceId/project/$projectId': typeof WorkspaceWorkspaceIdProjectProjectIdRoute
+	"/": typeof IndexRoute;
+	"/settings": typeof SettingsRoute;
+	"/workspace/$workspaceId/agent": typeof WorkspaceWorkspaceIdAgentRoute;
+	"/workspace/$workspaceId/knowledge": typeof WorkspaceWorkspaceIdKnowledgeRoute;
+	"/workspace/$workspaceId/memories": typeof WorkspaceWorkspaceIdMemoriesRoute;
+	"/workspace/$workspaceId/skills": typeof WorkspaceWorkspaceIdSkillsRoute;
+	"/workspace/$workspaceId/project/$projectId": typeof WorkspaceWorkspaceIdProjectProjectIdRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/settings': typeof SettingsRoute
-  '/workspace/$workspaceId/agent': typeof WorkspaceWorkspaceIdAgentRoute
-  '/workspace/$workspaceId/knowledge': typeof WorkspaceWorkspaceIdKnowledgeRoute
-  '/workspace/$workspaceId/memories': typeof WorkspaceWorkspaceIdMemoriesRoute
-  '/workspace/$workspaceId/skills': typeof WorkspaceWorkspaceIdSkillsRoute
-  '/workspace/$workspaceId/project/$projectId': typeof WorkspaceWorkspaceIdProjectProjectIdRoute
+	"/": typeof IndexRoute;
+	"/settings": typeof SettingsRoute;
+	"/workspace/$workspaceId/agent": typeof WorkspaceWorkspaceIdAgentRoute;
+	"/workspace/$workspaceId/knowledge": typeof WorkspaceWorkspaceIdKnowledgeRoute;
+	"/workspace/$workspaceId/memories": typeof WorkspaceWorkspaceIdMemoriesRoute;
+	"/workspace/$workspaceId/skills": typeof WorkspaceWorkspaceIdSkillsRoute;
+	"/workspace/$workspaceId/project/$projectId": typeof WorkspaceWorkspaceIdProjectProjectIdRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/settings': typeof SettingsRoute
-  '/workspace/$workspaceId/agent': typeof WorkspaceWorkspaceIdAgentRoute
-  '/workspace/$workspaceId/knowledge': typeof WorkspaceWorkspaceIdKnowledgeRoute
-  '/workspace/$workspaceId/memories': typeof WorkspaceWorkspaceIdMemoriesRoute
-  '/workspace/$workspaceId/skills': typeof WorkspaceWorkspaceIdSkillsRoute
-  '/workspace/$workspaceId/project/$projectId': typeof WorkspaceWorkspaceIdProjectProjectIdRoute
+	__root__: typeof rootRouteImport;
+	"/": typeof IndexRoute;
+	"/settings": typeof SettingsRoute;
+	"/workspace/$workspaceId/agent": typeof WorkspaceWorkspaceIdAgentRoute;
+	"/workspace/$workspaceId/knowledge": typeof WorkspaceWorkspaceIdKnowledgeRoute;
+	"/workspace/$workspaceId/memories": typeof WorkspaceWorkspaceIdMemoriesRoute;
+	"/workspace/$workspaceId/skills": typeof WorkspaceWorkspaceIdSkillsRoute;
+	"/workspace/$workspaceId/project/$projectId": typeof WorkspaceWorkspaceIdProjectProjectIdRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/settings'
-    | '/workspace/$workspaceId/agent'
-    | '/workspace/$workspaceId/knowledge'
-    | '/workspace/$workspaceId/memories'
-    | '/workspace/$workspaceId/skills'
-    | '/workspace/$workspaceId/project/$projectId'
-  fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/settings'
-    | '/workspace/$workspaceId/agent'
-    | '/workspace/$workspaceId/knowledge'
-    | '/workspace/$workspaceId/memories'
-    | '/workspace/$workspaceId/skills'
-    | '/workspace/$workspaceId/project/$projectId'
-  id:
-    | '__root__'
-    | '/'
-    | '/settings'
-    | '/workspace/$workspaceId/agent'
-    | '/workspace/$workspaceId/knowledge'
-    | '/workspace/$workspaceId/memories'
-    | '/workspace/$workspaceId/skills'
-    | '/workspace/$workspaceId/project/$projectId'
-  fileRoutesById: FileRoutesById
+	fileRoutesByFullPath: FileRoutesByFullPath;
+	fullPaths:
+		| "/"
+		| "/settings"
+		| "/workspace/$workspaceId/agent"
+		| "/workspace/$workspaceId/knowledge"
+		| "/workspace/$workspaceId/memories"
+		| "/workspace/$workspaceId/skills"
+		| "/workspace/$workspaceId/project/$projectId";
+	fileRoutesByTo: FileRoutesByTo;
+	to:
+		| "/"
+		| "/settings"
+		| "/workspace/$workspaceId/agent"
+		| "/workspace/$workspaceId/knowledge"
+		| "/workspace/$workspaceId/memories"
+		| "/workspace/$workspaceId/skills"
+		| "/workspace/$workspaceId/project/$projectId";
+	id:
+		| "__root__"
+		| "/"
+		| "/settings"
+		| "/workspace/$workspaceId/agent"
+		| "/workspace/$workspaceId/knowledge"
+		| "/workspace/$workspaceId/memories"
+		| "/workspace/$workspaceId/skills"
+		| "/workspace/$workspaceId/project/$projectId";
+	fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  SettingsRoute: typeof SettingsRoute
-  WorkspaceWorkspaceIdAgentRoute: typeof WorkspaceWorkspaceIdAgentRoute
-  WorkspaceWorkspaceIdKnowledgeRoute: typeof WorkspaceWorkspaceIdKnowledgeRoute
-  WorkspaceWorkspaceIdMemoriesRoute: typeof WorkspaceWorkspaceIdMemoriesRoute
-  WorkspaceWorkspaceIdSkillsRoute: typeof WorkspaceWorkspaceIdSkillsRoute
-  WorkspaceWorkspaceIdProjectProjectIdRoute: typeof WorkspaceWorkspaceIdProjectProjectIdRoute
+	IndexRoute: typeof IndexRoute;
+	SettingsRoute: typeof SettingsRoute;
+	WorkspaceWorkspaceIdAgentRoute: typeof WorkspaceWorkspaceIdAgentRoute;
+	WorkspaceWorkspaceIdKnowledgeRoute: typeof WorkspaceWorkspaceIdKnowledgeRoute;
+	WorkspaceWorkspaceIdMemoriesRoute: typeof WorkspaceWorkspaceIdMemoriesRoute;
+	WorkspaceWorkspaceIdSkillsRoute: typeof WorkspaceWorkspaceIdSkillsRoute;
+	WorkspaceWorkspaceIdProjectProjectIdRoute: typeof WorkspaceWorkspaceIdProjectProjectIdRoute;
 }
 
-declare module '@tanstack/react-router' {
-  interface FileRoutesByPath {
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/workspace/$workspaceId/skills': {
-      id: '/workspace/$workspaceId/skills'
-      path: '/workspace/$workspaceId/skills'
-      fullPath: '/workspace/$workspaceId/skills'
-      preLoaderRoute: typeof WorkspaceWorkspaceIdSkillsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/workspace/$workspaceId/memories': {
-      id: '/workspace/$workspaceId/memories'
-      path: '/workspace/$workspaceId/memories'
-      fullPath: '/workspace/$workspaceId/memories'
-      preLoaderRoute: typeof WorkspaceWorkspaceIdMemoriesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/workspace/$workspaceId/knowledge': {
-      id: '/workspace/$workspaceId/knowledge'
-      path: '/workspace/$workspaceId/knowledge'
-      fullPath: '/workspace/$workspaceId/knowledge'
-      preLoaderRoute: typeof WorkspaceWorkspaceIdKnowledgeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/workspace/$workspaceId/agent': {
-      id: '/workspace/$workspaceId/agent'
-      path: '/workspace/$workspaceId/agent'
-      fullPath: '/workspace/$workspaceId/agent'
-      preLoaderRoute: typeof WorkspaceWorkspaceIdAgentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/workspace/$workspaceId/project/$projectId': {
-      id: '/workspace/$workspaceId/project/$projectId'
-      path: '/workspace/$workspaceId/project/$projectId'
-      fullPath: '/workspace/$workspaceId/project/$projectId'
-      preLoaderRoute: typeof WorkspaceWorkspaceIdProjectProjectIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-  }
+declare module "@tanstack/react-router" {
+	interface FileRoutesByPath {
+		"/settings": {
+			id: "/settings";
+			path: "/settings";
+			fullPath: "/settings";
+			preLoaderRoute: typeof SettingsRouteImport;
+			parentRoute: typeof rootRouteImport;
+		};
+		"/": {
+			id: "/";
+			path: "/";
+			fullPath: "/";
+			preLoaderRoute: typeof IndexRouteImport;
+			parentRoute: typeof rootRouteImport;
+		};
+		"/workspace/$workspaceId/skills": {
+			id: "/workspace/$workspaceId/skills";
+			path: "/workspace/$workspaceId/skills";
+			fullPath: "/workspace/$workspaceId/skills";
+			preLoaderRoute: typeof WorkspaceWorkspaceIdSkillsRouteImport;
+			parentRoute: typeof rootRouteImport;
+		};
+		"/workspace/$workspaceId/memories": {
+			id: "/workspace/$workspaceId/memories";
+			path: "/workspace/$workspaceId/memories";
+			fullPath: "/workspace/$workspaceId/memories";
+			preLoaderRoute: typeof WorkspaceWorkspaceIdMemoriesRouteImport;
+			parentRoute: typeof rootRouteImport;
+		};
+		"/workspace/$workspaceId/knowledge": {
+			id: "/workspace/$workspaceId/knowledge";
+			path: "/workspace/$workspaceId/knowledge";
+			fullPath: "/workspace/$workspaceId/knowledge";
+			preLoaderRoute: typeof WorkspaceWorkspaceIdKnowledgeRouteImport;
+			parentRoute: typeof rootRouteImport;
+		};
+		"/workspace/$workspaceId/agent": {
+			id: "/workspace/$workspaceId/agent";
+			path: "/workspace/$workspaceId/agent";
+			fullPath: "/workspace/$workspaceId/agent";
+			preLoaderRoute: typeof WorkspaceWorkspaceIdAgentRouteImport;
+			parentRoute: typeof rootRouteImport;
+		};
+		"/workspace/$workspaceId/project/$projectId": {
+			id: "/workspace/$workspaceId/project/$projectId";
+			path: "/workspace/$workspaceId/project/$projectId";
+			fullPath: "/workspace/$workspaceId/project/$projectId";
+			preLoaderRoute: typeof WorkspaceWorkspaceIdProjectProjectIdRouteImport;
+			parentRoute: typeof rootRouteImport;
+		};
+	}
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  SettingsRoute: SettingsRoute,
-  WorkspaceWorkspaceIdAgentRoute: WorkspaceWorkspaceIdAgentRoute,
-  WorkspaceWorkspaceIdKnowledgeRoute: WorkspaceWorkspaceIdKnowledgeRoute,
-  WorkspaceWorkspaceIdMemoriesRoute: WorkspaceWorkspaceIdMemoriesRoute,
-  WorkspaceWorkspaceIdSkillsRoute: WorkspaceWorkspaceIdSkillsRoute,
-  WorkspaceWorkspaceIdProjectProjectIdRoute:
-    WorkspaceWorkspaceIdProjectProjectIdRoute,
-}
+	IndexRoute: IndexRoute,
+	SettingsRoute: SettingsRoute,
+	WorkspaceWorkspaceIdAgentRoute: WorkspaceWorkspaceIdAgentRoute,
+	WorkspaceWorkspaceIdKnowledgeRoute: WorkspaceWorkspaceIdKnowledgeRoute,
+	WorkspaceWorkspaceIdMemoriesRoute: WorkspaceWorkspaceIdMemoriesRoute,
+	WorkspaceWorkspaceIdSkillsRoute: WorkspaceWorkspaceIdSkillsRoute,
+	WorkspaceWorkspaceIdProjectProjectIdRoute:
+		WorkspaceWorkspaceIdProjectProjectIdRoute,
+};
 export const routeTree = rootRouteImport
-  ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+	._addFileChildren(rootRouteChildren)
+	._addFileTypes<FileRouteTypes>();

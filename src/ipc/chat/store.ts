@@ -4,7 +4,6 @@
  * 极薄 IPC 层，重导出 src/agent/run/ 模块的公开 API。
  * 旧代码（agent/, tools/, permission/, run/）将逐步废弃。
  */
-// biome-ignore lint/performance/noBarrelFile: Re-export from new agent/run module
 
 export type { ActiveRun, PendingPermission, ToolContext } from "@/agent/run";
 // Core run functions
