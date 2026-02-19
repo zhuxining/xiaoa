@@ -4,6 +4,7 @@ import { config } from "./config";
 import { knowledge } from "./knowledge";
 import { memory } from "./memory";
 import { project } from "./project";
+import { session } from "./session";
 import { shell } from "./shell";
 import { sisson } from "./sisson";
 import { skill } from "./skill";
@@ -18,6 +19,7 @@ export const router = {
   chat,
   shell,
   sisson,
+  session,
   config,
   workspace,
   skill,
