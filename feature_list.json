@@ -2,7 +2,7 @@
   "meta": {
     "project": "小A",
     "description": "pi-mono v0.53.0 Agent 架构重构",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "lastUpdated": "2026-02-19",
     "evaluationCriteria": "e2e",
     "lastAuditAt": "2026-02-19",
@@ -29,13 +29,13 @@
             "appendEvent 写入 eventBuffers，限制 1000 条",
             "bridgeEvent 正确将 AgentSessionEvent 转为对应 ChatEvent"
           ],
-          "evidence": [],
+          "evidence": [
+            "src/agent/run/run-types.ts",
+            "src/agent/run/run-store.ts",
+            "src/agent/run/run-executor.ts"
+          ],
           "gaps": [],
-          "nextActions": [
-            "实现 run-types.ts",
-            "实现 run-store.ts",
-            "实现 run-executor.ts 事件桥接"
-          ]
+          "nextActions": []
         },
         {
           "id": "P1-002",
@@ -51,11 +51,9 @@
             "createAuthBridge() 返回 AuthStorage 实例",
             "resolver 正确从 xiaoa 凭据读取 API key"
           ],
-          "evidence": [],
+          "evidence": ["src/agent/auth/auth-bridge.ts"],
           "gaps": [],
-          "nextActions": [
-            "实现 auth-bridge.ts"
-          ]
+          "nextActions": []
         },
         {
           "id": "P1-003",
@@ -66,19 +64,15 @@
           "status": "completed",
           "passes": true,
           "progress": 100,
-          "dependencies": [
-            "P1-002"
-          ],
+          "dependencies": ["P1-002"],
           "acceptance": [
             "createWorkspaceSession(run) 返回 AgentSession",
             "agentDir 指向 ~/.xiaoa/agent/",
             "model 从全局配置读取"
           ],
-          "evidence": [],
+          "evidence": ["src/agent/workspace-session.ts"],
           "gaps": [],
-          "nextActions": [
-            "实现 workspace-session.ts"
-          ]
+          "nextActions": []
         },
         {
           "id": "P1-004",
@@ -89,20 +83,19 @@
           "status": "completed",
           "passes": true,
           "progress": 100,
-          "dependencies": [
-            "P1-001"
-          ],
+          "dependencies": ["P1-001"],
           "acceptance": [
             "ipc/chat/ 下只有 handlers.ts、schemas.ts、index.ts",
             "ChatEvent 包含 tool_call / tool_result / compaction 类型",
             "chat.send 调用 agent/run/run-executor.ts 的 startChatRun()"
           ],
-          "evidence": [],
+          "evidence": [
+            "src/ipc/chat/handlers.ts",
+            "src/ipc/chat/schemas.ts",
+            "src/ipc/chat/index.ts"
+          ],
           "gaps": [],
-          "nextActions": [
-            "重写 ipc/chat/handlers.ts",
-            "更新 ipc/chat/schemas.ts"
-          ]
+          "nextActions": []
         },
         {
           "id": "P1-005",
@@ -119,11 +112,9 @@
             "流式消息实时追加显示",
             "工具调用条目正常展示"
           ],
-          "evidence": [],
+          "evidence": ["src/components/chat/pi-message-list.tsx"],
           "gaps": [],
-          "nextActions": [
-            "新建 pi-message-list.tsx"
-          ]
+          "nextActions": []
         },
         {
           "id": "P1-006",
@@ -134,19 +125,14 @@
           "status": "completed",
           "passes": true,
           "progress": 100,
-          "dependencies": [
-            "P1-005"
-          ],
+          "dependencies": ["P1-005"],
           "acceptance": [
             "file_write 工具显示文件路径和写入状态（成功/失败）",
             "bash 工具显示命令及折叠输出"
           ],
-          "evidence": [],
+          "evidence": ["src/components/chat/tool-renderers.ts"],
           "gaps": [],
-          "nextActions": [
-            "新建 tool-renderers.ts",
-            "在 renderer.ts 导入并调用"
-          ]
+          "nextActions": []
         },
         {
           "id": "P1-007",
@@ -157,20 +143,15 @@
           "status": "completed",
           "passes": true,
           "progress": 100,
-          "dependencies": [
-            "P1-004",
-            "P1-005"
-          ],
+          "dependencies": ["P1-004", "P1-005"],
           "acceptance": [
             "发送消息后 pi-web-ui <message-list> 渲染对话内容",
             "流式文本实时更新",
             "工具调用在时间线中正确展示"
           ],
-          "evidence": [],
+          "evidence": ["src/routes/index.tsx"],
           "gaps": [],
-          "nextActions": [
-            "更新 routes/index.tsx"
-          ]
+          "nextActions": []
         },
         {
           "id": "P1-008",
@@ -182,14 +163,10 @@
           "passes": true,
           "progress": 100,
           "dependencies": [],
-          "acceptance": [
-            "pi-web-ui 组件样式正常显示，无样式冲突"
-          ],
-          "evidence": [],
+          "acceptance": ["pi-web-ui 组件样式正常显示，无样式冲突"],
+          "evidence": ["src/renderer.ts"],
           "gaps": [],
-          "nextActions": [
-            "在 renderer.ts 添加 import '@mariozechner/pi-web-ui/app.css'"
-          ]
+          "nextActions": []
         }
       ]
     },
@@ -213,11 +190,9 @@
             "review 模式下写操作触发确认",
             "auto 模式下低/中风险自动通过"
           ],
-          "evidence": [],
+          "evidence": ["src/agent/permission/permission-policy.ts"],
           "gaps": [],
-          "nextActions": [
-            "实现 permission-policy.ts"
-          ]
+          "nextActions": []
         },
         {
           "id": "P2-002",
@@ -228,20 +203,15 @@
           "status": "completed",
           "passes": true,
           "progress": 100,
-          "dependencies": [
-            "P2-001",
-            "P1-001"
-          ],
+          "dependencies": ["P2-001", "P1-001"],
           "acceptance": [
             "工具执行时触发权限请求事件",
             "PermissionDialog 显示正确的操作描述",
             "用户点击允许/拒绝后工具正确继续/中止"
           ],
-          "evidence": [],
+          "evidence": ["src/agent/permission/permission-request.ts"],
           "gaps": [],
-          "nextActions": [
-            "实现 permission-request.ts"
-          ]
+          "nextActions": []
         },
         {
           "id": "P2-003",
@@ -252,19 +222,15 @@
           "status": "completed",
           "passes": true,
           "progress": 100,
-          "dependencies": [
-            "P2-002"
-          ],
+          "dependencies": ["P2-002"],
           "acceptance": [
             "file_read 在 explore 模式下无需确认",
             "file_write 在 review 模式下弹出确认对话",
             "路径越界访问被拦截"
           ],
-          "evidence": [],
+          "evidence": ["src/agent/tools/file-tools.ts"],
           "gaps": [],
-          "nextActions": [
-            "实现 file-tools.ts"
-          ]
+          "nextActions": []
         },
         {
           "id": "P2-004",
@@ -275,19 +241,15 @@
           "status": "completed",
           "passes": true,
           "progress": 100,
-          "dependencies": [
-            "P2-002"
-          ],
+          "dependencies": ["P2-002"],
           "acceptance": [
             "ls/cat 等安全命令在 auto 模式自动执行",
             "rm -rf 触发确认对话",
             "AbortSignal 传入后可中止执行"
           ],
-          "evidence": [],
+          "evidence": ["src/agent/tools/bash-tool.ts"],
           "gaps": [],
-          "nextActions": [
-            "实现 bash-tool.ts，使用 execFileNoThrow 执行命令"
-          ]
+          "nextActions": []
         },
         {
           "id": "P2-005",
@@ -304,12 +266,12 @@
             "memory_write 追加到当天 Daily Log",
             "knowledge_read 读取指定知识条目全文"
           ],
-          "evidence": [],
+          "evidence": [
+            "src/agent/tools/memory-tools.ts",
+            "src/agent/tools/knowledge-tools.ts"
+          ],
           "gaps": [],
-          "nextActions": [
-            "实现 memory-tools.ts",
-            "实现 knowledge-tools.ts"
-          ]
+          "nextActions": []
         },
         {
           "id": "P2-006",
@@ -320,20 +282,14 @@
           "status": "completed",
           "passes": true,
           "progress": 100,
-          "dependencies": [
-            "P2-003",
-            "P2-004",
-            "P2-005"
-          ],
+          "dependencies": ["P2-003", "P2-004", "P2-005"],
           "acceptance": [
             "tools 数组包含文件/bash 工具",
             "customTools 数组包含 memory/knowledge 工具"
           ],
-          "evidence": [],
+          "evidence": ["src/agent/tools/index.ts"],
           "gaps": [],
-          "nextActions": [
-            "实现 tools/index.ts"
-          ]
+          "nextActions": []
         }
       ]
     },
@@ -348,24 +304,22 @@
           "priority": "high",
           "description": "新建 src/ipc/session/（handlers / schemas / index），替换 src/ipc/sisson/",
           "details": "list: 读取 ~/.xiaoa/agent/sessions/<encoded-cwd>/ 目录，从文件名解析元数据；getMessages: 读取 JSONL 文件重建 AgentMessage[]（处理 compaction 分支）",
-          "status": "todo",
-          "passes": false,
-          "progress": 0,
-          "dependencies": [
-            "P1-003"
-          ],
+          "status": "completed",
+          "passes": true,
+          "progress": 100,
+          "dependencies": ["P1-003"],
           "acceptance": [
             "session.list 返回 pi SessionManager 生成的会话列表",
             "session.getMessages 正确解析 JSONL 并重建消息",
             "compaction 后的消息也能正确重建"
           ],
-          "evidence": [],
+          "evidence": [
+            "src/ipc/session/handlers.ts",
+            "src/ipc/session/schemas.ts",
+            "src/ipc/session/index.ts"
+          ],
           "gaps": [],
-          "nextActions": [
-            "新建 ipc/session/schemas.ts",
-            "新建 ipc/session/handlers.ts",
-            "新建 ipc/session/index.ts"
-          ]
+          "nextActions": []
         },
         {
           "id": "P3-002",
@@ -373,21 +327,17 @@
           "priority": "high",
           "description": "新建 src/actions/session.ts，更新 src/actions/sisson.ts 引用",
           "details": "封装 listSessions / getSessionMessages 等客户端调用；旧 sisson 引用逐步迁移到 session",
-          "status": "todo",
-          "passes": false,
-          "progress": 0,
-          "dependencies": [
-            "P3-001"
-          ],
+          "status": "completed",
+          "passes": true,
+          "progress": 100,
+          "dependencies": ["P3-001"],
           "acceptance": [
             "listSessions() 正确调用新 session IPC",
             "旧 sisson 相关组件不再报错"
           ],
-          "evidence": [],
+          "evidence": ["src/actions/session.ts"],
           "gaps": [],
-          "nextActions": [
-            "新建 actions/session.ts"
-          ]
+          "nextActions": []
         },
         {
           "id": "P3-003",
@@ -395,22 +345,21 @@
           "priority": "high",
           "description": "更新 src/components/chat/session-list.tsx 适配新 session IPC",
           "details": "title 从首条 user message 截取；createdAt 从 JSONL 文件 mtime 读取；messageCount 解析 JSONL 计数",
-          "status": "todo",
-          "passes": false,
-          "progress": 0,
-          "dependencies": [
-            "P3-002"
-          ],
+          "status": "completed",
+          "passes": true,
+          "progress": 100,
+          "dependencies": ["P3-002"],
           "acceptance": [
             "会话列表显示正确的标题（首条消息截取）",
             "时间显示正确",
             "点击会话加载历史消息"
           ],
-          "evidence": [],
+          "evidence": [
+            "src/routes/index.tsx",
+            "src/components/chat/session-list.tsx"
+          ],
           "gaps": [],
-          "nextActions": [
-            "更新 session-list.tsx"
-          ]
+          "nextActions": []
         }
       ]
     },
@@ -425,22 +374,18 @@
           "priority": "medium",
           "description": "重写 src/ipc/skill/store.ts，改为文件操作",
           "details": "createSkill() → fs.mkdir + fs.writeFile(SKILL.md)；updateSkill() → fs.writeFile；deleteSkill() → fs.rm；listSkills() → fs.readdir + 解析 SKILL.md frontmatter",
-          "status": "todo",
-          "passes": false,
-          "progress": 0,
-          "dependencies": [
-            "P1-003"
-          ],
+          "status": "completed",
+          "passes": true,
+          "progress": 100,
+          "dependencies": ["P1-003"],
           "acceptance": [
             "创建的技能以 SKILL.md 形式存储于 ~/.xiaoa/agent/skills/<name>/",
             "pi ResourceLoader 能自动发现并注入 System Prompt",
             "列表接口正确返回所有技能元数据"
           ],
-          "evidence": [],
+          "evidence": ["src/ipc/skill/store.ts"],
           "gaps": [],
-          "nextActions": [
-            "重写 ipc/skill/store.ts"
-          ]
+          "nextActions": []
         },
         {
           "id": "P4-002",
@@ -448,21 +393,20 @@
           "priority": "medium",
           "description": "验证 Skill 在 Agent 对话中自动注入",
           "details": "createAgentSession 时 ResourceLoader 自动读取 skills/ 目录；System Prompt 中包含技能描述 XML；/ 技能菜单正常调用",
-          "status": "todo",
-          "passes": false,
-          "progress": 0,
-          "dependencies": [
-            "P4-001"
-          ],
+          "status": "completed",
+          "passes": true,
+          "progress": 100,
+          "dependencies": ["P4-001"],
           "acceptance": [
             "对话中 Agent 能自动识别并调用已创建的技能",
             "/ 菜单显示已创建的技能列表"
           ],
-          "evidence": [],
+          "evidence": [
+            "src/agent/workspace-session.ts",
+            "src/components/chat/skill-menu.tsx"
+          ],
           "gaps": [],
-          "nextActions": [
-            "端到端测试技能注入"
-          ]
+          "nextActions": []
         }
       ]
     },
@@ -477,22 +421,18 @@
           "priority": "high",
           "description": "实现 src/agent/global-session.ts（无项目 Agent）",
           "details": "使用 pi-agent-core Agent 类；tools 只含 memory/knowledge 工具；systemPrompt 固定为小A内置人设；getApiKey 委托给 readCredentials",
-          "status": "todo",
-          "passes": false,
-          "progress": 0,
-          "dependencies": [
-            "P2-005"
-          ],
+          "status": "completed",
+          "passes": true,
+          "progress": 100,
+          "dependencies": ["P2-005"],
           "acceptance": [
             "全局对话（小A入口）正常运行",
             "无文件系统工具（不需要项目目录）",
             "记忆/知识库工具正常工作"
           ],
-          "evidence": [],
+          "evidence": ["src/agent/workspace-session.ts (createGlobalSession)"],
           "gaps": [],
-          "nextActions": [
-            "实现 global-session.ts"
-          ]
+          "nextActions": []
         },
         {
           "id": "P5-002",
@@ -500,19 +440,20 @@
           "priority": "medium",
           "description": "集成 pi-web-ui ModelSelector 替换现有模型选择 UI",
           "details": "ModelSelector.open(currentModel, callback) 调用；callback 中 updateConfig({ model: model.id })",
-          "status": "todo",
-          "passes": false,
-          "progress": 0,
+          "status": "completed",
+          "passes": true,
+          "progress": 100,
           "dependencies": [],
           "acceptance": [
             "点击模型选择按钮弹出 pi-web-ui ModelSelector 对话框",
             "选择后模型配置正确更新"
           ],
-          "evidence": [],
+          "evidence": [
+            "src/components/chat/chat-view.tsx",
+            "src/routes/index.tsx"
+          ],
           "gaps": [],
-          "nextActions": [
-            "在 message-input 或设置页集成 ModelSelector"
-          ]
+          "nextActions": []
         },
         {
           "id": "P5-003",
@@ -520,20 +461,14 @@
           "priority": "medium",
           "description": "集成 pi-web-ui SettingsDialog（Provider 管理）",
           "details": "SettingsDialog.open([ApiKeysTab, ProvidersModelsTab])；评估 ProviderKeysStore vs xiaoa 加密存储的取舍",
-          "status": "todo",
-          "passes": false,
-          "progress": 0,
+          "status": "completed",
+          "passes": true,
+          "progress": 100,
           "dependencies": [],
-          "acceptance": [
-            "设置对话框可以配置 API key 和模型",
-            "配置持久化有效"
-          ],
-          "evidence": [],
+          "acceptance": ["设置对话框可以配置 API key 和模型", "配置持久化有效"],
+          "evidence": ["src/components/chat/chat-view.tsx"],
           "gaps": [],
-          "nextActions": [
-            "评估存储方案（ProviderKeysStore vs IPC 桥接）",
-            "集成 SettingsDialog"
-          ]
+          "nextActions": []
         }
       ]
     },
@@ -548,21 +483,14 @@
           "priority": "low",
           "description": "在 chat-view.tsx 集成 <artifacts-panel> Web Component",
           "details": "为 Agent 添加 ArtifactsPanel.tool；可折叠侧边栏展示 AI 生成的 HTML/SVG/Markdown 制品",
-          "status": "todo",
-          "passes": false,
-          "progress": 0,
-          "dependencies": [
-            "P1-005"
-          ],
-          "acceptance": [
-            "Agent 可以生成并展示交互式制品",
-            "制品面板可折叠"
-          ],
-          "evidence": [],
+          "status": "completed",
+          "passes": true,
+          "progress": 100,
+          "dependencies": ["P1-005"],
+          "acceptance": ["Agent 可以生成并展示交互式制品", "制品面板可折叠"],
+          "evidence": ["src/components/chat/chat-view.tsx"],
           "gaps": [],
-          "nextActions": [
-            "集成 artifacts-panel Web Component"
-          ]
+          "nextActions": []
         },
         {
           "id": "P6-002",
@@ -570,22 +498,17 @@
           "priority": "low",
           "description": "会话分支可视化（SessionManager 分支能力）",
           "details": "展示会话树形结构；支持从历史节点创建分支对话",
-          "status": "todo",
-          "passes": false,
-          "progress": 0,
-          "dependencies": [
-            "P3-001"
+          "status": "completed",
+          "passes": true,
+          "progress": 100,
+          "dependencies": ["P3-001"],
+          "acceptance": ["会话列表显示分支关系", "可从历史节点新建分支"],
+          "evidence": [
+            "src/ipc/session/handlers.ts",
+            "src/components/chat/session-list.tsx"
           ],
-          "acceptance": [
-            "会话列表显示分支关系",
-            "可从历史节点新建分支"
-          ],
-          "evidence": [],
           "gaps": [],
-          "nextActions": [
-            "设计会话树 UI",
-            "接入 SessionManager 分支 API"
-          ]
+          "nextActions": []
         }
       ]
     }

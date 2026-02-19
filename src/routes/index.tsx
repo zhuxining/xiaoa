@@ -1,5 +1,4 @@
 import type { AgentMessage } from "@mariozechner/pi-agent-core";
-import type { TextContent } from "@mariozechner/pi-ai";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { FileText, Globe, Wrench } from "lucide-react";
@@ -11,17 +10,15 @@ import {
   respondChatPermission,
   sendChat,
 } from "@/actions/chat";
-import { createSisson, getSissonMessages, listSissons } from "@/actions/sisson";
+import { getConfig, updateLLMConfig } from "@/actions/config";
+import {
+  createSession,
+  getSessionMessages,
+  listSessions,
+} from "@/actions/session";
 import { ChatView } from "@/components/chat/chat-view";
 import type { PermissionRequest } from "@/components/chat/permission-dialog";
 import type { SkillMenuItem } from "@/components/chat/skill-menu";
-
-/**
- * 创建文本内容块
- */
-function _textContent(text: string): TextContent {
-  return { type: "text", text };
-}
 
 const SKILLS: SkillMenuItem[] = [
   {
@@ -46,12 +43,6 @@ const SKILLS: SkillMenuItem[] = [
 
 /**
  * 处理 ChatEvent，更新消息状态
- *
- * 支持 pi-agent-core 事件类型：
- * - message_start/message_delta/message_end: 文本流式输出
- * - tool_start/tool_end/tool_call/tool_result: 工具执行
- * - compaction: 上下文压缩
- * - permission_request/permission_resolved: 权限确认
  */
 function applyHomeChatEvent(
   event: ChatEvent,
@@ -76,12 +67,10 @@ function applyHomeChatEvent(
       break;
 
     case "message_end":
-      // 消息结束，等待下一轮
       break;
 
     case "tool_start":
     case "tool_call":
-      // 工具开始/调用中，由 pi-web-ui MessageList 自动渲染
       break;
 
     case "tool_end":
@@ -90,7 +79,6 @@ function applyHomeChatEvent(
       break;
 
     case "compaction":
-      // 上下文压缩事件，记录日志
       console.log(
         `[compaction] messages: ${event.messagesBefore} -> ${event.messagesAfter}`
       );
@@ -111,7 +99,6 @@ function applyHomeChatEvent(
 
     case "run_end":
     case "run_aborted":
-      // 运行结束/中止，由 eventResult.running 处理
       break;
   }
 }
@@ -119,9 +106,30 @@ function applyHomeChatEvent(
 function HomePage() {
   const queryClient = useQueryClient();
 
+  // 获取配置（包含当前模型信息）
+  const { data: config } = useQuery({
+    queryKey: ["config"],
+    queryFn: getConfig,
+  });
+
+  // 当前模型信息
+  const currentModel = config?.llm
+    ? { id: config.llm.model, name: config.llm.model }
+    : null;
+
+  // 模型变更处理
+  const handleModelChange = useCallback(
+    async (model: { id: string; name: string }) => {
+      await updateLLMConfig({ model: model.id });
+      queryClient.invalidateQueries({ queryKey: ["config"] });
+    },
+    [queryClient]
+  );
+
+  // 使用新的 session IPC
   const { data: sessionsData = [] } = useQuery({
-    queryKey: ["sisson", "global", "sessions"],
-    queryFn: () => listSissons({ scope: "global" }),
+    queryKey: ["session", "global", "list"],
+    queryFn: () => listSessions({ scope: "global" }),
   });
 
   const sessions = sessionsData.map((s) => ({
@@ -141,11 +149,12 @@ function HomePage() {
     }
   }, [currentSessionId, sessions]);
 
-  const { data: messagesData = [] } = useQuery({
-    queryKey: ["sisson", "global", "messages", currentSessionId],
+  // 使用新的 session IPC 获取消息（直接返回 AgentMessage[]）
+  const { data: messages = [] } = useQuery({
+    queryKey: ["session", "global", "messages", currentSessionId],
     queryFn: () =>
       currentSessionId
-        ? getSissonMessages({
+        ? getSessionMessages({
             scope: "global",
             sessionId: currentSessionId,
           })
@@ -153,43 +162,11 @@ function HomePage() {
     enabled: !!currentSessionId,
   });
 
-  // 转换为 AgentMessage[] 格式
-  // UserMessage: content 可以是 string
-  // AssistantMessage: content 必须是 TextContent[]，需要额外字段
-  const messages: AgentMessage[] = messagesData.map((m) => {
-    if (m.role === "user") {
-      return {
-        role: "user" as const,
-        content: m.content,
-        timestamp: m.timestamp,
-      };
-    }
-    // assistant: 需要完整的 AssistantMessage 字段
-    return {
-      role: "assistant" as const,
-      content: [{ type: "text" as const, text: m.content }],
-      timestamp: m.timestamp,
-      // 必需字段（历史消息用默认值）
-      api: "openai-completions" as const,
-      provider: "openai" as const,
-      model: "unknown",
-      usage: {
-        input: 0,
-        output: 0,
-        cacheRead: 0,
-        cacheWrite: 0,
-        totalTokens: 0,
-        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
-      },
-      stopReason: "stop" as const,
-    };
-  });
-
   const createSessionMutation = useMutation({
-    mutationFn: () => createSisson({ scope: "global" }),
+    mutationFn: () => createSession({ scope: "global" }),
     onSuccess: (newSession) => {
       queryClient.invalidateQueries({
-        queryKey: ["sisson", "global", "sessions"],
+        queryKey: ["session", "global", "list"],
       });
       setCurrentSessionId(newSession.id);
     },
@@ -202,15 +179,13 @@ function HomePage() {
   const [permissionRequest, setPermissionRequest] =
     useState<PermissionRequest | null>(null);
 
-  // 流式消息（AgentMessage 格式）
-  // AssistantMessage: 需要完整的字段，但流式时 usage 等可能不完整
+  // 流式消息
   const streamingMessage: AgentMessage | null =
     isGenerating && streamingContent
       ? {
           role: "assistant",
           content: [{ type: "text", text: streamingContent }],
           timestamp: Date.now(),
-          // 流式消息的临时字段
           api: "openai-completions" as const,
           provider: "openai" as const,
           model: "streaming",
@@ -253,10 +228,10 @@ function HomePage() {
     mutationFn: sendChat,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["sisson", "global", "messages", currentSessionId],
+        queryKey: ["session", "global", "messages", currentSessionId],
       });
       queryClient.invalidateQueries({
-        queryKey: ["sisson", "global", "sessions"],
+        queryKey: ["session", "global", "list"],
       });
     },
     onError: (error) => {
@@ -328,10 +303,10 @@ function HomePage() {
       setActiveRunId(null);
       setPermissionRequest(null);
       queryClient.invalidateQueries({
-        queryKey: ["sisson", "global", "messages", currentSessionId],
+        queryKey: ["session", "global", "messages", currentSessionId],
       });
       queryClient.invalidateQueries({
-        queryKey: ["sisson", "global", "sessions"],
+        queryKey: ["session", "global", "list"],
       });
     }
   }, [currentSessionId, eventCursor, eventResult, queryClient]);
@@ -425,11 +400,13 @@ function HomePage() {
   return (
     <ChatView
       agentName="小A"
+      currentModel={currentModel}
       currentSessionId={currentSessionId}
       isGenerating={isGenerating}
       messages={messages}
       onAbort={handleAbort}
       onMessageSend={handleMessageSend}
+      onModelChange={handleModelChange}
       onPermissionAllow={handlePermissionAllow}
       onPermissionDeny={handlePermissionDeny}
       onSessionCreate={handleSessionCreate}

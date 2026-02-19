@@ -1,15 +1,20 @@
+/**
+ * skill/store.ts - 技能存储层（文件操作版本）
+ *
+ * 将技能存储在 ~/.xiaoa/agent/skills/<name>/SKILL.md 格式，
+ * 以便 pi ResourceLoader 自动发现并注入 System Prompt。
+ */
+
 import {
-  copyFileSync,
   existsSync,
   mkdirSync,
   readdirSync,
   readFileSync,
   rmSync,
   statSync,
-  unlinkSync,
   writeFileSync,
 } from "node:fs";
-import { basename, dirname, join, relative } from "node:path";
+import { basename, join, relative } from "node:path";
 import { app } from "electron";
 import type { z } from "zod";
 import type { skillSchema } from "./schemas";
@@ -27,33 +32,65 @@ interface ParsedSkillMarkdown {
 const FRONTMATTER_START = "---";
 const FRONTMATTER_END = "\n---";
 
-function getWorkspacesRoot(): string {
-  return join(app.getPath("userData"), "workspaces");
+/**
+ * 获取 xiaoa agent 目录
+ */
+function getXiaoaAgentDir(): string {
+  return join(app.getPath("userData"), "agent");
 }
 
-function getSkillsDir(workspaceId: string): string {
-  return join(getWorkspacesRoot(), workspaceId, "skills");
+/**
+ * 获取技能根目录 ~/.xiaoa/agent/skills/
+ */
+function getSkillsRootDir(): string {
+  return join(getXiaoaAgentDir(), "skills");
 }
 
-function getSkillPath(workspaceId: string, skillId: string): string {
-  return join(getSkillsDir(workspaceId), `${skillId}.json`);
+/**
+ * 获取技能目录 ~/.xiaoa/agent/skills/<name>/
+ */
+function getSkillDir(skillName: string): string {
+  // 规范化名称：移除特殊字符，转小写
+  const safeName = skillName
+    .toLowerCase()
+    .replace(/[^a-z0-9\u4e00-\u9fa5_-]/g, "-")
+    .slice(0, 50);
+  return join(getSkillsRootDir(), safeName);
 }
 
-function getSkillReferencesDir(workspaceId: string, skillId: string): string {
-  return join(getSkillsDir(workspaceId), "_references", skillId);
+/**
+ * 获取 SKILL.md 文件路径
+ */
+function getSkillFilePath(skillDir: string): string {
+  return join(skillDir, "SKILL.md");
 }
 
-function ensureSkillsDir(workspaceId: string): void {
-  const dir = getSkillsDir(workspaceId);
+/**
+ * 获取参考资料目录
+ */
+function getReferencesDir(skillDir: string): string {
+  return join(skillDir, "references");
+}
+
+/**
+ * 确保目录存在
+ */
+function ensureDir(dir: string): void {
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
   }
 }
 
+/**
+ * 生成唯一 ID
+ */
 function generateId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+/**
+ * 解析 SKILL.md 文件内容
+ */
 function parseSkillMarkdown(content: string): ParsedSkillMarkdown {
   if (!content.startsWith(FRONTMATTER_START)) {
     return { prompt: content.trim() };
@@ -84,15 +121,22 @@ function parseSkillMarkdown(content: string): ParsedSkillMarkdown {
       parsed.icon = normalized;
     } else if (key === "argument-hint") {
       parsed.argumentHint = normalized;
+    } else if (key === "id") {
+      // 保留 ID
+      (parsed as any).id = normalized;
     }
   }
 
   return parsed;
 }
 
+/**
+ * 构建 SKILL.md 文件内容
+ */
 function buildSkillMarkdown(skill: Skill): string {
   const frontmatter: string[] = [
     "---",
+    `id: ${skill.id}`,
     `name: ${skill.name}`,
     `description: ${skill.description || ""}`,
   ];
@@ -106,6 +150,9 @@ function buildSkillMarkdown(skill: Skill): string {
   return `${frontmatter.join("\n")}\n\n${skill.prompt}\n`;
 }
 
+/**
+ * 列出参考文件
+ */
 function listReferenceFiles(dir: string, baseDir = dir): string[] {
   if (!existsSync(dir)) {
     return [];
@@ -125,71 +172,125 @@ function listReferenceFiles(dir: string, baseDir = dir): string[] {
   return files;
 }
 
-function toSkillWithReferences(skill: Skill): Skill {
-  const refsDir = getSkillReferencesDir(skill.workspaceId, skill.id);
-  const references = listReferenceFiles(refsDir).map((path) => ({
-    name: basename(path),
-    path,
-  }));
-  return {
-    ...skill,
-    references,
-  };
+/**
+ * 读取技能（从目录名）
+ */
+function readSkillFromDir(skillDir: string): Skill | null {
+  const skillFilePath = getSkillFilePath(skillDir);
+  if (!existsSync(skillFilePath)) {
+    return null;
+  }
+
+  try {
+    const content = readFileSync(skillFilePath, "utf-8");
+    const parsed = parseSkillMarkdown(content);
+    const stat = statSync(skillFilePath);
+
+    // 如果没有 ID，生成一个
+    const id = (parsed as any).id || generateId();
+
+    // 获取参考文件
+    const refsDir = getReferencesDir(skillDir);
+    const references = listReferenceFiles(refsDir).map((path) => ({
+      name: basename(path),
+      path,
+    }));
+
+    return {
+      id,
+      workspaceId: "", // 全局技能，不绑定工作区
+      name: parsed.name || basename(skillDir),
+      description: parsed.description || "",
+      icon: parsed.icon,
+      argumentHint: parsed.argumentHint,
+      prompt: parsed.prompt,
+      references,
+      enabled: true,
+      createdAt: stat.birthtimeMs,
+      updatedAt: stat.mtimeMs,
+    };
+  } catch {
+    return null;
+  }
 }
 
-export function listSkills(workspaceId: string): Skill[] {
-  const dir = getSkillsDir(workspaceId);
-  if (!existsSync(dir)) {
+/**
+ * 列出所有技能
+ *
+ * 注意：新版本技能是全局的，不再绑定 workspaceId
+ */
+export function listSkills(_workspaceId: string): Skill[] {
+  const skillsRoot = getSkillsRootDir();
+  if (!existsSync(skillsRoot)) {
     return [];
   }
 
   const skills: Skill[] = [];
-  const files = readdirSync(dir);
+  const entries = readdirSync(skillsRoot, { withFileTypes: true });
 
-  for (const file of files) {
-    if (!file.endsWith(".json")) {
+  for (const entry of entries) {
+    if (!entry.isDirectory()) {
       continue;
     }
-    try {
-      const content = readFileSync(join(dir, file), "utf-8");
-      skills.push(toSkillWithReferences(JSON.parse(content) as Skill));
-    } catch {
-      // Ignore malformed files.
+
+    const skillDir = join(skillsRoot, entry.name);
+    const skill = readSkillFromDir(skillDir);
+    if (skill) {
+      skills.push(skill);
     }
   }
 
   return skills.sort((a, b) => a.createdAt - b.createdAt);
 }
 
-export function getSkill(workspaceId: string, id: string): Skill | null {
-  const skillPath = getSkillPath(workspaceId, id);
-  if (!existsSync(skillPath)) {
+/**
+ * 获取单个技能
+ */
+export function getSkill(_workspaceId: string, id: string): Skill | null {
+  const skillsRoot = getSkillsRootDir();
+  if (!existsSync(skillsRoot)) {
     return null;
   }
 
-  try {
-    const content = readFileSync(skillPath, "utf-8");
-    return toSkillWithReferences(JSON.parse(content) as Skill);
-  } catch {
-    return null;
+  // 遍历所有技能目录查找匹配的 ID
+  const entries = readdirSync(skillsRoot, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+
+    const skillDir = join(skillsRoot, entry.name);
+    const skill = readSkillFromDir(skillDir);
+    if (skill && skill.id === id) {
+      return skill;
+    }
   }
+
+  return null;
 }
 
+/**
+ * 创建技能
+ */
 export function createSkill(
-  workspaceId: string,
+  _workspaceId: string,
   name: string,
   prompt: string,
   description?: string,
   icon?: string,
   argumentHint?: string
 ): Skill {
-  ensureSkillsDir(workspaceId);
+  const skillsRoot = getSkillsRootDir();
+  ensureDir(skillsRoot);
 
   const id = generateId();
+  const skillDir = getSkillDir(name);
+  ensureDir(skillDir);
+
   const now = Date.now();
   const skill: Skill = {
     id,
-    workspaceId,
+    workspaceId: "",
     name,
     description: description ?? "",
     icon,
@@ -201,16 +302,17 @@ export function createSkill(
     updatedAt: now,
   };
 
-  writeFileSync(
-    getSkillPath(workspaceId, id),
-    JSON.stringify(skill, null, 2),
-    "utf-8"
-  );
+  // 写入 SKILL.md
+  writeFileSync(getSkillFilePath(skillDir), buildSkillMarkdown(skill), "utf-8");
+
   return skill;
 }
 
+/**
+ * 更新技能
+ */
 export function updateSkill(
-  workspaceId: string,
+  _workspaceId: string,
   id: string,
   updates: {
     name?: string;
@@ -221,8 +323,28 @@ export function updateSkill(
     enabled?: boolean;
   }
 ): Skill | null {
-  const skill = getSkill(workspaceId, id);
+  const skill = getSkill("", id);
   if (!skill) {
+    return null;
+  }
+
+  // 查找技能目录
+  const skillsRoot = getSkillsRootDir();
+  const entries = readdirSync(skillsRoot, { withFileTypes: true });
+  let skillDir = "";
+  for (const entry of entries) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+    const dir = join(skillsRoot, entry.name);
+    const s = readSkillFromDir(dir);
+    if (s && s.id === id) {
+      skillDir = dir;
+      break;
+    }
+  }
+
+  if (!skillDir) {
     return null;
   }
 
@@ -237,74 +359,135 @@ export function updateSkill(
     updatedAt: Date.now(),
   };
 
+  // 如果名称变更，需要重命名目录
+  if (updates.name && updates.name !== skill.name) {
+    const newDir = getSkillDir(updates.name);
+    if (skillDir !== newDir) {
+      // 移动目录
+      const { renameSync } = require("node:fs");
+      try {
+        renameSync(skillDir, newDir);
+        skillDir = newDir;
+      } catch {
+        // 如果重命名失败（如目标已存在），继续使用原目录
+      }
+    }
+  }
+
+  // 写入更新后的 SKILL.md
   writeFileSync(
-    getSkillPath(workspaceId, id),
-    JSON.stringify(updated, null, 2),
+    getSkillFilePath(skillDir),
+    buildSkillMarkdown(updated),
     "utf-8"
   );
-  return toSkillWithReferences(updated);
-}
 
-export function deleteSkill(workspaceId: string, id: string): boolean {
-  const skillPath = getSkillPath(workspaceId, id);
-  if (!existsSync(skillPath)) {
-    return false;
-  }
-
-  try {
-    unlinkSync(skillPath);
-    const refsDir = getSkillReferencesDir(workspaceId, id);
-    if (existsSync(refsDir)) {
-      rmSync(refsDir, { recursive: true, force: true });
-    }
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function copyReferenceFiles(
-  workspaceId: string,
-  skillId: string,
-  filePaths: string[]
-): Skill["references"] {
-  const refsDir = getSkillReferencesDir(workspaceId, skillId);
-  mkdirSync(refsDir, { recursive: true });
-  for (const filePath of filePaths) {
-    const target = join(refsDir, basename(filePath));
-    copyFileSync(filePath, target);
-  }
-  return listReferenceFiles(refsDir).map((path) => ({
+  // 获取参考文件
+  const refsDir = getReferencesDir(skillDir);
+  updated.references = listReferenceFiles(refsDir).map((path) => ({
     name: basename(path),
     path,
   }));
-}
 
-export function addSkillReferences(
-  workspaceId: string,
-  id: string,
-  filePaths: string[]
-): Skill | null {
-  const skill = getSkill(workspaceId, id);
-  if (!skill) {
-    return null;
-  }
-  const references = copyReferenceFiles(workspaceId, id, filePaths);
-  const updated: Skill = {
-    ...skill,
-    references,
-    updatedAt: Date.now(),
-  };
-  writeFileSync(
-    getSkillPath(workspaceId, id),
-    JSON.stringify(updated, null, 2),
-    "utf-8"
-  );
   return updated;
 }
 
+/**
+ * 删除技能
+ */
+export function deleteSkill(_workspaceId: string, id: string): boolean {
+  const skillsRoot = getSkillsRootDir();
+  if (!existsSync(skillsRoot)) {
+    return false;
+  }
+
+  // 查找技能目录
+  const entries = readdirSync(skillsRoot, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+    const skillDir = join(skillsRoot, entry.name);
+    const skill = readSkillFromDir(skillDir);
+    if (skill && skill.id === id) {
+      rmSync(skillDir, { recursive: true, force: true });
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * 添加技能参考资料
+ */
+export function addSkillReferences(
+  _workspaceId: string,
+  id: string,
+  filePaths: string[]
+): Skill | null {
+  const skill = getSkill("", id);
+  if (!skill) {
+    return null;
+  }
+
+  // 查找技能目录
+  const skillsRoot = getSkillsRootDir();
+  const entries = readdirSync(skillsRoot, { withFileTypes: true });
+  let skillDir = "";
+  for (const entry of entries) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+    const dir = join(skillsRoot, entry.name);
+    const s = readSkillFromDir(dir);
+    if (s && s.id === id) {
+      skillDir = dir;
+      break;
+    }
+  }
+
+  if (!skillDir) {
+    return null;
+  }
+
+  // 复制文件到 references 目录
+  const refsDir = getReferencesDir(skillDir);
+  ensureDir(refsDir);
+
+  const { copyFileSync } = require("node:fs");
+  for (const filePath of filePaths) {
+    const target = join(refsDir, basename(filePath));
+    try {
+      copyFileSync(filePath, target);
+    } catch {
+      // 忽略复制失败
+    }
+  }
+
+  // 更新时间戳
+  const updated: Skill = {
+    ...skill,
+    references: listReferenceFiles(refsDir).map((path) => ({
+      name: basename(path),
+      path,
+    })),
+    updatedAt: Date.now(),
+  };
+
+  writeFileSync(
+    getSkillFilePath(skillDir),
+    buildSkillMarkdown(updated),
+    "utf-8"
+  );
+
+  return updated;
+}
+
+/**
+ * 从目录导入技能
+ */
 export function importSkillFromDir(
-  workspaceId: string,
+  _workspaceId: string,
   dirPath: string
 ): Skill {
   const skillFilePath = join(dirPath, "SKILL.md");
@@ -313,7 +496,7 @@ export function importSkillFromDir(
   const fallbackName = basename(dirPath);
 
   const skill = createSkill(
-    workspaceId,
+    "",
     parsed.name || fallbackName,
     parsed.prompt || "",
     parsed.description || "",
@@ -321,25 +504,29 @@ export function importSkillFromDir(
     parsed.argumentHint
   );
 
+  // 导入参考资料
   const referencesDir = join(dirPath, "references");
   if (existsSync(referencesDir)) {
     const refs = listReferenceFiles(referencesDir).map((path) =>
       join(referencesDir, path)
     );
     if (refs.length > 0) {
-      return addSkillReferences(workspaceId, skill.id, refs) ?? skill;
+      return addSkillReferences("", skill.id, refs) ?? skill;
     }
   }
 
   return skill;
 }
 
+/**
+ * 导出技能到目录
+ */
 export function exportSkillToDir(
-  workspaceId: string,
+  _workspaceId: string,
   id: string,
   targetDir: string
 ): { path: string } | null {
-  const skill = getSkill(workspaceId, id);
+  const skill = getSkill("", id);
   if (!skill) {
     return null;
   }
@@ -348,10 +535,28 @@ export function exportSkillToDir(
   mkdirSync(outDir, { recursive: true });
   writeFileSync(join(outDir, "SKILL.md"), buildSkillMarkdown(skill), "utf-8");
 
-  if (skill.references && skill.references.length > 0) {
+  // 查找技能目录
+  const skillsRoot = getSkillsRootDir();
+  const entries = readdirSync(skillsRoot, { withFileTypes: true });
+  let skillDir = "";
+  for (const entry of entries) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+    const dir = join(skillsRoot, entry.name);
+    const s = readSkillFromDir(dir);
+    if (s && s.id === id) {
+      skillDir = dir;
+      break;
+    }
+  }
+
+  // 导出参考资料
+  if (skill.references && skill.references.length > 0 && skillDir) {
     const refsOutDir = join(outDir, "references");
     mkdirSync(refsOutDir, { recursive: true });
-    const refsSrcDir = getSkillReferencesDir(workspaceId, id);
+    const refsSrcDir = getReferencesDir(skillDir);
+    const { copyFileSync, dirname } = require("node:fs");
     for (const ref of skill.references) {
       const src = join(refsSrcDir, ref.path);
       const dest = join(refsOutDir, ref.path);
