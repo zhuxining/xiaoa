@@ -50,7 +50,7 @@ export function KnowledgeUploader({
 
   return (
     <div className={className} data-slot="knowledge-uploader">
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: drag-drop zone requires keyboard-accessible section */}
+      {/* biome-ignore lint/a11y/noNoninteractiveElementInteractions: drag-drop zone */}
       <section
         aria-label="文件拖放区域"
         className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 text-muted-foreground"

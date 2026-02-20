@@ -67,14 +67,14 @@ export function requestPermission(
   // 如果不需要确认，直接返回
   if (!decision.needsConfirmation) {
     if (decision.allowed) {
-      return "allow";
+      return Promise.resolve("allow" as const);
     }
-    return "deny";
+    return Promise.resolve("deny" as const);
   }
 
   // 如果已被策略拒绝
   if (!decision.allowed) {
-    return "deny";
+    return Promise.resolve("deny" as const);
   }
 
   // 需要用户确认

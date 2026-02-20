@@ -17,6 +17,7 @@ import {
 import type { ActiveRun } from "./run-types";
 
 // Re-export for backward compatibility
+// biome-ignore lint/performance/noBarrelFile: 向后兼容重导出
 export { extractMessageText } from "./run-store";
 
 /**

@@ -24,6 +24,7 @@ import {
   sleep,
 } from "./run-store";
 
+// biome-ignore lint/performance/noBarrelFile: 向后兼容重导出
 export { extractMessageText } from "./run-store";
 
 import type { ActiveRun, ToolContext } from "./run-types";

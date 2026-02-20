@@ -20,7 +20,8 @@ import {
 } from "./knowledge-tools";
 import { createMemorySearchTool, createMemoryWriteTool } from "./memory-tools";
 
-/** 通用工具类型（参数为对象） */
+/** 通用工具类型 — AgentTool 约束需要 TSchema，用 Record 替代并抑制错误 */
+// @ts-expect-error AgentTool<P> 约束 P extends TSchema，Record<string,unknown> 不满足但结构兼容
 type GenericTool = AgentTool<Record<string, unknown>>;
 
 /**
@@ -45,25 +46,26 @@ export function buildAllTools(run: ActiveRun): AllTools {
 
   if (run.workspaceRootPath) {
     tools.push(
-      createFileReadTool(run) as GenericTool,
-      createFileWriteTool(run) as GenericTool,
-      createFileListTool(run) as GenericTool,
-      createBashTool(run) as GenericTool
+      createFileReadTool(run) as unknown as GenericTool,
+      createFileWriteTool(run) as unknown as GenericTool,
+      createFileListTool(run) as unknown as GenericTool,
+      createBashTool(run) as unknown as GenericTool
     );
   }
 
   // 全局可用工具（不需要工作区）
   const customTools: GenericTool[] = [
-    createMemorySearchTool() as GenericTool,
-    createMemoryWriteTool() as GenericTool,
-    createKnowledgeReadTool() as GenericTool,
-    createKnowledgeListTool() as GenericTool,
+    createMemorySearchTool() as unknown as GenericTool,
+    createMemoryWriteTool() as unknown as GenericTool,
+    createKnowledgeReadTool() as unknown as GenericTool,
+    createKnowledgeListTool() as unknown as GenericTool,
   ];
 
   return { tools, customTools };
 }
 
 // 导出各个工具创建函数
+// biome-ignore lint/performance/noBarrelFile: 工具模块公开 API 边界
 export { createBashTool } from "./bash-tool";
 export {
   createFileListTool,

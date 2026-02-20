@@ -7,6 +7,7 @@
 
 export type { ActiveRun, PendingPermission, ToolContext } from "@/agent/run";
 // Core run functions
+// biome-ignore lint/performance/noBarrelFile: IPC 层薄封装，重导出 agent/run 公开 API
 export {
   abortChatRun,
   activeRuns,

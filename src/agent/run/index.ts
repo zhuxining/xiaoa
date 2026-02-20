@@ -7,6 +7,7 @@
  * - run-executor.ts: AgentSessionEvent → ChatEvent 桥接
  */
 
+// biome-ignore lint/performance/noBarrelFile: 运行时模块公开 API 边界
 export {
   abortChatRun,
   bridgeEvent,

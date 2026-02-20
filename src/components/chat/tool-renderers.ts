@@ -33,11 +33,14 @@ class FileWriteRenderer implements ToolRenderer<FileWriteParams> {
     params: FileWriteParams | undefined,
     result: ToolResultMessage | undefined
   ): ToolRenderResult {
-    const state = result
-      ? result.isError
-        ? "error"
-        : "complete"
-      : "inprogress";
+    let state: "error" | "complete" | "inprogress";
+    if (!result) {
+      state = "inprogress";
+    } else if (result.isError) {
+      state = "error";
+    } else {
+      state = "complete";
+    }
 
     // 有结果时显示路径 + 状态
     if (result && params?.path) {
@@ -102,19 +105,25 @@ class FileReadRenderer implements ToolRenderer<{ path: string }> {
     params: { path: string } | undefined,
     result: ToolResultMessage | undefined
   ): ToolRenderResult {
-    const state = result
-      ? result.isError
-        ? "error"
-        : "complete"
-      : "inprogress";
+    let state: "error" | "complete" | "inprogress";
+    if (!result) {
+      state = "inprogress";
+    } else if (result.isError) {
+      state = "error";
+    } else {
+      state = "complete";
+    }
     const icon = result?.isError ? FileWarning : FileText;
 
     if (params?.path) {
-      const statusText = result
-        ? result.isError
-          ? "读取失败"
-          : "读取成功"
-        : "正在读取文件...";
+      let statusText: string;
+      if (!result) {
+        statusText = "正在读取文件...";
+      } else if (result.isError) {
+        statusText = "读取失败";
+      } else {
+        statusText = "读取成功";
+      }
 
       return {
         content: html`

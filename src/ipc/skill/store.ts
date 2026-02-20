@@ -309,6 +309,27 @@ export function createSkill(
   return skill;
 }
 
+function maybeRenameSkillDir(
+  skillDir: string,
+  oldName: string,
+  newName?: string
+): string {
+  if (!newName || newName === oldName) {
+    return skillDir;
+  }
+  const newDir = getSkillDir(newName);
+  if (skillDir === newDir) {
+    return skillDir;
+  }
+  const { renameSync } = require("node:fs");
+  try {
+    renameSync(skillDir, newDir);
+    return newDir;
+  } catch {
+    return skillDir;
+  }
+}
+
 /**
  * 更新技能
  */
@@ -360,20 +381,7 @@ export function updateSkill(
     updatedAt: Date.now(),
   };
 
-  // 如果名称变更，需要重命名目录
-  if (updates.name && updates.name !== skill.name) {
-    const newDir = getSkillDir(updates.name);
-    if (skillDir !== newDir) {
-      // 移动目录
-      const { renameSync } = require("node:fs");
-      try {
-        renameSync(skillDir, newDir);
-        skillDir = newDir;
-      } catch {
-        // 如果重命名失败（如目标已存在），继续使用原目录
-      }
-    }
-  }
+  skillDir = maybeRenameSkillDir(skillDir, skill.name, updates.name);
 
   // 写入更新后的 SKILL.md
   writeFileSync(

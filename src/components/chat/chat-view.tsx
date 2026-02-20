@@ -97,13 +97,11 @@ export function ChatView({
           contextLength: 200_000,
           inputPrice: 3,
           outputPrice: 15,
-          // biome-ignore lint/suspicious/noExplicitAny: pi-ai Model 类型定义不完整
         } as unknown as Record<string, unknown>)
       : null;
 
-    // biome-ignore lint/suspicious/noExplicitAny: ModelSelector.open 需要 pi-ai Model 类型
     await ModelSelector.open(
-      model as unknown as Record<string, unknown>,
+      model as unknown as Parameters<typeof ModelSelector.open>[0],
       (selectedModel) => {
         onModelChange?.({
           id: selectedModel.id,
@@ -179,7 +177,7 @@ export function ChatView({
           <PiMessageList
             className={cn(
               "flex-1 transition-all duration-300",
-              hasArtifactsTool && !artifactsCollapsed && "flex-[2]"
+              hasArtifactsTool && !artifactsCollapsed && "flex-2"
             )}
             isStreaming={isGenerating}
             messages={messages}

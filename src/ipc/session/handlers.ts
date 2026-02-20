@@ -5,7 +5,9 @@
  * 直接读取 ~/.xiaoa/agent/sessions/ 目录。
  */
 
+// biome-ignore lint/performance/noNamespaceImport: Node.js fs/path 惯用命名空间导入
 import * as fs from "node:fs/promises";
+// biome-ignore lint/performance/noNamespaceImport: Node.js fs/path 惯用命名空间导入
 import * as path from "node:path";
 import type { AgentMessage } from "@mariozechner/pi-agent-core";
 import { os } from "@orpc/server";
@@ -18,6 +20,8 @@ import {
   type SessionMeta,
   sessionMetaSchema,
 } from "./schemas";
+
+const _JSONL_EXT_RE = /\.jsonl$/;
 
 /**
  * 获取 xiaoa agent 目录
@@ -57,6 +61,63 @@ async function parseJsonlFile(
   }
 }
 
+function toContentArray(raw: unknown): unknown[] {
+  if (Array.isArray(raw)) {
+    return raw;
+  }
+  return [{ type: "text" as const, text: String(raw ?? "") }];
+}
+
+function buildAssistantMessage(
+  entry: Record<string, unknown>,
+  timestamp: number
+): AgentMessage {
+  return {
+    role: "assistant",
+    content: toContentArray(entry.content) as unknown as Extract<
+      AgentMessage,
+      { role: "assistant" }
+    >["content"],
+    timestamp,
+    api: (entry.api as string) ?? "unknown",
+    provider: (entry.provider as string) ?? "unknown",
+    model: (entry.model as string) ?? "unknown",
+    // biome-ignore lint/suspicious/noExplicitAny: usage 从 JSONL 解析，类型不确定
+    usage: (entry.usage as any) ?? {
+      input: 0,
+      output: 0,
+      cacheRead: 0,
+      cacheWrite: 0,
+      totalTokens: 0,
+      cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+    },
+    stopReason:
+      (entry.stopReason as
+        | "stop"
+        | "length"
+        | "toolUse"
+        | "error"
+        | "aborted") ?? "stop",
+  };
+}
+
+function buildToolResultMessage(
+  entry: Record<string, unknown>,
+  timestamp: number
+): AgentMessage {
+  return {
+    role: "toolResult",
+    toolCallId: (entry.toolCallId as string) ?? "",
+    toolName: (entry.toolName as string) ?? "unknown",
+    content: toContentArray(entry.content) as unknown as Extract<
+      AgentMessage,
+      { role: "toolResult" }
+    >["content"],
+    isError: Boolean(entry.isError),
+    timestamp,
+  };
+}
+
 /**
  * 从 JSONL 文件重建 AgentMessage[]
  */
@@ -65,7 +126,6 @@ async function rebuildMessages(filePath: string): Promise<AgentMessage[]> {
   const messages: AgentMessage[] = [];
 
   for (const entry of entries) {
-    // 跳过 compaction 标记
     if (entry.type === "compaction") {
       continue;
     }
@@ -73,56 +133,12 @@ async function rebuildMessages(filePath: string): Promise<AgentMessage[]> {
     const role = entry.role as string;
     const timestamp = (entry.timestamp as number) ?? Date.now();
 
-    // 处理消息条目
     if (role === "user" && typeof entry.content === "string") {
-      messages.push({
-        role: "user",
-        content: entry.content,
-        timestamp,
-      });
+      messages.push({ role: "user", content: entry.content, timestamp });
     } else if (role === "assistant") {
-      // assistant 消息可能有复杂格式
-      const content = Array.isArray(entry.content)
-        ? entry.content
-        : [{ type: "text" as const, text: String(entry.content ?? "") }];
-
-      messages.push({
-        role: "assistant",
-        content,
-        timestamp,
-        api: (entry.api as string) ?? "unknown",
-        provider: (entry.provider as string) ?? "unknown",
-        model: (entry.model as string) ?? "unknown",
-        // biome-ignore lint/suspicious/noExplicitAny: usage 从 JSONL 解析，类型不确定
-        usage: (entry.usage as any) ?? {
-          input: 0,
-          output: 0,
-          cacheRead: 0,
-          cacheWrite: 0,
-          totalTokens: 0,
-          cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
-        },
-        stopReason:
-          (entry.stopReason as
-            | "stop"
-            | "length"
-            | "toolUse"
-            | "error"
-            | "aborted") ?? "stop",
-      });
+      messages.push(buildAssistantMessage(entry, timestamp));
     } else if (role === "toolResult") {
-      const content = Array.isArray(entry.content)
-        ? entry.content
-        : [{ type: "text" as const, text: String(entry.content ?? "") }];
-
-      messages.push({
-        role: "toolResult",
-        toolCallId: (entry.toolCallId as string) ?? "",
-        toolName: (entry.toolName as string) ?? "unknown",
-        content,
-        isError: Boolean(entry.isError),
-        timestamp,
-      });
+      messages.push(buildToolResultMessage(entry, timestamp));
     }
   }
 
@@ -166,7 +182,7 @@ export const sessionRouter = os.router({
         for (const file of jsonlFiles) {
           const filePath = path.join(sessionsDir, file);
           const stat = await fs.stat(filePath);
-          const id = file.replace(/\.jsonl$/, "");
+          const id = file.replace(_JSONL_EXT_RE, "");
 
           // 解析消息获取标题和数量
           const messages = await rebuildMessages(filePath);

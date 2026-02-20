@@ -100,6 +100,9 @@ function applyHomeChatEvent(
     case "run_end":
     case "run_aborted":
       break;
+
+    default:
+      break;
   }
 }
 

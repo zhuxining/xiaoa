@@ -7,6 +7,7 @@ export type {
   PermissionPolicy,
   ToolRisk,
 } from "./permission-policy";
+// biome-ignore lint/performance/noBarrelFile: 权限模块公开 API 边界
 export {
   checkToolPermission,
   getPermissionPolicy,

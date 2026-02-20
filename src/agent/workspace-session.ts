@@ -97,4 +97,5 @@ export async function createGlobalSession(
 }
 
 // Re-export for convenience
+// biome-ignore lint/performance/noBarrelFile: 便捷重导出
 export { createAuthBridge, getXiaoaAgentDir } from "./auth/auth-bridge";
