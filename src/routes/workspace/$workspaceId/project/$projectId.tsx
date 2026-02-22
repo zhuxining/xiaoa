@@ -384,7 +384,7 @@ function ProjectPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: [
-          "sisson",
+          "session",
           "workspace",
           workspaceId,
           "messages",
@@ -518,7 +518,7 @@ function ProjectPage() {
       setStreamingContent("");
       queryClient.invalidateQueries({
         queryKey: [
-          "sisson",
+          "session",
           "workspace",
           workspaceId,
           "messages",

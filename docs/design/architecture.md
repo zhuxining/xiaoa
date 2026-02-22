@@ -1487,13 +1487,10 @@ Anthropic / OpenAI / Google / xAI / Groq / Mistral / DeepSeek / Ollama / Custom 
 - ✅ 新建 `src/agent/permission.ts`（Promise 阻塞式权限流）
 - ✅ 重写 `src/agent/workspace-session.ts`：`DefaultResourceLoader` + `SessionManager.open` + `codingTools`
 - ✅ 重写 `memory-tools.ts` / `knowledge-tools.ts` 为 `ToolDefinition` 接口
-
-**待完成**：
-
-- 删除死代码：`src/ipc/chat/agent/`、`src/ipc/chat/run/`、`src/ipc/chat/tools/`、`src/ipc/chat/permission/`、`src/ipc/sisson/`
-- 修复 `src/ipc/chat/store.ts`：移除 `PendingPermission` 引用
-- 更新路由文件：`routes/index.tsx`、`routes/workspace/$workspaceId/project/$projectId.tsx`（旧 `scope` 参数 → 新 API）
-- 删除废弃测试：`tests/unit/sisson-workspace-store.test.ts` 等
+- ✅ 删除死代码：`src/ipc/chat/agent/`、`src/ipc/chat/run/`、`src/ipc/chat/tools/`、`src/ipc/chat/permission/`、`src/ipc/sisson/`（目录不存在，无需删除）
+- ✅ `src/ipc/chat/store.ts`：`PendingPermission` 定义在 `src/agent/permission.ts`，非 IPC 层，store.ts 为有效重导出模块
+- ✅ 更新路由文件：修复 `routes/workspace/$workspaceId/project/$projectId.tsx` 中 queryKey 拼写错误（"sisson" → "session"）
+- ✅ 删除废弃测试：`tests/unit/sisson-workspace-store.test.ts`（文件不存在，无需删除）
 
 ### Phase 3 — 权限守卫 + 对话 UI
 
