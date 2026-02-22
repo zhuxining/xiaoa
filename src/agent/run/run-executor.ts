@@ -2,11 +2,14 @@
  * run-executor.ts - AgentSessionEvent → ChatEvent 桥接
  *
  * 将 pi-coding-agent 的 AgentSessionEvent 转换为 xiaoa 的 ChatEvent，
- * 并提供对话运行的启动、中止等管理功能。
+ * 并提供对话运行的启动、中止、Steering 等管理功能。
  */
+
 import type { AgentSessionEvent } from "@mariozechner/pi-coding-agent";
-import { respondToPermissionRequest } from "@/agent/permission/permission-request";
-import { buildAllTools } from "@/agent/tools";
+import {
+  cancelPendingPermissions,
+  respondToPermission,
+} from "@/agent/permission";
 import {
   createGlobalSession,
   createWorkspaceSession,
@@ -22,8 +25,7 @@ import {
 } from "./run-store";
 import type { ActiveRun } from "./run-types";
 
-// Re-export for backward compatibility
-// biome-ignore lint/performance/noBarrelFile: 向后兼容重导出
+// biome-ignore lint/performance/noBarrelFile: 便捷重导出
 export { extractMessageText } from "./run-store";
 
 /**
@@ -37,7 +39,6 @@ export function bridgeEvent(key: string, event: AgentSessionEvent): void {
 
   switch (event.type) {
     case "message_update":
-      // 流式文本更新
       if (event.assistantMessageEvent.type === "text_delta") {
         const delta = event.assistantMessageEvent.delta ?? "";
         if (!delta) {
@@ -56,22 +57,19 @@ export function bridgeEvent(key: string, event: AgentSessionEvent): void {
       break;
 
     case "message_end": {
-      // 消息结束
       const message = event.message;
-      // 处理 assistant 消息
       if (message && (!("role" in message) || message.role === "assistant")) {
         const text = message.content
           .filter(
             (part): part is { type: "text"; text: string } =>
               part.type === "text"
           )
-          .map((part) => part.text)
+          .map((p) => p.text)
           .join("");
         if (text) {
           run.assistantBuffer = text;
         }
       }
-
       appendEvent(key, {
         runId: run.runId,
         scope: run.scope,
@@ -84,7 +82,6 @@ export function bridgeEvent(key: string, event: AgentSessionEvent): void {
     }
 
     case "tool_execution_start":
-      // 工具执行开始
       appendEvent(key, {
         runId: run.runId,
         scope: run.scope,
@@ -96,7 +93,6 @@ export function bridgeEvent(key: string, event: AgentSessionEvent): void {
       break;
 
     case "tool_execution_end":
-      // 工具执行结束
       appendEvent(key, {
         runId: run.runId,
         scope: run.scope,
@@ -108,41 +104,24 @@ export function bridgeEvent(key: string, event: AgentSessionEvent): void {
       break;
 
     case "auto_compaction_start":
-      // 自动压缩开始（可选：通知 UI）
-      // 暂不处理，pi-coding-agent 内部处理
-      break;
-
     case "auto_compaction_end":
-      // 自动压缩结束（事件类型将在 P1-004 中添加到 schema）
-      // 暂不发送事件，pi-coding-agent 内部处理
+      // pi-coding-agent 内部处理，暂不转发
       break;
 
     default:
-      // 忽略其他事件类型
       break;
   }
 }
 
 /**
  * 异步执行 Agent 运行
- *
- * 创建 AgentSession 并调用 prompt()，将事件通过 bridgeEvent 转发。
  */
 async function executeRun(run: ActiveRun): Promise<void> {
   try {
-    const { tools, customTools } = buildAllTools(run);
     const result =
       run.scope === "workspace"
-        ? await createWorkspaceSession(run, {
-            // biome-ignore lint/suspicious/noExplicitAny: pi-coding-agent 工具类型桥接
-            tools: tools as any[],
-            // biome-ignore lint/suspicious/noExplicitAny: pi-coding-agent 工具类型桥接
-            customTools: customTools as any[],
-          })
-        : await createGlobalSession(run, {
-            // biome-ignore lint/suspicious/noExplicitAny: pi-coding-agent 工具类型桥接
-            customTools: customTools as any[],
-          });
+        ? await createWorkspaceSession(run)
+        : await createGlobalSession(run);
 
     run.session = result.session;
 
@@ -162,7 +141,7 @@ async function executeRun(run: ActiveRun): Promise<void> {
     if (!aborted) {
       errorMessage = error instanceof Error ? error.message : "运行失败";
     }
-    endChatRun(run, { error: errorMessage, aborted });
+    endChatRun(run, { aborted, error: errorMessage });
   }
 }
 
@@ -191,10 +170,8 @@ export function createActiveRun(input: {
       ? `workspace:${workspaceId ?? ""}:${sessionId}`
       : `global:${sessionId}`;
 
-  const runId = generateId();
-
-  const run: ActiveRun = {
-    runId,
+  return {
+    runId: generateId(),
     key,
     scope,
     workspaceId: scope === "workspace" ? (workspaceId ?? null) : null,
@@ -203,19 +180,14 @@ export function createActiveRun(input: {
     workspaceRootPath:
       scope === "workspace" ? (workspaceRootPath ?? null) : null,
     aborted: false,
-    pendingPermission: null,
     assistantBuffer: "",
     allowedPermissions: new Set(),
     thinkingLevel: thinkingLevel ?? "minimal",
   };
-
-  return run;
 }
 
 /**
  * 启动对话运行
- *
- * 创建 ActiveRun，注册到 activeRuns，并异步触发 Agent 执行。
  */
 export function startChatRun(input: {
   scope: ChatScope;
@@ -231,18 +203,18 @@ export function startChatRun(input: {
 
   const run = createActiveRun(input);
 
-  // 如果已有运行中的会话，先中止
+  // 中止已有运行
   const existing = getActiveRun(run.key);
   if (existing) {
     existing.aborted = true;
-    existing.session?.abort();
-    existing.pendingPermission?.reject(new Error("ABORTED"));
-    existing.pendingPermission = null;
+    existing.session?.abort().catch(() => {
+      /* ignore */
+    });
+    cancelPendingPermissions(existing.key);
   }
 
   setActiveRun(run.key, run);
 
-  // 发送 run_start 事件
   appendEvent(run.key, {
     runId: run.runId,
     scope: run.scope,
@@ -251,7 +223,6 @@ export function startChatRun(input: {
     type: "run_start",
   });
 
-  // 异步触发 Agent 执行
   executeRun(run).catch(() => undefined);
 
   return { runId: run.runId };
@@ -298,7 +269,6 @@ export function abortChatRun(input: {
   runId?: string;
 }): { aborted: boolean } {
   const { scope, workspaceId, sessionId, runId } = input;
-
   const key =
     scope === "workspace"
       ? `workspace:${workspaceId}:${sessionId}`
@@ -308,15 +278,15 @@ export function abortChatRun(input: {
   if (!run) {
     return { aborted: false };
   }
-
   if (runId && run.runId !== runId) {
     return { aborted: false };
   }
 
   run.aborted = true;
-  run.session?.abort();
-  run.pendingPermission?.reject(new Error("ABORTED"));
-  run.pendingPermission = null;
+  run.session?.abort().catch(() => {
+    /* ignore */
+  });
+  cancelPendingPermissions(run.key);
 
   return { aborted: true };
 }
@@ -349,35 +319,17 @@ export function respondChatPermission(input: {
       : `global:${sessionId}`;
 
   const run = getActiveRun(key);
-  if (!run || run.runId !== runId || !run.pendingPermission) {
-    // 尝试通过新权限系统响应（旧 pendingPermission 可能已清空）
-    respondToPermissionRequest(
-      key,
-      requestId,
-      decision,
-      alwaysAllowInSession ?? false
-    );
+  if (!run || run.runId !== runId) {
     return { applied: false };
   }
 
-  if (run.pendingPermission.requestId !== requestId) {
-    return { applied: false };
-  }
-
-  run.pendingPermission.resolve(
-    decision === "allow",
-    alwaysAllowInSession ?? false
-  );
-
-  // 同时 resolve 新权限系统
-  respondToPermissionRequest(
-    run.key,
+  const applied = respondToPermission(
+    key,
     requestId,
     decision,
     alwaysAllowInSession ?? false
   );
-
-  return { applied: true };
+  return { applied };
 }
 
 /**
@@ -395,7 +347,6 @@ export function getChatEvents(input: {
   runId: string | null;
 } {
   const { scope, workspaceId, sessionId, afterSeq } = input;
-
   const key =
     scope === "workspace"
       ? `workspace:${workspaceId}:${sessionId}`
@@ -426,7 +377,6 @@ export function steerChatRun(input: {
   message: string;
 }): { queued: boolean } {
   const { scope, workspaceId, sessionId, message } = input;
-
   const key =
     scope === "workspace"
       ? `workspace:${workspaceId}:${sessionId}`
@@ -437,7 +387,9 @@ export function steerChatRun(input: {
     return { queued: false };
   }
 
-  run.session.steer(message);
+  run.session.steer(message).catch(() => {
+    /* fire-and-forget */
+  });
   return { queued: true };
 }
 
@@ -451,7 +403,6 @@ export function followUpChatRun(input: {
   message: string;
 }): { queued: boolean } {
   const { scope, workspaceId, sessionId, message } = input;
-
   const key =
     scope === "workspace"
       ? `workspace:${workspaceId}:${sessionId}`
@@ -462,11 +413,12 @@ export function followUpChatRun(input: {
     return { queued: false };
   }
 
-  run.session.followUp(message);
+  run.session.followUp(message).catch(() => {
+    /* fire-and-forget */
+  });
   return { queued: true };
 }
 
-// 导出 store 函数供外部使用
 export {
   activeRuns,
   appendEvent,
@@ -475,4 +427,4 @@ export {
   getActiveRun,
   setActiveRun,
 } from "./run-store";
-export type { ActiveRun, PendingPermission, ToolContext } from "./run-types";
+export type { ActiveRun, ToolContext } from "./run-types";

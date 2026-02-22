@@ -1,17 +1,25 @@
 /**
  * session/handlers.ts - Session IPC Handlers
  *
- * 基于 pi SessionManager JSONL 格式的会话管理。
- * 直接读取 ~/.xiaoa/agent/sessions/ 目录。
+ * 使用 pi SessionManager 管理会话，不再手动解析 JSONL。
+ *
+ * 路径约定：
+ *   工作区会话: {userData}/workspaces/{workspaceId}/sessions/{id}.jsonl
+ *   全局会话:   {userData}/xiaoa/sessions/{id}.jsonl
+ *
+ * 项目过滤：pi 会话头中存储 cwd（项目路径），通过 SessionInfo.cwd 过滤。
  */
 
 // biome-ignore lint/performance/noNamespaceImport: Node.js fs/path 惯用命名空间导入
 import * as fs from "node:fs/promises";
 // biome-ignore lint/performance/noNamespaceImport: Node.js fs/path 惯用命名空间导入
 import * as path from "node:path";
-import type { AgentMessage } from "@mariozechner/pi-agent-core";
+import {
+  buildSessionContext,
+  SessionManager,
+} from "@mariozechner/pi-coding-agent";
 import { os } from "@orpc/server";
-import { getXiaoaAgentDir } from "@/agent/auth/auth-bridge";
+import { app } from "electron";
 import {
   createSessionInputSchema,
   deleteSessionInputSchema,
@@ -22,257 +30,116 @@ import {
   sessionMetaSchema,
 } from "./schemas";
 
-const _JSONL_EXT_RE = /\.jsonl$/;
-
-/**
- * 获取会话存储目录
- *
- * 格式: ~/.xiaoa/agent/sessions/<encoded-cwd>/
- */
-function getSessionsDir(scope: string, workspaceId?: string): string {
-  const agentDir = getXiaoaAgentDir();
-  if (scope === "global") {
-    return path.join(agentDir, "sessions", "global");
-  }
-  // workspace 会话使用 workspaceId 作为目录名
-  const encodedId = workspaceId?.replace(/[/\\]/g, "_") ?? "unknown";
-  return path.join(agentDir, "sessions", `workspace-${encodedId}`);
+function getBaseDir(workspaceId: string | null): string {
+  const userData = app.getPath("userData");
+  return workspaceId
+    ? path.join(userData, "workspaces", workspaceId)
+    : path.join(userData, "xiaoa");
 }
 
-/**
- * 解析 JSONL 文件内容
- */
-async function parseJsonlFile(
-  filePath: string
-): Promise<Record<string, unknown>[]> {
-  try {
-    const content = await fs.readFile(filePath, "utf-8");
-    const lines = content.trim().split("\n");
-    return lines.filter((line) => line.trim()).map((line) => JSON.parse(line));
-  } catch {
-    return [];
-  }
+function getSessionsDir(workspaceId: string | null): string {
+  return path.join(getBaseDir(workspaceId), "sessions");
 }
 
-function toContentArray(raw: unknown): unknown[] {
-  if (Array.isArray(raw)) {
-    return raw;
-  }
-  return [{ type: "text" as const, text: String(raw ?? "") }];
+function getSessionFilePath(
+  workspaceId: string | null,
+  sessionId: string
+): string {
+  return path.join(getSessionsDir(workspaceId), `${sessionId}.jsonl`);
 }
 
-function buildAssistantMessage(
-  entry: Record<string, unknown>,
-  timestamp: number
-): AgentMessage {
+type SessionInfo = Awaited<ReturnType<typeof SessionManager.list>>[number];
+
+function toSessionMeta(
+  info: SessionInfo,
+  workspaceId: string | null
+): SessionMeta {
+  const rawTitle = info.name ?? info.firstMessage ?? "";
+  const title =
+    rawTitle.length > 50 ? `${rawTitle.slice(0, 50)}...` : rawTitle || "新会话";
   return {
-    role: "assistant",
-    content: toContentArray(entry.content) as unknown as Extract<
-      AgentMessage,
-      { role: "assistant" }
-    >["content"],
-    timestamp,
-    api: (entry.api as string) ?? "unknown",
-    provider: (entry.provider as string) ?? "unknown",
-    model: (entry.model as string) ?? "unknown",
-    // biome-ignore lint/suspicious/noExplicitAny: usage 从 JSONL 解析，类型不确定
-    usage: (entry.usage as any) ?? {
-      input: 0,
-      output: 0,
-      cacheRead: 0,
-      cacheWrite: 0,
-      totalTokens: 0,
-      cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
-    },
-    stopReason:
-      (entry.stopReason as
-        | "stop"
-        | "length"
-        | "toolUse"
-        | "error"
-        | "aborted") ?? "stop",
+    id: info.id,
+    workspaceId,
+    title,
+    createdAt: info.created.getTime(),
+    updatedAt: info.modified.getTime(),
+    messageCount: info.messageCount,
   };
 }
 
-function buildToolResultMessage(
-  entry: Record<string, unknown>,
-  timestamp: number
-): AgentMessage {
-  return {
-    role: "toolResult",
-    toolCallId: (entry.toolCallId as string) ?? "",
-    toolName: (entry.toolName as string) ?? "unknown",
-    content: toContentArray(entry.content) as unknown as Extract<
-      AgentMessage,
-      { role: "toolResult" }
-    >["content"],
-    isError: Boolean(entry.isError),
-    timestamp,
-  };
-}
-
-/**
- * 从 JSONL 文件重建 AgentMessage[]
- */
-async function rebuildMessages(filePath: string): Promise<AgentMessage[]> {
-  const entries = await parseJsonlFile(filePath);
-  const messages: AgentMessage[] = [];
-
-  for (const entry of entries) {
-    if (entry.type === "compaction") {
-      continue;
-    }
-
-    const role = entry.role as string;
-    const timestamp = (entry.timestamp as number) ?? Date.now();
-
-    if (role === "user" && typeof entry.content === "string") {
-      messages.push({ role: "user", content: entry.content, timestamp });
-    } else if (role === "assistant") {
-      messages.push(buildAssistantMessage(entry, timestamp));
-    } else if (role === "toolResult") {
-      messages.push(buildToolResultMessage(entry, timestamp));
-    }
-  }
-
-  return messages;
-}
-
-/**
- * 从首条用户消息提取标题
- */
-function extractTitle(messages: AgentMessage[]): string {
-  for (const msg of messages) {
-    if (msg.role === "user" && typeof msg.content === "string") {
-      const title = msg.content.slice(0, 50);
-      return title.length < msg.content.length ? `${title}...` : title;
-    }
-  }
-  return "新会话";
-}
-
-/**
- * Session Router
- */
 export const sessionRouter = os.router({
-  /**
-   * 列出会话
-   */
   list: os
     .input(listSessionsInputSchema)
     .output(sessionMetaSchema.array())
     .handler(async ({ input }) => {
-      const { scope, workspaceId } = input;
-      const sessionsDir = getSessionsDir(scope, workspaceId);
+      const { workspaceId, projectPath } = input;
+      const baseDir = getBaseDir(workspaceId);
+      const sessionsDir = getSessionsDir(workspaceId);
 
-      try {
-        await fs.mkdir(sessionsDir, { recursive: true });
-        const files = await fs.readdir(sessionsDir);
-        const jsonlFiles = files.filter((f) => f.endsWith(".jsonl"));
+      await fs.mkdir(sessionsDir, { recursive: true }).catch(() => {
+        /* ignore */
+      });
+      let sessions = await SessionManager.list(baseDir, sessionsDir).catch(
+        () => []
+      );
 
-        const sessions: SessionMeta[] = [];
-
-        for (const file of jsonlFiles) {
-          const filePath = path.join(sessionsDir, file);
-          const stat = await fs.stat(filePath);
-          const id = file.replace(_JSONL_EXT_RE, "");
-
-          // 解析消息获取标题和数量
-          const messages = await rebuildMessages(filePath);
-          const title = extractTitle(messages);
-
-          sessions.push({
-            id,
-            scope,
-            workspaceId: workspaceId ?? null,
-            title,
-            createdAt: stat.birthtimeMs,
-            updatedAt: stat.mtimeMs,
-            messageCount: messages.length,
-          });
-        }
-
-        // 按更新时间降序排序
-        sessions.sort((a, b) => b.updatedAt - a.updatedAt);
-        return sessions;
-      } catch {
-        return [];
+      // 按项目路径过滤（pi 会话头中的 cwd 字段）
+      if (projectPath) {
+        sessions = sessions.filter((s) => s.cwd === projectPath);
       }
+
+      return sessions
+        .map((info) => toSessionMeta(info, workspaceId))
+        .sort((a, b) => b.updatedAt - a.updatedAt);
     }),
 
-  /**
-   * 获取单个会话
-   */
   get: os
     .input(getSessionInputSchema)
     .output(sessionMetaSchema.nullable())
     .handler(async ({ input }) => {
-      const { scope, workspaceId, id } = input;
-      const sessionsDir = getSessionsDir(scope, workspaceId);
-      const filePath = path.join(sessionsDir, `${id}.jsonl`);
+      const { workspaceId, id } = input;
+      const baseDir = getBaseDir(workspaceId);
+      const sessionsDir = getSessionsDir(workspaceId);
 
-      try {
-        const stat = await fs.stat(filePath);
-        const messages = await rebuildMessages(filePath);
-        const title = extractTitle(messages);
-
-        return {
-          id,
-          scope,
-          workspaceId: workspaceId ?? null,
-          title,
-          createdAt: stat.birthtimeMs,
-          updatedAt: stat.mtimeMs,
-          messageCount: messages.length,
-        };
-      } catch {
-        return null;
-      }
+      const sessions = await SessionManager.list(baseDir, sessionsDir).catch(
+        () => []
+      );
+      const info = sessions.find((s) => s.id === id);
+      return info ? toSessionMeta(info, workspaceId) : null;
     }),
 
-  /**
-   * 获取会话消息
-   */
-  getMessages: os
-    .input(getSessionMessagesInputSchema)
-    .handler(async ({ input }) => {
-      const { scope, workspaceId, sessionId } = input;
-      const sessionsDir = getSessionsDir(scope, workspaceId);
-      const filePath = path.join(sessionsDir, `${sessionId}.jsonl`);
+  getMessages: os.input(getSessionMessagesInputSchema).handler(({ input }) => {
+    const { workspaceId, sessionId } = input;
+    const filePath = getSessionFilePath(workspaceId, sessionId);
 
-      try {
-        return await rebuildMessages(filePath);
-      } catch {
-        return [];
-      }
-    }),
+    try {
+      const sm = SessionManager.open(filePath);
+      const { messages } = buildSessionContext(sm.getEntries());
+      return messages;
+    } catch {
+      return [];
+    }
+  }),
 
-  /**
-   * 创建会话
-   *
-   * 创建空的 JSONL 文件
-   */
   create: os
     .input(createSessionInputSchema)
     .output(sessionMetaSchema)
     .handler(async ({ input }) => {
-      const { scope, workspaceId, title } = input;
-      const sessionsDir = getSessionsDir(scope, workspaceId);
+      const { workspaceId, cwd, title } = input;
+      const baseDir = getBaseDir(workspaceId);
+      const sessionsDir = getSessionsDir(workspaceId);
 
       await fs.mkdir(sessionsDir, { recursive: true });
 
-      // 生成会话 ID
-      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      const filePath = path.join(sessionsDir, `${id}.jsonl`);
-
-      // 创建空文件
-      await fs.writeFile(filePath, "", "utf-8");
-
+      // cwd 优先取项目路径，回退为 baseDir（写入 pi 会话头，供 list 过滤使用）
+      const sessionCwd = cwd ?? baseDir;
+      const sm = SessionManager.create(sessionCwd, sessionsDir);
+      const id = sm.getSessionId();
       const now = Date.now();
+
       return {
         id,
-        scope,
-        workspaceId: workspaceId ?? null,
+        workspaceId,
         title: title ?? "新会话",
         createdAt: now,
         updatedAt: now,
@@ -280,33 +147,23 @@ export const sessionRouter = os.router({
       };
     }),
 
-  /**
-   * 删除会话
-   */
   delete: os
     .input(deleteSessionInputSchema)
     .output(sessionMetaSchema.nullable())
     .handler(async ({ input }) => {
-      const { scope, workspaceId, id } = input;
-      const sessionsDir = getSessionsDir(scope, workspaceId);
-      const filePath = path.join(sessionsDir, `${id}.jsonl`);
+      const { workspaceId, id } = input;
+      const baseDir = getBaseDir(workspaceId);
+      const sessionsDir = getSessionsDir(workspaceId);
+      const filePath = getSessionFilePath(workspaceId, id);
+
+      const sessions = await SessionManager.list(baseDir, sessionsDir).catch(
+        () => []
+      );
+      const info = sessions.find((s) => s.id === id);
 
       try {
-        const stat = await fs.stat(filePath);
-        const messages = await rebuildMessages(filePath);
-
-        // 删除文件
         await fs.unlink(filePath);
-
-        return {
-          id,
-          scope,
-          workspaceId: workspaceId ?? null,
-          title: extractTitle(messages),
-          createdAt: stat.birthtimeMs,
-          updatedAt: stat.mtimeMs,
-          messageCount: messages.length,
-        };
+        return info ? toSessionMeta(info, workspaceId) : null;
       } catch {
         return null;
       }

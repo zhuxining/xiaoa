@@ -132,7 +132,7 @@ function HomePage() {
   // 使用新的 session IPC
   const { data: sessionsData = [] } = useQuery({
     queryKey: ["session", "global", "list"],
-    queryFn: () => listSessions({ scope: "global" }),
+    queryFn: () => listSessions({ workspaceId: null }),
   });
 
   const sessions = sessionsData.map((s) => ({
@@ -158,7 +158,7 @@ function HomePage() {
     queryFn: () =>
       currentSessionId
         ? getSessionMessages({
-            scope: "global",
+            workspaceId: null,
             sessionId: currentSessionId,
           })
         : [],
@@ -166,7 +166,7 @@ function HomePage() {
   });
 
   const createSessionMutation = useMutation({
-    mutationFn: () => createSession({ scope: "global" }),
+    mutationFn: () => createSession({ workspaceId: null }),
     onSuccess: (newSession) => {
       queryClient.invalidateQueries({
         queryKey: ["session", "global", "list"],

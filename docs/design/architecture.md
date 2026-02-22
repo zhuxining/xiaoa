@@ -30,10 +30,10 @@
 | 路由 | TanStack Router（文件路由） |
 | 状态管理 | TanStack Query（服务端状态） + useState（局部状态） |
 | IPC | oRPC（类型安全，MessagePort 通信） |
-| Schema | Zod 4（oRPC IPC 输入验证）+ TypeBox（AgentTool 参数，SDK 强制要求） |
+| Schema | Zod 4（oRPC IPC 输入验证）+ TypeBox（ToolDefinition 参数，pi-agent-core 接口要求，传递依赖自动安装） |
 | 国际化 | i18next |
 | 动画 | Motion |
-| Agent SDK | @mariozechner/pi-agent-core（Agent 循环 + 工具执行 + 事件流） |
+| Agent SDK | @mariozechner/pi-coding-agent（高级封装：createAgentSession、DefaultResourceLoader、SessionManager、自动 Compaction、Extension 系统） |
 | LLM 抽象 | @mariozechner/pi-ai（多 Provider 统一接口：Anthropic / OpenAI / Google 等） |
 | 代码质量 | Biome（lint/format） + tsgo（类型检查） + React Compiler |
 
@@ -918,27 +918,24 @@ interface WorkspacePermissions {
 src/
 ├── main.ts                        # Electron Main 进程入口
 ├── preload.ts                     # Preload 脚本
-├── renderer.ts                    # Renderer 进程入口（导入 pi-web-ui CSS + 注册工具渲染器）
+├── renderer.ts                    # Renderer 进程入口
 ├── app.tsx                        # React 根组件
 │
-├── agent/                         # pi Agent 集成层（Main 进程）
-│   ├── index.ts                   # 公开 API
-│   ├── types.ts                   # AgentMessage 声明合并
-│   ├── workspace-session.ts       # createAgentSession() 封装（工作区 Agent）
-│   ├── global-session.ts          # Agent 封装（全局无项目 Agent）
+├── agent/                         # pi-coding-agent 集成层（Main 进程）
+│   ├── model.ts                   # getModelFromConfig() — provider/model 映射
+│   ├── workspace-session.ts       # createWorkspaceSession / createGlobalSession
+│   ├── extension-factory.ts       # createXiaoaExtension() — 系统提示 + 权限钩子
+│   ├── system-prompt.ts           # composeWorkspaceSystemPrompt / composeGlobalSystemPrompt
+│   ├── permission.ts              # requestPermission / respondToPermission（Promise 阻塞流）
 │   ├── auth/
-│   │   └── auth-bridge.ts         # AuthStorage + setFallbackResolver
+│   │   └── auth-bridge.ts         # AuthStorage.inMemory() + setFallbackResolver
 │   ├── tools/
-│   │   ├── index.ts               # 组装所有工具
-│   │   ├── file-tools.ts          # 权限感知文件工具（含 ctx.ui.confirm）
-│   │   ├── bash-tool.ts           # 权限感知 bash 工具
-│   │   ├── memory-tools.ts        # memory_search, memory_write
-│   │   └── knowledge-tools.ts     # knowledge_read
-│   ├── permission/
-│   │   ├── permission-policy.ts   # 策略（explore/review/auto）
-│   │   └── permission-request.ts  # Promise + IPC 权限桥接
+│   │   ├── index.ts               # buildCustomTools() → ToolDefinition[]
+│   │   ├── memory-tools.ts        # memory_search, memory_write（ToolDefinition）
+│   │   └── knowledge-tools.ts     # knowledge_read, knowledge_list（ToolDefinition）
 │   └── run/
-│       ├── run-types.ts           # ActiveRun 接口
+│       ├── index.ts               # 公开 API 导出
+│       ├── run-types.ts           # ActiveRun, ToolContext 接口
 │       ├── run-store.ts           # Map 状态（activeRuns, eventBuffers）
 │       └── run-executor.ts        # AgentSessionEvent → ChatEvent 桥接
 │
@@ -959,17 +956,24 @@ src/
 │   ├── shell/                     # Shell 操作
 │   ├── theme/                     # 主题管理
 │   ├── window/                    # 窗口控制
-│   ├── chat/                      # 极薄对话 IPC（handlers / schemas / index）
-│   └── session/                   # 会话 IPC（替换旧 sisson/）
+│   ├── chat/                      # 极薄对话 IPC（handlers / schemas / store）
+│   └── session/                   # 会话 IPC（读取 pi SessionManager JSONL）
+│
+│   # ↓ 待删除（旧 Agent 实现）
+│   # chat/agent/                  → 旧 Agent（create-agent / convert-to-llm / transform-context）
+│   # chat/run/                    → 旧 run（run-executor / run-store / run-types）
+│   # chat/tools/                  → 旧工具（file-tools / memory-tools / permission-guard）
+│   # chat/permission/             → 旧权限
+│   # sisson/                      → typo 目录，已由 session/ 替代
 │
 ├── components/                    # React 组件
 │   ├── ui/                        # shadcn/ui 基础组件
 │   ├── chat/
-│   │   ├── pi-message-list.tsx    # pi-web-ui <message-list> React wrapper
-│   │   ├── tool-renderers.ts      # 注册 file/bash 自定义渲染器
-│   │   ├── message-input.tsx      # 输入框（技能菜单保留）
-│   │   ├── permission-dialog.tsx  # 权限确认对话
-│   │   └── session-list.tsx       # 会话列表（适配 pi SessionManager）
+│   │   ├── message-list.tsx       # 纯 React 消息列表（读取 agentSession.messages）
+│   │   ├── message-item.tsx       # 单条消息（文本 / 工具调用 / 权限请求）
+│   │   ├── message-input.tsx      # 输入框（含技能 / 菜单）
+│   │   ├── permission-dialog.tsx  # 权限确认对话（tool_call 钩子触发）
+│   │   └── session-list.tsx       # 会话列表（读取 sessions/index.json）
 │   └── ...                        # 其他组件
 │
 ├── layouts/                       # 布局组件
@@ -1193,134 +1197,272 @@ await client.theme.set({ mode: "dark" });
 
 ---
 
-## 9. Agent 集成架构（pi-coding-agent + pi-agent-core）
+## 9. Agent 集成架构（pi-coding-agent）
 
-基于 pi-mono 生态全面重构，工作区 Agent 使用 `@mariozechner/pi-coding-agent`（自动 Compaction + SessionManager），全局 Agent 使用 `@mariozechner/pi-agent-core`。
+完全使用 `@mariozechner/pi-coding-agent` 高层封装，最大化复用 pi 内置能力，xiaoa 只实现差异化功能。
 
-> **详细实现文档**：[pi-agent-architecture.md](./pi-agent-architecture.md)
+### 9.1 pi 复用 vs 小A自实现
 
-### 9.1 架构概览
+| 功能 | 复用 pi-coding-agent | 小A自实现 |
+|------|----------------------|-----------|
+| 文件读写 | `readTool, editTool, writeTool` ✅ | — |
+| Bash 执行 | `bashTool` ✅ | — |
+| 文件搜索 | `grepTool, findTool, lsTool` ✅ | — |
+| 上下文自动压缩 | `auto-compaction` 内置 ✅ | — |
+| 会话 JSONL 持久化 | `SessionManager.open(path)` ✅ | 自定义路径映射 |
+| 技能自动加载 | 从 `agentDir/skills/` 自动读取 SKILL.md ✅ | GUI 管理 SKILL.md 文件 |
+| MEMORY.md 注入 | `agentsFilesOverride` ✅ | `memory_write` 工具写入 |
+| 系统提示注入 | `systemPromptOverride` ✅ | workspace persona + 知识库概览 |
+| 权限拦截 | `tool_call` extension 钩子 ✅ | `requestPermission()` + PermissionDialog |
+| 系统提示动态更新 | `before_agent_start` extension 钩子 ✅ | 每轮更新 workspace 上下文 |
+| 认证 | `AuthStorage.inMemory()` + `setFallbackResolver` ✅ | — |
+| 消息读取 | `agentSession.messages` getter ✅ | 纯 React 组件渲染 |
+| 记忆搜索 | — | `memory_search`（FTS5 SQLite） |
+| 知识库读取 | — | `knowledge_read`（解析后 .md） |
 
-```text
-src/agent/                          # pi Agent 集成层（Main 进程，全新）
-├── workspace-session.ts            # createAgentSession() 封装（工作区 Agent）
-├── global-session.ts               # Agent 类封装（全局无项目 Agent）
-├── auth/
-│   └── auth-bridge.ts             # AuthStorage.inMemory() + setFallbackResolver
-├── tools/
-│   ├── index.ts                   # buildAllTools() 组装
-│   ├── file-tools.ts              # file_read / file_write / file_list（含权限判定）
-│   ├── bash-tool.ts               # bash（含风险级别判定）
-│   ├── memory-tools.ts            # memory_search, memory_write
-│   └── knowledge-tools.ts         # knowledge_read
-├── permission/
-│   ├── permission-policy.ts       # 策略（explore/review/auto）
-│   └── permission-request.ts      # Promise + IPC 权限桥接
-└── run/
-    ├── run-types.ts               # ActiveRun 接口
-    ├── run-store.ts               # Map 状态（activeRuns, eventBuffers）
-    └── run-executor.ts            # AgentSessionEvent → ChatEvent 桥接
+### 9.2 agentDir 设计
 
-src/ipc/chat/                       # 极薄 IPC 层（3 文件）
-src/ipc/session/                    # 会话 IPC（读取 pi SessionManager JSONL）
-```
+`agentDir` 设置为工作区目录 `~/.xiaoa/workspaces/{workspaceId}/`，pi-coding-agent 会自动：
 
-**废弃**：`src/ipc/chat/` 下原有的 `agent/`、`tools/`、`permission/`、`run/` 子模块；`src/ipc/sisson/`（替换为 `src/ipc/session/`）；手动 Compaction 和 `patchToolsWithPermission`。
+- 从 `{workspaceDir}/skills/` 加载技能（SKILL.md 格式，无需手动注入）
+- 通过 `SessionManager.open(path)` 管理 `{workspaceDir}/sessions/{sessionId}.jsonl`
+- 读取 `{workspaceDir}/AGENTS.md` 等上下文文件（如存在）
 
-### 9.2 工作区 Agent（createAgentSession）
+### 9.3 工作区 Agent 创建
 
 ```typescript
 // src/agent/workspace-session.ts
-const { session } = await createAgentSession({
-  cwd: run.workspaceRootPath,       // 项目根目录
-  agentDir: getXiaoaAgentDir(),     // ~/.xiaoa/agent/（会话 + Skill 存储）
-  model: resolveModel(readConfig()),
-  thinkingLevel: "minimal",
-  tools: [fileReadTool, fileWriteTool, fileListTool, bashTool],  // 含权限逻辑
-  customTools: [...memoryTools, ...knowledgeTools],
-  authStorage: createAuthBridge(),
-});
-```
+export async function createWorkspaceSession(
+  run: ActiveRun
+): Promise<CreateAgentSessionResult> {
+  const workspaceDir = getWorkspaceDir(run.workspaceId ?? "default");
+  // ~/.xiaoa/workspaces/{id}/sessions/{sessionId}.jsonl
+  const sessionFile = getSessionFilePath(run.workspaceId, run.sessionId);
+  const cwd = run.workspaceRootPath ?? process.cwd();
 
-pi-coding-agent 自动处理：**Compaction**（上下文压缩）、**SessionManager**（JSONL 持久化）、**ResourceLoader**（Skill 自动注入）。
+  const loader = new DefaultResourceLoader({
+    cwd,
+    agentDir: workspaceDir,                     // pi 从 {workspaceDir}/skills/ 自动加载技能
+    extensionFactories: [createXiaoaExtension(run)],
+    noExtensions: true,   // 只用 extensionFactories，不加载文件扩展
+    noThemes: true,       // Electron UI 不需要 pi 主题
+  });
 
-### 9.3 全局 Agent（Agent 类）
+  return createAgentSession({
+    cwd,
+    agentDir: workspaceDir,
+    model: getModelFromConfig(),
+    thinkingLevel: (run.thinkingLevel ?? "minimal") as ThinkingLevel,
+    tools: codingTools,              // [readTool, bashTool, editTool, writeTool]
+    customTools: buildCustomTools(), // memory_search, memory_write, knowledge_read, knowledge_list
+    authStorage: createAuthBridge(),
+    resourceLoader: loader,
+    sessionManager: SessionManager.open(sessionFile),
+  });
+}
 
-```typescript
-// src/agent/global-session.ts（无项目目录，不需要文件/bash 工具）
-return new Agent({
-  initialState: { systemPrompt, model, tools: [...memoryTools, ...knowledgeTools], messages: [] },
-  convertToLlm: filterToLlmMessages,
-  getApiKey: (provider) => readCredentials().providers[provider],
-});
-```
+export async function createGlobalSession(
+  run: ActiveRun
+): Promise<CreateAgentSessionResult> {
+  const globalDir = getGlobalDir(); // ~/.xiaoa/xiaoa/
+  const sessionFile = getSessionFilePath(null, run.sessionId);
 
-### 9.4 权限控制
+  const loader = new DefaultResourceLoader({
+    cwd: process.cwd(),
+    agentDir: globalDir,
+    extensionFactories: [createXiaoaExtension(run)],
+    noExtensions: true,
+    noThemes: true,
+  });
 
-权限逻辑内嵌于工具 `execute()` 内部，通过 Promise + IPC 与 Renderer 的 `PermissionDialog` 通信：
-
-```text
-工具 execute()
-  → 检查权限策略（explore/review/auto）
-  → 需要确认时：appendEvent(runKey, { type: "permission_request" })
-  → await waitForPermissionResponse(runKey, permissionId)   ← 阻塞
-  → Renderer 显示 PermissionDialog → 用户点击
-  → respondChatPermission IPC → resolve Promise → 工具继续
-```
-
-| 策略 | file_read | file_write | bash（安全） | bash（危险） |
-|------|-----------|------------|-------------|-------------|
-| explore | ✅ 自动 | ❌ 拒绝 | ❌ 拒绝 | ❌ 拒绝 |
-| review | ✅ 自动 | ⚠️ 确认 | ⚠️ 确认 | ⚠️ 确认 |
-| auto | ✅ 自动 | ✅ 自动 | ✅ 自动 | ⚠️ 确认 |
-
-### 9.5 自定义消息类型（声明合并）
-
-```typescript
-// src/agent/types.ts
-declare module "@mariozechner/pi-agent-core" {
-  interface CustomAgentMessages {
-    permission_request: PermissionRequestMessage;  // UI-only，不传 LLM
-    memory_update: MemoryUpdateMessage;            // UI-only，不传 LLM
-    // compaction_summary 由 pi-coding-agent 内置处理
-  }
+  return createAgentSession({
+    cwd: process.cwd(),
+    agentDir: globalDir,
+    model: getModelFromConfig(),
+    thinkingLevel: (run.thinkingLevel ?? "minimal") as ThinkingLevel,
+    tools: [],               // 全局对话无文件工具
+    customTools: buildCustomTools(),
+    authStorage: createAuthBridge(),
+    resourceLoader: loader,
+    sessionManager: SessionManager.open(sessionFile),
+  });
 }
 ```
 
-### 9.6 ChatEvent 类型
+### 9.4 Extension 工厂（系统提示 + 权限）
 
-| 事件 | 说明 |
-|------|------|
-| `run_start / run_end / run_error` | 运行生命周期 |
-| `message_start / message_delta / message_end` | 流式文本 |
-| `tool_call / tool_result` | 工具调用（含 toolCallId 关联） |
-| `permission_request / permission_resolved` | 权限对话 |
-| `compaction` | 上下文压缩通知 |
+```typescript
+// src/agent/extension-factory.ts
 
-### 9.7 认证适配
+// 无需用户确认的只读工具（自动放行）
+const AUTO_ALLOWED_TOOLS = new Set([
+  "read", "grep", "find", "ls",
+  "memory_search", "memory_write",
+  "knowledge_read", "knowledge_list",
+]);
+
+export function createXiaoaExtension(run: ActiveRun): ExtensionFactory {
+  return (pi: ExtensionAPI) => {
+    // 注册自定义 Provider（deepseek / ollama / custom）
+    registerCustomProviders(pi);
+
+    // 每轮 LLM 调用前动态刷新 workspace 上下文
+    pi.on("before_agent_start", async () => ({
+      systemPrompt: run.workspaceId
+        ? composeWorkspaceSystemPrompt(run.workspaceId)
+        : composeGlobalSystemPrompt(),
+    }));
+
+    // 工具调用前权限拦截
+    pi.on("tool_call", async (event) => {
+      if (run.aborted) {
+        cancelPendingPermissions(run.key);
+        return { block: true, reason: "运行已中止" };
+      }
+      // 自动放行只读工具
+      if (AUTO_ALLOWED_TOOLS.has(event.toolName)) return;
+      // 本次会话已授权的工具
+      if (run.allowedPermissions.has(event.toolName)) return;
+
+      const result = await requestPermission(run, event.toolName, event.input);
+      if (result.alwaysAllow && result.decision === "allow") {
+        run.allowedPermissions.add(event.toolName); // 会话内缓存
+      }
+      if (result.decision === "deny") {
+        return { block: true, reason: "操作被用户拒绝" };
+      }
+    });
+  };
+}
+```
+
+### 9.5 权限流程
+
+```text
+pi 触发 tool_call 钩子
+  │
+  ├── run.aborted? → block: true（中止保护）
+  ├── AUTO_ALLOWED_TOOLS? → 直接放行（读类工具）
+  ├── run.allowedPermissions? → 直接放行（本次会话已授权）
+  │
+  └── 需确认 → requestPermission(run, toolName, input)
+        │
+        ├── appendEvent(runKey, { type: "permission_request", ... })
+        └── await new Promise(resolve)  ← extension handler 阻塞
+              │
+              ← Renderer 显示 PermissionDialog
+              ← 用户选择：允许 / 本次会话始终允许 / 拒绝
+              │
+              └── respondChatPermission IPC
+                    → respondToPermission(runKey, id, decision, alwaysAllow)
+                    → resolve Promise
+                    │
+                    ├── alwaysAllow=true → run.allowedPermissions.add(toolName)
+                    ├── decision="allow" → return undefined（放行）
+                    └── decision="deny"  → return { block: true, reason: "..." }
+```
+
+**permission.ts 接口**：
+
+```typescript
+export interface PermissionResult {
+  decision: "allow" | "deny";
+  alwaysAllow: boolean;
+}
+
+export function requestPermission(
+  run: ActiveRun,
+  toolName: string,
+  input: Record<string, unknown>
+): Promise<PermissionResult>
+
+export function respondToPermission(
+  runKey: string,
+  permissionId: string,
+  decision: "allow" | "deny",
+  alwaysAllow: boolean
+): boolean
+
+export function cancelPendingPermissions(runKey: string): void
+```
+
+### 9.6 自定义工具（ToolDefinition）
+
+pi-coding-agent 的自定义工具使用 **TypeBox** schema（非 Zod），execute 签名固定。
+
+```typescript
+// src/agent/tools/memory-tools.ts
+import { Type, type TObject } from "@sinclair/typebox";
+import type { AgentToolResult, ToolDefinition } from "@mariozechner/pi-coding-agent";
+
+const memorySearchSchema = Type.Object({
+  query: Type.String({ description: "搜索关键词" }),
+});
+
+export const memorySearchTool: ToolDefinition<typeof memorySearchSchema> = {
+  name: "memory_search",
+  label: "搜索记忆",
+  description: "在工作区记忆库（Daily Log + MEMORY.md）中全文搜索",
+  parameters: memorySearchSchema,
+  async execute(
+    _toolCallId,
+    params,
+    _signal,
+    _onUpdate,
+    _ctx
+  ): Promise<AgentToolResult<{ sources: string[] }>> {
+    const results = await searchMemory(params.query);
+    return {
+      content: [{ type: "text", text: formatResults(results) }],
+      details: { sources: results.map((r) => r.path) },
+    };
+  },
+};
+```
+
+**buildCustomTools() 返回的工具列表**：
+
+| 工具名 | 文件 | 用途 |
+|--------|------|------|
+| `memory_search` | memory-tools.ts | FTS5 全文搜索 Daily Log + MEMORY.md |
+| `memory_write` | memory-tools.ts | 追加写入 Daily Log / 更新 MEMORY.md |
+| `knowledge_read` | knowledge-tools.ts | 读取知识库条目解析后的 Markdown |
+| `knowledge_list` | knowledge-tools.ts | 列出知识库条目（name + description） |
+
+### 9.7 ChatEvent 类型（AgentSessionEvent 映射）
+
+| AgentSessionEvent | ChatEvent | 说明 |
+|---|---|---|
+| `message_update` | `message_delta` | 流式文本增量 |
+| `message_end` | `message_end` | 消息完成 |
+| `tool_execution_start` | `tool_call` | 工具调用开始 |
+| `tool_execution_end` | `tool_result` | 工具执行结果 |
+| `auto_compaction_start` | `compaction_start` | 上下文压缩开始 |
+| `auto_compaction_end` | `compaction_end` | 上下文压缩完成 |
+| `auto_retry_start` | `retry_start` | 自动重试开始 |
+| `auto_retry_end` | `retry_end` | 自动重试完成 |
+| — | `run_start / run_end / run_error` | 运行生命周期 |
+| — | `permission_request / permission_resolved` | 权限对话 |
+
+### 9.8 认证适配
 
 ```typescript
 // src/agent/auth/auth-bridge.ts
-const storage = AuthStorage.inMemory();
-storage.setFallbackResolver((provider) => readCredentials().providers[provider]);
-return storage;
+export function createAuthBridge(): AuthStorage {
+  const storage = AuthStorage.inMemory();
+  const config = readConfig();
+
+  if (config.llm.apiKey) {
+    storage.setRuntimeApiKey(config.llm.provider, config.llm.apiKey);
+  }
+  storage.setFallbackResolver((_provider) => config.llm.apiKey);
+  return storage;
+}
 ```
 
-### 9.8 Provider 支持
+### 9.9 Provider 支持
 
-Anthropic / OpenAI / Google / xAI / Groq / Mistral / DeepSeek / Ollama / Custom 等（由 pi-ai 统一抽象）。
-
-### 9.9 pi-web-ui 集成（消息渲染）
-
-`@mariozechner/pi-web-ui` 提供 LitElement Web Components，选择性集成：
-
-| 组件 | 方案 |
-|------|------|
-| 消息列表 | `<message-list>` Web Component，React 19 ref 命令式赋值 |
-| 工具渲染 | `registerToolRenderer()` 注册 file/bash/memory 自定义渲染器 |
-| 整体布局 | 保留 React + TanStack Router |
-| 技能菜单 | 保留 xiaoa 自定义 `message-input.tsx` |
-| 权限对话 | 保留 xiaoa 自定义 `permission-dialog.tsx` |
+Anthropic / OpenAI / Google / xAI / Groq / Mistral / DeepSeek / Ollama / Custom 等（由 pi-ai 统一抽象，`getModelFromConfig()` 负责映射）。
 
 ---
 
@@ -1333,27 +1475,38 @@ Anthropic / OpenAI / Google / xAI / Groq / Mistral / DeepSeek / Ollama / Custom 
 - 工作区 CRUD 和切换
 - 本地存储层（credentials.enc 加密存储）
 
-### Phase 2 — Agent 核心（pi-coding-agent）
+### Phase 2 — Agent 核心重构 ✅
 
-- 新建 `src/agent/` 集成层（workspace-session / global-session / auth-bridge）
-- 工具层（file / bash / memory / knowledge，含权限逻辑）
-- 事件桥接（AgentSessionEvent → ChatEvent）
-- 极薄 IPC 层（`src/ipc/chat/` 精简为 3 文件）
-- 消息渲染：`<message-list>` Web Component wrapper + 工具渲染器注册
+**已完成**：
+
+- ✅ 删除 `src/agent/tools/file-tools.ts`、`src/agent/tools/bash-tool.ts`（已由 pi `codingTools` 替代）
+- ✅ 删除 `src/agent/permission/`（权限逻辑移至 `extension-factory.ts` `tool_call` 钩子）
+- ✅ 新建 `src/agent/model.ts`（`getModelFromConfig()`，支持所有 Provider）
+- ✅ 新建 `src/agent/extension-factory.ts`（`createXiaoaExtension`）
+- ✅ 新建 `src/agent/system-prompt.ts`（`composeWorkspaceSystemPrompt / composeGlobalSystemPrompt`）
+- ✅ 新建 `src/agent/permission.ts`（Promise 阻塞式权限流）
+- ✅ 重写 `src/agent/workspace-session.ts`：`DefaultResourceLoader` + `SessionManager.open` + `codingTools`
+- ✅ 重写 `memory-tools.ts` / `knowledge-tools.ts` 为 `ToolDefinition` 接口
+
+**待完成**：
+
+- 删除死代码：`src/ipc/chat/agent/`、`src/ipc/chat/run/`、`src/ipc/chat/tools/`、`src/ipc/chat/permission/`、`src/ipc/sisson/`
+- 修复 `src/ipc/chat/store.ts`：移除 `PendingPermission` 引用
+- 更新路由文件：`routes/index.tsx`、`routes/workspace/$workspaceId/project/$projectId.tsx`（旧 `scope` 参数 → 新 API）
+- 删除废弃测试：`tests/unit/sisson-workspace-store.test.ts` 等
 
 ### Phase 3 — 权限守卫 + 对话 UI
 
-- 权限策略（explore/review/auto）
-- Promise + IPC 权限桥接（工具 execute → PermissionDialog → IPC resolve）
-- 会话列表（适配 pi SessionManager JSONL）
-- `src/ipc/session/` 替换 `src/ipc/sisson/`
-- 流式消息渲染（AgentMessage[] 状态重建）
+- Extension `tool_call` 钩子驱动权限判断（requestPermission → PermissionDialog → IPC resolve）
+- 会话列表读取 `sessions/index.json`（适配 pi SessionManager JSONL 格式）
+- 纯 React 消息列表（`agentSession.messages` 驱动）
+- 极薄 IPC 层 `src/ipc/chat/` 精简（handlers / schemas / store 三文件）
 
 ### Phase 4 — Agent 配置 + Skill 系统
 
 - Agent 配置页面（人设 / 模型 / 头像）
-- 技能管理（SKILL.md 文件操作，`~/.xiaoa/agent/skills/`）
-- 记忆管理（MEMORY.md 编辑器）
+- 技能管理 GUI（SKILL.md 文件操作，存于 `~/.xiaoa/workspaces/{id}/skills/`，pi 自动加载）
+- 记忆管理（MEMORY.md 编辑器，通过 `agentsFilesOverride` 注入）
 - 知识库管理（文件拖入 + URL 解析）
 
 ### Phase 5 — 项目工作视图
@@ -1362,10 +1515,9 @@ Anthropic / OpenAI / Google / xAI / Groq / Mistral / DeepSeek / Ollama / Custom 
 - 文件预览（文本 / 图片 / PDF）
 - `@` 引用文件作为上下文
 - 技能快捷调用（`/` 菜单）
-- ModelSelector + SettingsDialog（pi-web-ui）
 
-### Phase 6 — ArtifactsPanel + 高级功能
+### Phase 6 — 高级功能
 
-- `<artifacts-panel>` 集成（AI 生成可交互制品）
 - SessionManager 分支能力 → 会话树可视化
 - 向量记忆搜索（sqlite-vec）
+- Pre-compaction flush（对话压缩前自动写入 Daily Log）

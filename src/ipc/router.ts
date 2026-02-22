@@ -6,7 +6,6 @@ import { memory } from "./memory";
 import { project } from "./project";
 import { session } from "./session";
 import { shell } from "./shell";
-import { sisson } from "./sisson";
 import { skill } from "./skill";
 import { theme } from "./theme";
 import { window } from "./window";
@@ -18,7 +17,6 @@ export const router = {
   app,
   chat,
   shell,
-  sisson,
   session,
   config,
   workspace,

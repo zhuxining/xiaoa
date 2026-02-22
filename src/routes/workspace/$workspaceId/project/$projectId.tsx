@@ -22,11 +22,11 @@ import {
   removeProject,
 } from "@/actions/project";
 import {
-  createSisson,
-  deleteSisson,
-  getSissonMessages,
-  listSissons,
-} from "@/actions/sisson";
+  createSession,
+  deleteSession,
+  getSessionMessages,
+  listSessions,
+} from "@/actions/session";
 import { getSkills } from "@/actions/skill";
 import {
   getWorkspace,
@@ -186,12 +186,11 @@ function ProjectPage() {
   );
 
   const { data: sessionData = [] } = useQuery({
-    queryKey: ["sisson", "workspace", workspaceId, "sessions", projectId],
+    queryKey: ["session", "workspace", workspaceId, "sessions", projectId],
     queryFn: () =>
-      listSissons({
-        scope: "workspace",
+      listSessions({
         workspaceId,
-        projectId,
+        projectPath: projectId,
       }),
   });
 
@@ -304,7 +303,7 @@ function ProjectPage() {
 
   const { data: messagesData = [] } = useQuery({
     queryKey: [
-      "sisson",
+      "session",
       "workspace",
       workspaceId,
       "messages",
@@ -312,8 +311,7 @@ function ProjectPage() {
     ],
     queryFn: () =>
       currentSessionId
-        ? getSissonMessages({
-            scope: "workspace",
+        ? getSessionMessages({
             workspaceId,
             sessionId: currentSessionId,
           })
@@ -321,33 +319,8 @@ function ProjectPage() {
     enabled: !!currentSessionId,
   });
 
-  // 转换为 AgentMessage[] 格式
-  const messages: AgentMessage[] = messagesData.map((m) => {
-    if (m.role === "user") {
-      return {
-        role: "user" as const,
-        content: m.content,
-        timestamp: m.timestamp,
-      };
-    }
-    return {
-      role: "assistant" as const,
-      content: [{ type: "text" as const, text: m.content }],
-      timestamp: m.timestamp,
-      api: "openai-completions" as const,
-      provider: "openai" as const,
-      model: "unknown",
-      usage: {
-        input: 0,
-        output: 0,
-        cacheRead: 0,
-        cacheWrite: 0,
-        totalTokens: 0,
-        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
-      },
-      stopReason: "stop" as const,
-    };
-  });
+  // messagesData 已经是 AgentMessage[] 格式，直接使用
+  const messages: AgentMessage[] = messagesData;
 
   const streamingMessage: AgentMessage | null =
     isGenerating && streamingContent
@@ -382,14 +355,13 @@ function ProjectPage() {
 
   const createSessionMutation = useMutation({
     mutationFn: () =>
-      createSisson({
-        scope: "workspace",
+      createSession({
         workspaceId,
-        projectId,
+        cwd: project?.path,
       }),
     onSuccess: (session) => {
       queryClient.invalidateQueries({
-        queryKey: ["sisson", "workspace", workspaceId, "sessions", projectId],
+        queryKey: ["session", "workspace", workspaceId, "sessions", projectId],
       });
       setCurrentSessionId(session.id);
       navigate({
@@ -420,7 +392,7 @@ function ProjectPage() {
         ],
       });
       queryClient.invalidateQueries({
-        queryKey: ["sisson", "workspace", workspaceId, "sessions", projectId],
+        queryKey: ["session", "workspace", workspaceId, "sessions", projectId],
       });
     },
     onError: (error) => {
@@ -433,17 +405,16 @@ function ProjectPage() {
 
   const deleteSessionMutation = useMutation({
     mutationFn: (sessionId: string) =>
-      deleteSisson({
-        scope: "workspace",
+      deleteSession({
         workspaceId,
         id: sessionId,
       }),
     onSuccess: (_, sessionId) => {
       queryClient.invalidateQueries({
-        queryKey: ["sisson", "workspace", workspaceId, "sessions", projectId],
+        queryKey: ["session", "workspace", workspaceId, "sessions", projectId],
       });
       queryClient.invalidateQueries({
-        queryKey: ["sisson", "workspace", workspaceId, "messages"],
+        queryKey: ["session", "workspace", workspaceId, "messages"],
       });
 
       if (currentSessionId === sessionId) {
@@ -555,7 +526,7 @@ function ProjectPage() {
         ],
       });
       queryClient.invalidateQueries({
-        queryKey: ["sisson", "workspace", workspaceId, "sessions", projectId],
+        queryKey: ["session", "workspace", workspaceId, "sessions", projectId],
       });
     }
   }, [

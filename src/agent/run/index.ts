@@ -34,4 +34,4 @@ export {
   setActiveRun,
   sleep,
 } from "./run-store";
-export type { ActiveRun, PendingPermission, ToolContext } from "./run-types";
+export type { ActiveRun, ToolContext } from "./run-types";

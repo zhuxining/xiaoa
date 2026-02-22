@@ -1,172 +1,136 @@
 /**
  * knowledge-tools.ts - 知识库工具
  *
- * 知识库管理工具：
+ * 实现 ToolDefinition 接口，供 createAgentSession customTools 使用：
  * - knowledge_read: 读取知识条目
  * - knowledge_list: 列出知识条目
  */
 
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { AgentTool, AgentToolResult } from "@mariozechner/pi-agent-core";
+import type {
+  AgentToolResult,
+  ToolDefinition,
+} from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
 
-/** Markdown 文件扩展名正则 */
-const MD_EXTENSION_REGEX = /\.md$/;
-
-/** 换行符正则表达式 */
-const NEWLINE_REGEX = /\n/;
-
-/**
- * 知识读取工具参数 Schema
- */
 const knowledgeReadSchema = Type.Object({
-  id: Type.String({
-    description: "知识条目 ID（文件名，不含 .md 后缀）",
-  }),
+  id: Type.String({ description: "知识条目 ID（文件名，不含 .md 后缀）" }),
 });
 
-/**
- * 知识列表工具参数 Schema
- */
 const knowledgeListSchema = Type.Object({});
 
-/**
- * 获取知识库目录
- */
+const MD_EXTENSION_REGEX = /\.md$/;
+
 function getKnowledgeDir(): string {
   const home = process.env.HOME ?? process.env.USERPROFILE ?? "";
-  return join(home, ".xiaoa", "agent", "knowledge");
+  return join(home, ".pi", "agent", "knowledge");
 }
 
-/**
- * 创建知识读取工具
- */
-export function createKnowledgeReadTool(): AgentTool<
-  typeof knowledgeReadSchema
-> {
-  return {
-    name: "knowledge_read",
-    description: "读取知识库中的条目",
-    parameters: knowledgeReadSchema,
-    label: "读取知识",
-    async execute(
-      _toolCallId: string,
-      params: { id: string },
-      _signal?: AbortSignal
-    ): Promise<AgentToolResult<undefined>> {
-      const { id } = params;
-
-      // 安全检查：防止路径遍历
-      if (id.includes("..") || id.includes("/") || id.includes("\\")) {
-        return {
-          content: [{ type: "text", text: "无效的知识条目 ID" }],
-          details: undefined,
-        };
-      }
-
-      const knowledgeDir = getKnowledgeDir();
-      const filePath = join(knowledgeDir, `${id}.md`);
-
-      try {
-        const content = await readFile(filePath, "utf-8");
-        return {
-          content: [{ type: "text", text: content }],
-          details: undefined,
-        };
-      } catch {
-        return {
-          content: [{ type: "text", text: `知识条目 "${id}" 不存在` }],
-          details: undefined,
-        };
-      }
-    },
-  };
-}
-
-/**
- * 提取知识条目标题
- */
 function extractTitle(content: string, fallbackId: string): string {
-  const lines = content.split(NEWLINE_REGEX);
-  let title = fallbackId;
-
-  // 检查 frontmatter 中的 title
+  const lines = content.split("\n");
   if (lines[0] === "---") {
     for (let i = 1; i < lines.length; i++) {
       if (lines[i] === "---") {
         break;
       }
       if (lines[i].startsWith("title:")) {
-        title = lines[i].slice(6).trim();
-        break;
+        return lines[i].slice(6).trim();
       }
     }
   } else if (lines[0]?.startsWith("# ")) {
-    // 使用第一个标题
-    title = lines[0].slice(2).trim();
+    return lines[0].slice(2).trim();
   }
-
-  return title;
+  return fallbackId;
 }
 
-/**
- * 创建知识列表工具
- */
-export function createKnowledgeListTool(): AgentTool<
-  typeof knowledgeListSchema
-> {
-  return {
-    name: "knowledge_list",
-    description: "列出知识库中的所有条目",
-    parameters: knowledgeListSchema,
-    label: "列出知识",
-    async execute(
-      _toolCallId: string,
-      _params: Record<string, never>,
-      _signal?: AbortSignal
-    ): Promise<AgentToolResult<{ count: number }>> {
-      const knowledgeDir = getKnowledgeDir();
+export const knowledgeReadTool: ToolDefinition<typeof knowledgeReadSchema> = {
+  name: "knowledge_read",
+  label: "读取知识",
+  description: "读取知识库中的条目",
+  parameters: knowledgeReadSchema,
+  async execute(
+    _toolCallId,
+    params,
+    _signal,
+    _onUpdate,
+    _ctx
+  ): Promise<AgentToolResult<undefined>> {
+    const { id } = params;
 
-      try {
-        const files = await readdir(knowledgeDir);
-        const mdFiles = files.filter((f) => MD_EXTENSION_REGEX.test(f));
+    if (id.includes("..") || id.includes("/") || id.includes("\\")) {
+      return {
+        content: [{ type: "text", text: "无效的知识条目 ID" }],
+        details: undefined,
+      };
+    }
 
-        if (mdFiles.length === 0) {
-          return {
-            content: [{ type: "text", text: "知识库为空" }],
-            details: { count: 0 },
-          };
-        }
+    try {
+      const content = await readFile(
+        join(getKnowledgeDir(), `${id}.md`),
+        "utf-8"
+      );
+      return { content: [{ type: "text", text: content }], details: undefined };
+    } catch {
+      return {
+        content: [{ type: "text", text: `知识条目 "${id}" 不存在` }],
+        details: undefined,
+      };
+    }
+  },
+};
 
-        // 提取标题
-        const entries: string[] = [];
-        for (const file of mdFiles) {
-          const id = file.replace(MD_EXTENSION_REGEX, "");
-          try {
-            const content = await readFile(join(knowledgeDir, file), "utf-8");
-            const title = extractTitle(content, id);
-            entries.push(`- **${id}**: ${title}`);
-          } catch {
-            entries.push(`- **${id}**`);
-          }
-        }
+export const knowledgeListTool: ToolDefinition<typeof knowledgeListSchema> = {
+  name: "knowledge_list",
+  label: "列出知识",
+  description: "列出知识库中的所有条目",
+  parameters: knowledgeListSchema,
+  async execute(
+    _toolCallId,
+    _params,
+    _signal,
+    _onUpdate,
+    _ctx
+  ): Promise<AgentToolResult<{ count: number }>> {
+    const knowledgeDir = getKnowledgeDir();
 
+    try {
+      const files = (await readdir(knowledgeDir)).filter((f) =>
+        f.endsWith(".md")
+      );
+
+      if (files.length === 0) {
         return {
-          content: [
-            {
-              type: "text",
-              text: `知识库条目 (${entries.length}):\n\n${entries.join("\n")}`,
-            },
-          ],
-          details: { count: entries.length },
-        };
-      } catch {
-        return {
-          content: [{ type: "text", text: "知识库目录不存在" }],
+          content: [{ type: "text", text: "知识库为空" }],
           details: { count: 0 },
         };
       }
-    },
-  };
-}
+
+      const entries: string[] = [];
+      for (const file of files) {
+        const id = file.replace(MD_EXTENSION_REGEX, "");
+        try {
+          const content = await readFile(join(knowledgeDir, file), "utf-8");
+          entries.push(`- **${id}**: ${extractTitle(content, id)}`);
+        } catch {
+          entries.push(`- **${id}**`);
+        }
+      }
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: `知识库条目 (${entries.length}):\n\n${entries.join("\n")}`,
+          },
+        ],
+        details: { count: entries.length },
+      };
+    } catch {
+      return {
+        content: [{ type: "text", text: "知识库目录不存在" }],
+        details: { count: 0 },
+      };
+    }
+  },
+};

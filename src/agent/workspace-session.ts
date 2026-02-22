@@ -1,97 +1,118 @@
 /**
  * workspace-session.ts - 工作区 AgentSession 封装
  *
- * 使用 pi-coding-agent 的 createAgentSession() 创建工作区对话会话。
+ * 使用 pi-coding-agent 的完整栈：
+ * - DefaultResourceLoader: 加载 skills/prompts，注入 extensionFactories
+ * - SessionManager.open(path): 绑定持久化 JSONL 会话文件
+ * - createAgentSession: 组装最终 AgentSession
+ *
+ * agentDir = workspaceDir（{userData}/workspaces/{workspaceId}/）
+ *   → pi 自动发现 {workspaceDir}/skills/ 中的 SKILL.md 文件
  */
 
-import type { AgentTool, ThinkingLevel } from "@mariozechner/pi-agent-core";
-import type { Model } from "@mariozechner/pi-ai";
+// biome-ignore lint/performance/noNamespaceImport: Node.js path 惯用命名空间导入
+import * as path from "node:path";
+import type { ThinkingLevel } from "@mariozechner/pi-agent-core";
 import {
+  type CreateAgentSessionResult,
+  codingTools,
   createAgentSession,
-  type ToolDefinition,
+  DefaultResourceLoader,
+  SessionManager,
 } from "@mariozechner/pi-coding-agent";
-import { getModelFromConfig } from "@/ipc/chat/agent/create-agent";
-import { createAuthBridge, getXiaoaAgentDir } from "./auth/auth-bridge";
+import { app } from "electron";
+import { createAuthBridge } from "./auth/auth-bridge";
+import { createXiaoaExtension } from "./extension-factory";
+import { getModelFromConfig } from "./model";
 import type { ActiveRun } from "./run/run-types";
+import { buildCustomTools } from "./tools";
 
 /**
- * 从配置解析模型
+ * 获取工作区目录（作为 agentDir，用于 skills 自动加载）
  */
-function resolveModel(): Model<string> {
-  return getModelFromConfig();
+function getWorkspaceDir(workspaceId: string): string {
+  return path.join(app.getPath("userData"), "workspaces", workspaceId);
+}
+
+/**
+ * 获取全局小A目录（作为全局 agentDir）
+ */
+function getGlobalDir(): string {
+  return path.join(app.getPath("userData"), "xiaoa");
+}
+
+/**
+ * 获取会话文件完整路径
+ */
+function getSessionFilePath(
+  workspaceId: string | null,
+  sessionId: string
+): string {
+  const baseDir = workspaceId ? getWorkspaceDir(workspaceId) : getGlobalDir();
+  return path.join(baseDir, "sessions", `${sessionId}.jsonl`);
 }
 
 /**
  * 创建工作区 AgentSession
  *
- * 调用 pi-coding-agent 的 createAgentSession()，配置：
- * - cwd: 工作区根路径
- * - agentDir: ~/.xiaoa/agent/
- * - model: 从全局配置读取
- * - thinkingLevel: 从 run 读取，默认 minimal
- * - tools: 文件/bash 工具（Phase 2 实现）
- * - customTools: memory/knowledge 工具（Phase 2 实现）
- * - authStorage: 认证桥接
+ * @param run - 当前活跃运行（包含 workspaceId、sessionId、workspaceRootPath 等）
  */
 export async function createWorkspaceSession(
-  run: ActiveRun,
-  options?: {
-    tools?: AgentTool[];
-    customTools?: ToolDefinition[];
-  }
-): Promise<ReturnType<typeof createAgentSession>> {
-  const { tools = [], customTools = [] } = options ?? {};
+  run: ActiveRun
+): Promise<CreateAgentSessionResult> {
+  const workspaceDir = getWorkspaceDir(run.workspaceId ?? "default");
+  const cwd = run.workspaceRootPath ?? process.cwd();
+  const sessionFile = getSessionFilePath(run.workspaceId, run.sessionId);
 
-  const authStorage = createAuthBridge();
-  const model = resolveModel();
-  const agentDir = getXiaoaAgentDir();
-  const thinkingLevel: ThinkingLevel = run.thinkingLevel ?? "minimal";
-
-  const result = await createAgentSession({
-    cwd: run.workspaceRootPath ?? process.cwd(),
-    agentDir,
-    model,
-    thinkingLevel,
-    tools,
-    customTools,
-    authStorage,
+  const loader = new DefaultResourceLoader({
+    cwd,
+    agentDir: workspaceDir,
+    extensionFactories: [createXiaoaExtension(run)],
+    noExtensions: true, // 只使用 extensionFactories，不加载文件扩展
+    noThemes: true, // Electron UI 不需要 pi 主题
   });
 
-  return result;
+  return await createAgentSession({
+    cwd,
+    agentDir: workspaceDir,
+    model: getModelFromConfig(),
+    thinkingLevel: (run.thinkingLevel ?? "minimal") as ThinkingLevel,
+    tools: codingTools, // read + bash + edit + write
+    customTools: buildCustomTools(),
+    authStorage: createAuthBridge(),
+    resourceLoader: loader,
+    sessionManager: SessionManager.open(sessionFile),
+  });
 }
 
 /**
  * 创建全局 AgentSession（无项目上下文）
  *
- * 全局对话没有项目目录，只使用 memory/knowledge 工具。
- * TODO: Phase 5 完整实现
+ * 全局对话无文件工具（无 cwd），只使用记忆/知识工具。
  */
 export async function createGlobalSession(
-  run: ActiveRun,
-  options?: {
-    customTools?: ToolDefinition[];
-  }
-): Promise<ReturnType<typeof createAgentSession>> {
-  const { customTools = [] } = options ?? {};
+  run: ActiveRun
+): Promise<CreateAgentSessionResult> {
+  const globalDir = getGlobalDir();
+  const sessionFile = getSessionFilePath(null, run.sessionId);
 
-  const authStorage = createAuthBridge();
-  const model = resolveModel();
-  const agentDir = getXiaoaAgentDir();
-  const thinkingLevel: ThinkingLevel = run.thinkingLevel ?? "minimal";
-
-  const result = await createAgentSession({
+  const loader = new DefaultResourceLoader({
     cwd: process.cwd(),
-    agentDir,
-    model,
-    thinkingLevel,
-    tools: [], // 全局对话无文件工具
-    customTools,
-    authStorage,
+    agentDir: globalDir,
+    extensionFactories: [createXiaoaExtension(run)],
+    noExtensions: true,
+    noThemes: true,
   });
 
-  return result;
+  return await createAgentSession({
+    cwd: process.cwd(),
+    agentDir: globalDir,
+    model: getModelFromConfig(),
+    thinkingLevel: (run.thinkingLevel ?? "minimal") as ThinkingLevel,
+    tools: [], // 全局对话无文件工具
+    customTools: buildCustomTools(),
+    authStorage: createAuthBridge(),
+    resourceLoader: loader,
+    sessionManager: SessionManager.open(sessionFile),
+  });
 }
-
-// Re-export for convenience
-// biome-ignore lint/performance/noBarrelFile: 便捷重导出
-export { createAuthBridge, getXiaoaAgentDir } from "./auth/auth-bridge";

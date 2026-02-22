@@ -1,83 +1,32 @@
 /**
  * tools/index.ts - 工具组装
  *
- * buildAllTools() 组装所有工具：
- * - tools: 文件/bash 工具（LLM 可调用）
- * - customTools: 记忆/知识工具（LLM 可调用）
+ * buildCustomTools(): 组装自定义工具（记忆/知识）
+ * pi 内置工具（read/bash/edit/write/grep/find/ls）通过 codingTools 直接传给 createAgentSession。
  */
 
-import type { AgentTool } from "@mariozechner/pi-agent-core";
-import type { ActiveRun } from "../run";
-import { createBashTool } from "./bash-tool";
-import {
-  createFileListTool,
-  createFileReadTool,
-  createFileWriteTool,
-} from "./file-tools";
-import {
-  createKnowledgeListTool,
-  createKnowledgeReadTool,
-} from "./knowledge-tools";
-import { createMemorySearchTool, createMemoryWriteTool } from "./memory-tools";
-
-/** 通用工具类型 — AgentTool 约束需要 TSchema，用 Record 替代并抑制错误 */
-// @ts-expect-error AgentTool<P> 约束 P extends TSchema，Record<string,unknown> 不满足但结构兼容
-type GenericTool = AgentTool<Record<string, unknown>>;
+import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
+import { knowledgeListTool, knowledgeReadTool } from "./knowledge-tools";
+import { memorySearchTool, memoryWriteTool } from "./memory-tools";
 
 /**
- * 工具组装结果
+ * 组装自定义工具（内存/知识工具）
+ * 这些工具与项目无关，workspace 和 global 模式都可用。
  */
-export interface AllTools {
-  /** 自定义工具（记忆/知识） */
-  customTools: GenericTool[];
-  /** LLM 可调用的工具（文件/bash） */
-  tools: GenericTool[];
-}
-
-/**
- * 组装所有工具
- *
- * @param run - 运行时实例
- * @returns 工具列表
- */
-export function buildAllTools(run: ActiveRun): AllTools {
-  // 工作区工具（需要 workspaceRootPath）
-  const tools: GenericTool[] = [];
-
-  if (run.workspaceRootPath) {
-    tools.push(
-      createFileReadTool(run) as unknown as GenericTool,
-      createFileWriteTool(run) as unknown as GenericTool,
-      createFileListTool(run) as unknown as GenericTool,
-      createBashTool(run) as unknown as GenericTool
-    );
-  }
-
-  // 全局可用工具（不需要工作区）
-  const customTools: GenericTool[] = [
-    createMemorySearchTool() as unknown as GenericTool,
-    createMemoryWriteTool() as unknown as GenericTool,
-    createKnowledgeReadTool() as unknown as GenericTool,
-    createKnowledgeListTool() as unknown as GenericTool,
+// biome-ignore lint/suspicious/noExplicitAny: ToolDefinition<TObject> 协变问题，运行时安全
+export function buildCustomTools(): ToolDefinition<any>[] {
+  return [
+    memorySearchTool,
+    memoryWriteTool,
+    knowledgeReadTool,
+    knowledgeListTool,
   ];
-
-  return { tools, customTools };
 }
 
-// 导出各个工具创建函数
 // biome-ignore lint/performance/noBarrelFile: 工具模块公开 API 边界
-export { createBashTool } from "./bash-tool";
-export {
-  createFileListTool,
-  createFileReadTool,
-  createFileWriteTool,
-} from "./file-tools";
-export {
-  createKnowledgeListTool,
-  createKnowledgeReadTool,
-} from "./knowledge-tools";
+export { knowledgeListTool, knowledgeReadTool } from "./knowledge-tools";
 export {
   appendDailyLog,
-  createMemorySearchTool,
-  createMemoryWriteTool,
+  memorySearchTool,
+  memoryWriteTool,
 } from "./memory-tools";
