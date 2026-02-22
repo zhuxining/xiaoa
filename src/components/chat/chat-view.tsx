@@ -1,20 +1,19 @@
 import type { AgentMessage, AgentTool } from "@mariozechner/pi-agent-core";
-import {
-  ApiKeysTab,
-  ModelSelector,
-  ProvidersModelsTab,
-  ProxyTab,
-  SettingsDialog,
-} from "@mariozechner/pi-web-ui";
+import { useNavigate } from "@tanstack/react-router";
 import { Settings, Sparkles } from "lucide-react";
-import React, { useLayoutEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/utils/tailwind";
+import { AgentMessageList } from "./agent-message-list";
 import type { FileMenuItem } from "./file-menu";
 import { MessageInput } from "./message-input";
 import { PermissionBar } from "./permission-bar";
 import type { PermissionRequest } from "./permission-dialog";
-import { PiMessageList } from "./pi-message-list";
 import { SessionList } from "./session-list";
 import type { SkillMenuItem } from "./skill-menu";
 
@@ -25,11 +24,24 @@ export interface Session {
   updatedAt: Date;
 }
 
+interface ModelInfo {
+  id: string;
+  name: string;
+}
+
+// 可用模型列表
+const AVAILABLE_MODELS: ModelInfo[] = [
+  { id: "claude-sonnet-4-5-20250514", name: "Claude Sonnet 4.5" },
+  { id: "claude-3-5-sonnet-20241022", name: "Claude 3.5 Sonnet" },
+  { id: "claude-3-5-haiku-20241022", name: "Claude 3.5 Haiku" },
+  { id: "claude-opus-4-5-20250514", name: "Claude Opus 4.5" },
+];
+
 interface ChatViewProps {
   agentAvatar?: string;
   agentName?: string;
   className?: string;
-  currentModel?: { id: string; name: string } | null;
+  currentModel?: ModelInfo | null;
   currentSessionId?: string;
   files?: FileMenuItem[];
   isGenerating?: boolean;
@@ -37,7 +49,7 @@ interface ChatViewProps {
   messages: AgentMessage[];
   onAbort?: () => void;
   onMessageSend: (message: string) => void;
-  onModelChange?: (model: { id: string; name: string }) => void;
+  onModelChange?: (model: ModelInfo) => void;
   onPermissionAllow?: (request: PermissionRequest) => void;
   onPermissionDeny?: (request: PermissionRequest) => void;
   onSessionCreate?: () => void;
@@ -53,12 +65,50 @@ interface ChatViewProps {
   tools?: AgentTool[];
 }
 
-// ArtifactsPanel Web Component 类型
-interface ArtifactsPanelElement extends HTMLElement {
-  artifacts: Map<string, { filename: string; content: string }>;
-  collapsed: boolean;
-  overlay: boolean;
-  tool: AgentTool;
+/**
+ * 模型选择器组件
+ */
+function ModelSelector({
+  currentModel,
+  onModelChange,
+}: {
+  currentModel?: ModelInfo | null;
+  onModelChange?: (model: ModelInfo) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const handleSelect = (model: ModelInfo) => {
+    onModelChange?.(model);
+    setOpen(false);
+  };
+
+  const displayName = currentModel?.name || "选择模型";
+
+  return (
+    <Popover onOpenChange={setOpen} open={open}>
+      <PopoverTrigger asChild>
+        <Button className="text-muted-foreground" size="sm" variant="ghost">
+          {displayName}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-56 p-2">
+        <div className="space-y-1">
+          {AVAILABLE_MODELS.map((model) => (
+            <button
+              className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent ${
+                currentModel?.id === model.id ? "bg-accent" : ""
+              }`}
+              key={model.id}
+              onClick={() => handleSelect(model)}
+              type="button"
+            >
+              {model.name}
+            </button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 export function ChatView({
@@ -81,56 +131,15 @@ export function ChatView({
   onPermissionDeny,
   onModelChange,
   showSessionList = true,
+  agentName = "小A",
+  agentAvatar,
   className,
 }: ChatViewProps) {
-  const artifactsRef = useRef<ArtifactsPanelElement>(null);
-  const [artifactsCollapsed, _setArtifactsCollapsed] = useState(true);
+  const navigate = useNavigate();
 
-  // 打开模型选择器
-  const handleOpenModelSelector = async () => {
-    // 将当前模型转换为 pi-ai Model 格式（pi-ai Model 类型定义不完整）
-    const model = currentModel
-      ? ({
-          id: currentModel.id,
-          name: currentModel.name,
-          provider: { id: "anthropic", name: "Anthropic" },
-          contextLength: 200_000,
-          inputPrice: 3,
-          outputPrice: 15,
-        } as unknown as Record<string, unknown>)
-      : null;
-
-    await ModelSelector.open(
-      model as unknown as Parameters<typeof ModelSelector.open>[0],
-      (selectedModel) => {
-        onModelChange?.({
-          id: selectedModel.id,
-          name: selectedModel.name,
-        });
-      }
-    );
+  const handleOpenSettings = () => {
+    navigate({ to: "/settings" });
   };
-
-  // 打开设置对话框
-  const handleOpenSettings = async () => {
-    await SettingsDialog.open([
-      new ProvidersModelsTab(),
-      new ApiKeysTab(),
-      new ProxyTab(),
-    ]);
-  };
-
-  // ArtifactsPanel 命令式赋值
-  useLayoutEffect(() => {
-    if (!artifactsRef.current) {
-      return;
-    }
-    const el = artifactsRef.current;
-    el.collapsed = artifactsCollapsed;
-  }, [artifactsCollapsed]);
-
-  // 检查是否有 artifacts 工具
-  const hasArtifactsTool = tools.some((t) => t.name === "artifacts");
 
   return (
     <div className={cn("flex h-full", className)} data-slot="chat-view">
@@ -148,18 +157,14 @@ export function ChatView({
         <div className="nodraglayer flex items-center justify-between border-b px-4 py-2">
           <div className="flex items-center gap-2">
             <Sparkles className="size-4 text-primary" />
-            <span className="font-medium">小A</span>
+            <span className="font-medium">{agentName}</span>
           </div>
           <div className="flex items-center gap-2">
             {/* 模型选择按钮 */}
-            <Button
-              className="text-muted-foreground"
-              onClick={handleOpenModelSelector}
-              size="sm"
-              variant="ghost"
-            >
-              {currentModel?.name || "选择模型"}
-            </Button>
+            <ModelSelector
+              currentModel={currentModel}
+              onModelChange={onModelChange}
+            />
             {/* 设置按钮 */}
             <Button
               className="size-8"
@@ -172,29 +177,16 @@ export function ChatView({
           </div>
         </div>
 
-        {/* 消息区域 + Artifacts 面板 */}
-        <div className="flex flex-1 overflow-hidden">
-          <PiMessageList
-            className={cn(
-              "flex-1 transition-all duration-300",
-              hasArtifactsTool && !artifactsCollapsed && "flex-2"
-            )}
-            isStreaming={isGenerating}
-            messages={messages}
-            streamingMessage={streamingMessage}
-            tools={tools}
-          />
-
-          {/* Artifacts 面板 */}
-          {hasArtifactsTool &&
-            React.createElement("artifacts-panel", {
-              ref: artifactsRef,
-              className: cn(
-                "border-l bg-muted/30 transition-all duration-300",
-                artifactsCollapsed ? "w-0 overflow-hidden" : "w-[400px]"
-              ),
-            })}
-        </div>
+        {/* 消息区域 */}
+        <AgentMessageList
+          agentAvatar={agentAvatar}
+          agentName={agentName}
+          className="flex-1"
+          isStreaming={isGenerating}
+          messages={messages}
+          streamingMessage={streamingMessage}
+          tools={tools}
+        />
 
         {/* 输入区域 */}
         <MessageInput

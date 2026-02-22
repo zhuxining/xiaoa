@@ -189,7 +189,13 @@ export function getModelFromConfig(): GetModelReturn {
 
 export function getApiKeyForProvider(provider: string): string {
   const config = readConfig();
+  // 首先检查当前配置的 provider 是否匹配
   if (provider === config.llm.provider && config.llm.apiKey) {
+    return config.llm.apiKey;
+  }
+  // 如果不匹配，可能是 model.provider 与配置的 provider 名称不同
+  // 尝试直接使用配置的 API Key（因为用户可能只配置了一个 provider）
+  if (config.llm.apiKey) {
     return config.llm.apiKey;
   }
   return "";

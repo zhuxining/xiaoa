@@ -67,7 +67,6 @@
     "@mariozechner/pi-agent-core": "^0.54.0",
     "@mariozechner/pi-ai": "^0.54.0",
     "@mariozechner/pi-coding-agent": "^0.54.0",
-    "@mariozechner/pi-web-ui": "^0.54.0",
     "@orpc/client": "^1.13.5",
     "@orpc/server": "^1.13.5",
     "@tailwindcss/vite": "^4.2.0",

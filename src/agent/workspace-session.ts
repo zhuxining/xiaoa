@@ -10,18 +10,14 @@ import {
   createAgentSession,
   type ToolDefinition,
 } from "@mariozechner/pi-coding-agent";
+import { getModelFromConfig } from "@/ipc/chat/agent/create-agent";
 import { createAuthBridge, getXiaoaAgentDir } from "./auth/auth-bridge";
 import type { ActiveRun } from "./run/run-types";
 
 /**
  * 从配置解析模型
- *
- * 复用现有 create-agent.ts 中的逻辑。
- * TODO: 后续将 getModelFromConfig 迁移到 src/agent/ 目录。
  */
 function resolveModel(): Model<string> {
-  // 动态导入以避免循环依赖
-  const { getModelFromConfig } = require("@/ipc/chat/agent/create-agent");
   return getModelFromConfig();
 }
 
