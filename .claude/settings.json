@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun run fix && bun run check-types",
+            "command": "bun run check && bun run check-types",
             "timeout": 30
           }
         ]
