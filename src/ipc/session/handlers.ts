@@ -11,6 +11,7 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import type { AgentMessage } from "@mariozechner/pi-agent-core";
 import { os } from "@orpc/server";
+import { getXiaoaAgentDir } from "@/agent/auth/auth-bridge";
 import {
   createSessionInputSchema,
   deleteSessionInputSchema,
@@ -22,14 +23,6 @@ import {
 } from "./schemas";
 
 const _JSONL_EXT_RE = /\.jsonl$/;
-
-/**
- * 获取 xiaoa agent 目录
- */
-function getXiaoaAgentDir(): string {
-  const home = process.env.HOME ?? process.env.USERPROFILE ?? "";
-  return path.join(home, ".xiaoa", "agent");
-}
 
 /**
  * 获取会话存储目录

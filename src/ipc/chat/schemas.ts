@@ -61,6 +61,7 @@ export const chatSendInputSchema = z.object({
   workspaceId: z.string().optional(),
   sessionId: z.string(),
   content: z.string().min(1),
+  workspaceRootPath: z.string().optional(),
 });
 
 export const chatSendResultSchema = z.object({

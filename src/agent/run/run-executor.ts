@@ -5,6 +5,12 @@
  * 并提供对话运行的启动、中止等管理功能。
  */
 import type { AgentSessionEvent } from "@mariozechner/pi-coding-agent";
+import { respondToPermissionRequest } from "@/agent/permission/permission-request";
+import { buildAllTools } from "@/agent/tools";
+import {
+  createGlobalSession,
+  createWorkspaceSession,
+} from "@/agent/workspace-session";
 import type { ChatScope } from "@/ipc/chat/schemas";
 import {
   appendEvent,
@@ -118,6 +124,49 @@ export function bridgeEvent(key: string, event: AgentSessionEvent): void {
 }
 
 /**
+ * 异步执行 Agent 运行
+ *
+ * 创建 AgentSession 并调用 prompt()，将事件通过 bridgeEvent 转发。
+ */
+async function executeRun(run: ActiveRun): Promise<void> {
+  try {
+    const { tools, customTools } = buildAllTools(run);
+    const result =
+      run.scope === "workspace"
+        ? await createWorkspaceSession(run, {
+            // biome-ignore lint/suspicious/noExplicitAny: pi-coding-agent 工具类型桥接
+            tools: tools as any[],
+            // biome-ignore lint/suspicious/noExplicitAny: pi-coding-agent 工具类型桥接
+            customTools: customTools as any[],
+          })
+        : await createGlobalSession(run, {
+            // biome-ignore lint/suspicious/noExplicitAny: pi-coding-agent 工具类型桥接
+            customTools: customTools as any[],
+          });
+
+    run.session = result.session;
+
+    const unsub = result.session.subscribe((event) =>
+      bridgeEvent(run.key, event)
+    );
+    try {
+      await result.session.prompt(run.content);
+    } finally {
+      unsub();
+    }
+    endChatRun(run);
+  } catch (error) {
+    const aborted =
+      run.aborted || (error instanceof Error && error.message === "ABORTED");
+    let errorMessage: string | undefined;
+    if (!aborted) {
+      errorMessage = error instanceof Error ? error.message : "运行失败";
+    }
+    endChatRun(run, { error: errorMessage, aborted });
+  }
+}
+
+/**
  * 创建 ActiveRun 实例
  */
 export function createActiveRun(input: {
@@ -166,8 +215,7 @@ export function createActiveRun(input: {
 /**
  * 启动对话运行
  *
- * 创建 ActiveRun 并注册到 activeRuns，
- * 实际的 AgentSession 创建由调用方在 executeRun 中完成。
+ * 创建 ActiveRun，注册到 activeRuns，并异步触发 Agent 执行。
  */
 export function startChatRun(input: {
   scope: ChatScope;
@@ -176,7 +224,7 @@ export function startChatRun(input: {
   content: string;
   workspaceRootPath?: string;
   thinkingLevel?: ActiveRun["thinkingLevel"];
-}): { runId: string; run: ActiveRun } {
+}): { runId: string } {
   if (!input.content.trim()) {
     throw new Error("content is required");
   }
@@ -203,7 +251,10 @@ export function startChatRun(input: {
     type: "run_start",
   });
 
-  return { runId: run.runId, run };
+  // 异步触发 Agent 执行
+  executeRun(run).catch(() => undefined);
+
+  return { runId: run.runId };
 }
 
 /**
@@ -299,6 +350,13 @@ export function respondChatPermission(input: {
 
   const run = getActiveRun(key);
   if (!run || run.runId !== runId || !run.pendingPermission) {
+    // 尝试通过新权限系统响应（旧 pendingPermission 可能已清空）
+    respondToPermissionRequest(
+      key,
+      requestId,
+      decision,
+      alwaysAllowInSession ?? false
+    );
     return { applied: false };
   }
 
@@ -308,6 +366,14 @@ export function respondChatPermission(input: {
 
   run.pendingPermission.resolve(
     decision === "allow",
+    alwaysAllowInSession ?? false
+  );
+
+  // 同时 resolve 新权限系统
+  respondToPermissionRequest(
+    run.key,
+    requestId,
+    decision,
     alwaysAllowInSession ?? false
   );
 

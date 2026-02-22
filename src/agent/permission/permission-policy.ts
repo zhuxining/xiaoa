@@ -7,6 +7,7 @@
  * - auto: 自动模式，低/中风险自动通过
  */
 
+import { getWorkspace } from "@/ipc/workspace/store";
 import type { ActiveRun } from "../run";
 
 /** 命令分隔正则表达式 */
@@ -89,10 +90,12 @@ const READ_ONLY_COMMANDS = [
  *
  * 从 workspace 配置读取，默认为 review
  */
-export function getPermissionPolicy(_run: ActiveRun): PermissionPolicy {
-  // TODO: 从 workspace.agent.permissionPolicy 读取
-  // 目前默认返回 review
-  return "review";
+export function getPermissionPolicy(run: ActiveRun): PermissionPolicy {
+  if (!run.workspaceId) {
+    return "review";
+  }
+  const workspace = getWorkspace(run.workspaceId);
+  return (workspace?.permissions?.mode as PermissionPolicy) ?? "review";
 }
 
 /**

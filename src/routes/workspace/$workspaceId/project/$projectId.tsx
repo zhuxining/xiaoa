@@ -613,6 +613,7 @@ function ProjectPage() {
           workspaceId,
           sessionId: currentSessionId,
           content,
+          workspaceRootPath: project?.path,
         },
         {
           onSuccess: (result) => {
@@ -631,7 +632,14 @@ function ProjectPage() {
         }),
       });
     },
-    [currentSessionId, navigate, projectId, sendChatMutation, workspaceId]
+    [
+      currentSessionId,
+      navigate,
+      projectId,
+      sendChatMutation,
+      workspaceId,
+      project?.path,
+    ]
   );
 
   const handleMessageSend = (content: string) => {

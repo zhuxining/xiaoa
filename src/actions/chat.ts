@@ -7,6 +7,7 @@ export interface ChatSendInput {
   scope: ChatScope;
   sessionId: string;
   workspaceId?: string;
+  workspaceRootPath?: string;
 }
 
 export interface ChatAbortInput {
