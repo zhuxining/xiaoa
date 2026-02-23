@@ -3,9 +3,9 @@
  *
  * 使用 pi SessionManager 管理会话，不再手动解析 JSONL。
  *
- * 路径约定：
- *   工作区会话: {userData}/workspaces/{workspaceId}/sessions/{id}.jsonl
- *   全局会话:   {userData}/xiaoa/sessions/{id}.jsonl
+ * 路径约定（pi 格式）：
+ *   工作区会话: {userData}/workspaces/{workspaceId}/sessions/{timestamp}_{uuid}.jsonl
+ *   全局会话:   {userData}/xiaoa/sessions/{timestamp}_{uuid}.jsonl
  *
  * 项目过滤：pi 会话头中存储 cwd（项目路径），通过 SessionInfo.cwd 过滤。
  */
@@ -41,13 +41,6 @@ function getSessionsDir(workspaceId: string | null): string {
   return path.join(getBaseDir(workspaceId), "sessions");
 }
 
-function getSessionFilePath(
-  workspaceId: string | null,
-  sessionId: string
-): string {
-  return path.join(getSessionsDir(workspaceId), `${sessionId}.jsonl`);
-}
-
 type SessionInfo = Awaited<ReturnType<typeof SessionManager.list>>[number];
 
 function toSessionMeta(
@@ -76,9 +69,8 @@ export const sessionRouter = os.router({
       const baseDir = getBaseDir(workspaceId);
       const sessionsDir = getSessionsDir(workspaceId);
 
-      await fs.mkdir(sessionsDir, { recursive: true }).catch(() => {
-        /* ignore */
-      });
+      await fs.mkdir(sessionsDir, { recursive: true }).catch(() => {});
+
       let sessions = await SessionManager.list(baseDir, sessionsDir).catch(
         () => []
       );
@@ -108,11 +100,20 @@ export const sessionRouter = os.router({
       return info ? toSessionMeta(info, workspaceId) : null;
     }),
 
-  getMessages: os.input(getSessionMessagesInputSchema).handler(({ input }) => {
+  getMessages: os.input(getSessionMessagesInputSchema).handler(async ({ input }) => {
     const { workspaceId, sessionId } = input;
-    const filePath = getSessionFilePath(workspaceId, sessionId);
+    const sessionsDir = getSessionsDir(workspaceId);
 
+    // pi 的文件名格式是 {timestamp}_{uuid}.jsonl，需要查找匹配的文件
     try {
+      const files = await fs.readdir(sessionsDir);
+      const sessionFile = files.find((f) => f.endsWith(`_${sessionId}.jsonl`));
+
+      if (!sessionFile) {
+        return [];
+      }
+
+      const filePath = path.join(sessionsDir, sessionFile);
       const sm = SessionManager.open(filePath);
       const { messages } = buildSessionContext(sm.getEntries());
       return messages;
@@ -135,6 +136,17 @@ export const sessionRouter = os.router({
       const sessionCwd = cwd ?? baseDir;
       const sm = SessionManager.create(sessionCwd, sessionsDir);
       const id = sm.getSessionId();
+      const sessionFile = sm.getSessionFile();
+
+      // pi 的 SessionManager 默认只在收到 assistant 消息后才写入磁盘
+      // 这里强制立即写入会话头，确保会话可以被 list 发现
+      if (sessionFile) {
+        const header = sm.getHeader();
+        if (header) {
+          await fs.writeFile(sessionFile, `${JSON.stringify(header)}\n`);
+        }
+      }
+
       const now = Date.now();
 
       return {
@@ -154,15 +166,24 @@ export const sessionRouter = os.router({
       const { workspaceId, id } = input;
       const baseDir = getBaseDir(workspaceId);
       const sessionsDir = getSessionsDir(workspaceId);
-      const filePath = getSessionFilePath(workspaceId, id);
 
       const sessions = await SessionManager.list(baseDir, sessionsDir).catch(
         () => []
       );
       const info = sessions.find((s) => s.id === id);
 
+      // pi 的文件名格式是 {timestamp}_{uuid}.jsonl，需要查找匹配的文件
       try {
-        await fs.unlink(filePath);
+        const files = await fs.readdir(sessionsDir);
+        const sessionFile = files.find((f) =>
+          f.endsWith(`_${id}.jsonl`)
+        );
+
+        if (sessionFile) {
+          const filePath = path.join(sessionsDir, sessionFile);
+          await fs.unlink(filePath);
+        }
+
         return info ? toSessionMeta(info, workspaceId) : null;
       } catch {
         return null;
