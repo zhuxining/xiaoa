@@ -341,9 +341,9 @@ argument-hint: "[风格] [文本]"
 - **开箱即用**：用户首次打开应用即可直接对话，无需创建工作区
 - **通用助手**：无特定领域人设，适合通用问答、文件处理、临时任务
 - 支持通过附件按钮上传文件（不需要打开项目）
-- 有独立的会话列表（存储于 `~/.xiaoa/xiaoa/sessions/`）
+- 有独立的会话列表（存储于 `{userData}/xiaoa/sessions/`）
 - 使用全局默认模型（不可在小A层面自定义模型，需去设置页修改）
-- 有独立的记忆（存储于 `~/.xiaoa/xiaoa/memories/`）
+- 有独立的记忆（存储于 `{userData}/xiaoa/memories/`）
 - 会话 scope 固定为 `global`，与工作区会话（scope=`workspace`）完全隔离
 - 默认使用 Review 权限模式
 
@@ -468,7 +468,7 @@ Workspace.agent.model = "claude-opus-4-6"         ← 优先使用
 ```typescript
 // ============================================
 // GlobalConfig — 应用级全局配置
-// 存储于 ~/.xiaoa/config.json
+// 存储于 {userData}/config.json
 // ============================================
 
 interface GlobalConfig {
@@ -478,7 +478,7 @@ interface GlobalConfig {
 }
 
 interface LLMConfig {
-  provider: "anthropic" | "openai" | "openrouter" | "ollama" | "custom";
+  provider: ProviderType;                 // 见 src/ipc/config/schemas.ts providerSchema（18 种）
   apiKey?: string;                        // 加密存储于 credentials.enc
   model: string;                          // 默认模型（工作区可覆盖）
   endpoint?: string;                      // 自定义端点（ollama/custom 时使用）
@@ -643,8 +643,10 @@ interface Attachment {
 
 ### 4.2 本地存储结构
 
+> 实际路径为 `app.getPath("userData")`（macOS: `~/Library/Application Support/xiaoa/`），以下用 `{userData}` 代指。
+
 ```text
-~/.xiaoa/
+{userData}/
 ├── config.json                    # GlobalConfig（活跃工作区 ID、LLM 配置、偏好等）
 ├── credentials.enc                # 加密的 API 密钥（AES-256-GCM）
 ├── xiaoa/                         # 内置小A Agent 的数据目录（结构同工作区，但无 workspace.json）
@@ -743,7 +745,7 @@ description: 小A桌面应用的产品需求规格，包含功能列表、用户
 **索引数据库存放位置**：
 
 ```text
-~/.xiaoa/
+{userData}/
 ├── indexes/                       # 记忆搜索索引（派生数据）
 │   ├── xiaoa.sqlite               # 内置小A的记忆索引
 │   └── {workspace-id}.sqlite      # 各工作区的记忆索引
@@ -921,16 +923,18 @@ src/
 ├── renderer.ts                    # Renderer 进程入口
 ├── app.tsx                        # React 根组件
 │
-├── agent/                         # pi-coding-agent 集成层（Main 进程）
+├── agent/                         # pi-coding-agent 集成层（Main 进程，pi 唯一入口）
+│   ├── paths.ts                   # 工作区/全局路径约定（公共路径计算）
 │   ├── model.ts                   # getModelFromConfig() — provider/model 映射
 │   ├── workspace-session.ts       # createWorkspaceSession / createGlobalSession
+│   ├── session-store.ts           # 会话 CRUD（pi SessionManager 封装）
 │   ├── extension-factory.ts       # createXiaoaExtension() — 系统提示 + 权限钩子
 │   ├── system-prompt.ts           # composeWorkspaceSystemPrompt / composeGlobalSystemPrompt
 │   ├── permission.ts              # requestPermission / respondToPermission（Promise 阻塞流）
 │   ├── auth/
 │   │   └── auth-bridge.ts         # AuthStorage.inMemory() + setFallbackResolver
 │   ├── tools/
-│   │   ├── index.ts               # buildCustomTools() → ToolDefinition[]
+│   │   ├── index.ts               # buildCustomTools(workspaceId) → ToolDefinition[]
 │   │   ├── memory-tools.ts        # memory_search, memory_write（ToolDefinition）
 │   │   └── knowledge-tools.ts     # knowledge_read, knowledge_list（ToolDefinition）
 │   └── run/
@@ -947,7 +951,7 @@ src/
 │   ├── theme.ts                   # 主题切换
 │   └── window.ts                  # 窗口控制
 │
-├── ipc/                           # oRPC handlers（Main 进程）
+├── ipc/                           # oRPC handlers（Main 进程，极薄委托，不直接引用 pi）
 │   ├── router.ts                  # 聚合所有 domain router
 │   ├── handler.ts                 # IPC handler 注册
 │   ├── context.ts                 # oRPC 上下文
@@ -956,27 +960,25 @@ src/
 │   ├── shell/                     # Shell 操作
 │   ├── theme/                     # 主题管理
 │   ├── window/                    # 窗口控制
-│   ├── chat/                      # 极薄对话 IPC（handlers / schemas / store）
-│   └── session/                   # 会话 IPC（读取 pi SessionManager JSONL）
-│
-│   # ↓ 待删除（旧 Agent 实现）
-│   # chat/agent/                  → 旧 Agent（create-agent / convert-to-llm / transform-context）
-│   # chat/run/                    → 旧 run（run-executor / run-store / run-types）
-│   # chat/tools/                  → 旧工具（file-tools / memory-tools / permission-guard）
-│   # chat/permission/             → 旧权限
-│   # sisson/                      → typo 目录，已由 session/ 替代
+│   ├── chat/                      # 极薄对话 IPC（委托 agent/run/）
+│   └── session/                   # 极薄会话 IPC（委托 agent/session-store）
 │
 ├── components/                    # React 组件
 │   ├── ui/                        # shadcn/ui 基础组件
 │   ├── chat/
+│   │   ├── chat-view.tsx          # 对话视图容器
 │   │   ├── message-list.tsx       # 纯 React 消息列表（读取 agentSession.messages）
-│   │   ├── message-item.tsx       # 单条消息（文本 / 工具调用 / 权限请求）
+│   │   ├── agent-message-list.tsx # Agent 消息列表（分组渲染）
 │   │   ├── message-input.tsx      # 输入框（含技能 / 菜单）
+│   │   ├── message-renderers/     # 消息渲染器（assistant / user / tool / code-block）
 │   │   ├── permission-dialog.tsx  # 权限确认对话（tool_call 钩子触发）
-│   │   └── session-list.tsx       # 会话列表（读取 sessions/index.json）
+│   │   ├── permission-bar.tsx     # 权限操作栏
+│   │   ├── session-list.tsx       # 会话列表
+│   │   ├── skill-menu.tsx         # 技能菜单
+│   │   └── file-menu.tsx          # 文件菜单
+│   ├── layout/                    # 布局组件（app-layout / sidebar / workspace-switcher）
 │   └── ...                        # 其他组件
 │
-├── layouts/                       # 布局组件
 ├── routes/                        # TanStack Router 文件路由
 ├── localization/                  # i18n 国际化
 ├── constants/                     # 常量定义
@@ -1125,6 +1127,14 @@ URL search params 承载 UI 状态：
 
 使用 [oRPC](https://orpc.dev) 实现 Main ↔ Renderer 类型安全通信，取代传统的 `ipcMain.handle` / `ipcRenderer.invoke` 字符串通道模式。
 
+**分层规则**：`src/ipc/` 是极薄委托层，**不得直接 import pi-coding-agent 的任何模块**。所有 pi 交互集中在 `src/agent/` 层，IPC handler 仅做 schema 校验 + 路由。
+
+| 层 | 职责 | 能否 import pi？ |
+|---|---|---|
+| `src/ipc/` | oRPC schema 校验 + 路由 | **否** |
+| `src/agent/` | pi 集成 + 业务逻辑 | **是，唯一入口** |
+| `src/actions/` | Renderer 端调用封装 | 否 |
+
 ### 8.1 oRPC Router 结构
 
 IPC handlers 按领域组织为嵌套 router，所有 procedure 的输入通过 Zod schema 验证：
@@ -1132,23 +1142,18 @@ IPC handlers 按领域组织为嵌套 router，所有 procedure 的输入通过 
 ```typescript
 // src/ipc/router.ts — 聚合所有 domain router
 export const router = {
-  theme,    // 主题管理：get / set
-  window,   // 窗口控制：minimize / maximize / close
-  app,      // 应用信息：getVersion / getName
-  shell,    // Shell 操作：openExternal
-
-  // ── 以下为规划中的 domain router ──
+  theme,       // 主题管理：get / set
+  window,      // 窗口控制：minimize / maximize / close
+  app,         // 应用信息：getVersion / getName
+  chat,        // 对话：send / abort / events / respondPermission（极薄，委托 agent/run/）
+  shell,       // Shell 操作：openExternal
+  session,     // 会话管理：list / create / delete / getMessages（极薄，委托 agent/session-store）
   config,      // 全局配置：get / update
-  llm,         // LLM 密钥：setKey / test
   workspace,   // 工作区 CRUD：list / get / create / update / delete
   skill,       // 技能管理：list / get / create / update / delete / import
   memory,      // 记忆管理：read / write / search / get / reindex
   knowledge,   // 知识库：list / add / remove / reparse / read
   project,     // 项目管理：list / open / close / readDir
-  session,     // 会话管理：list / create / delete / messages
-  file,        // 文件操作：read
-  session,     // 会话管理：list / getMessages（读取 pi SessionManager JSONL）
-  chat,        // 对话：send / abort / events / respondPermission / steer / followUp
 };
 ```
 
@@ -1222,7 +1227,7 @@ await client.theme.set({ mode: "dark" });
 
 ### 9.2 agentDir 设计
 
-`agentDir` 设置为工作区目录 `~/.xiaoa/workspaces/{workspaceId}/`，pi-coding-agent 会自动：
+`agentDir` 设置为工作区目录 `{userData}/workspaces/{workspaceId}/`，pi-coding-agent 会自动：
 
 - 从 `{workspaceDir}/skills/` 加载技能（SKILL.md 格式，无需手动注入）
 - 通过 `SessionManager.open(path)` 管理 `{workspaceDir}/sessions/{sessionId}.jsonl`
@@ -1236,7 +1241,7 @@ export async function createWorkspaceSession(
   run: ActiveRun
 ): Promise<CreateAgentSessionResult> {
   const workspaceDir = getWorkspaceDir(run.workspaceId ?? "default");
-  // ~/.xiaoa/workspaces/{id}/sessions/{sessionId}.jsonl
+  // {userData}/workspaces/{id}/sessions/{sessionId}.jsonl
   const sessionFile = getSessionFilePath(run.workspaceId, run.sessionId);
   const cwd = run.workspaceRootPath ?? process.cwd();
 
@@ -1254,7 +1259,7 @@ export async function createWorkspaceSession(
     model: getModelFromConfig(),
     thinkingLevel: (run.thinkingLevel ?? "minimal") as ThinkingLevel,
     tools: codingTools,              // [readTool, bashTool, editTool, writeTool]
-    customTools: buildCustomTools(), // memory_search, memory_write, knowledge_read, knowledge_list
+    customTools: buildCustomTools(run.workspaceId ?? null),
     authStorage: createAuthBridge(),
     resourceLoader: loader,
     sessionManager: SessionManager.open(sessionFile),
@@ -1264,7 +1269,7 @@ export async function createWorkspaceSession(
 export async function createGlobalSession(
   run: ActiveRun
 ): Promise<CreateAgentSessionResult> {
-  const globalDir = getGlobalDir(); // ~/.xiaoa/xiaoa/
+  const globalDir = getGlobalDir(); // {userData}/xiaoa/
   const sessionFile = getSessionFilePath(null, run.sessionId);
 
   const loader = new DefaultResourceLoader({
@@ -1281,7 +1286,7 @@ export async function createGlobalSession(
     model: getModelFromConfig(),
     thinkingLevel: (run.thinkingLevel ?? "minimal") as ThinkingLevel,
     tools: [],               // 全局对话无文件工具
-    customTools: buildCustomTools(),
+    customTools: buildCustomTools(null),
     authStorage: createAuthBridge(),
     resourceLoader: loader,
     sessionManager: SessionManager.open(sessionFile),
@@ -1420,7 +1425,7 @@ export const memorySearchTool: ToolDefinition<typeof memorySearchSchema> = {
 };
 ```
 
-**buildCustomTools() 返回的工具列表**：
+**buildCustomTools(workspaceId) 返回的工具列表**：
 
 | 工具名 | 文件 | 用途 |
 |--------|------|------|
@@ -1491,6 +1496,11 @@ Anthropic / OpenAI / Google / xAI / Groq / Mistral / DeepSeek / Ollama / Custom 
 - ✅ `src/ipc/chat/store.ts`：`PendingPermission` 定义在 `src/agent/permission.ts`，非 IPC 层，store.ts 为有效重导出模块
 - ✅ 更新路由文件：修复 `routes/workspace/$workspaceId/project/$projectId.tsx` 中 queryKey 拼写错误（"sisson" → "session"）
 - ✅ 删除废弃测试：`tests/unit/sisson-workspace-store.test.ts`（文件不存在，无需删除）
+- ✅ 新建 `src/agent/paths.ts`：抽出公共路径计算（getWorkspaceDir / getGlobalDir / getBaseDir / getSessionsDir / getSessionFilePath）
+- ✅ 新建 `src/agent/session-store.ts`：将 `ipc/session/handlers.ts` 中的 pi SessionManager 交互下沉到 agent 层
+- ✅ `src/ipc/session/handlers.ts`：改为极薄委托（仅 schema 校验 + 调用 agent/session-store）
+- ✅ `src/agent/workspace-session.ts`：复用 `agent/paths.ts` 公共路径，消除重复
+- ✅ 确立分层规则：`src/ipc/` 不得直接 import pi-coding-agent，`src/agent/` 是 pi 唯一入口
 
 ### Phase 3 — 权限守卫 + 对话 UI
 
@@ -1502,7 +1512,7 @@ Anthropic / OpenAI / Google / xAI / Groq / Mistral / DeepSeek / Ollama / Custom 
 ### Phase 4 — Agent 配置 + Skill 系统
 
 - Agent 配置页面（人设 / 模型 / 头像）
-- 技能管理 GUI（SKILL.md 文件操作，存于 `~/.xiaoa/workspaces/{id}/skills/`，pi 自动加载）
+- 技能管理 GUI（SKILL.md 文件操作，存于 `{userData}/workspaces/{id}/skills/`，pi 自动加载）
 - 记忆管理（MEMORY.md 编辑器，通过 `agentsFilesOverride` 注入）
 - 知识库管理（文件拖入 + URL 解析）
 

@@ -1,1 +1,0 @@
-@docs/electron-shadcn/components

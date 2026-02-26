@@ -10,8 +10,6 @@
  *   → pi 自动发现 {workspaceDir}/skills/ 中的 SKILL.md 文件
  */
 
-// biome-ignore lint/performance/noNamespaceImport: Node.js path 惯用命名空间导入
-import * as path from "node:path";
 import type { ThinkingLevel } from "@mariozechner/pi-agent-core";
 import {
   type CreateAgentSessionResult,
@@ -20,37 +18,12 @@ import {
   DefaultResourceLoader,
   SessionManager,
 } from "@mariozechner/pi-coding-agent";
-import { app } from "electron";
 import { createAuthBridge } from "./auth/auth-bridge";
 import { createXiaoaExtension } from "./extension-factory";
 import { getModelFromConfig } from "./model";
+import { getGlobalDir, getSessionFilePath, getWorkspaceDir } from "./paths";
 import type { ActiveRun } from "./run/run-types";
 import { buildCustomTools } from "./tools";
-
-/**
- * 获取工作区目录（作为 agentDir，用于 skills 自动加载）
- */
-function getWorkspaceDir(workspaceId: string): string {
-  return path.join(app.getPath("userData"), "workspaces", workspaceId);
-}
-
-/**
- * 获取全局小A目录（作为全局 agentDir）
- */
-function getGlobalDir(): string {
-  return path.join(app.getPath("userData"), "xiaoa");
-}
-
-/**
- * 获取会话文件完整路径
- */
-function getSessionFilePath(
-  workspaceId: string | null,
-  sessionId: string
-): string {
-  const baseDir = workspaceId ? getWorkspaceDir(workspaceId) : getGlobalDir();
-  return path.join(baseDir, "sessions", `${sessionId}.jsonl`);
-}
 
 /**
  * 创建工作区 AgentSession
@@ -78,7 +51,7 @@ export async function createWorkspaceSession(
     model: getModelFromConfig(),
     thinkingLevel: (run.thinkingLevel ?? "minimal") as ThinkingLevel,
     tools: codingTools, // read + bash + edit + write
-    customTools: buildCustomTools(),
+    customTools: buildCustomTools(run.workspaceId ?? null),
     authStorage: createAuthBridge(),
     resourceLoader: loader,
     sessionManager: SessionManager.open(sessionFile),
@@ -110,7 +83,7 @@ export async function createGlobalSession(
     model: getModelFromConfig(),
     thinkingLevel: (run.thinkingLevel ?? "minimal") as ThinkingLevel,
     tools: [], // 全局对话无文件工具
-    customTools: buildCustomTools(),
+    customTools: buildCustomTools(null),
     authStorage: createAuthBridge(),
     resourceLoader: loader,
     sessionManager: SessionManager.open(sessionFile),

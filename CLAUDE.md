@@ -15,10 +15,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```text
 xiaoa/
 └── src/
-    ├── agent/           # pi-coding-agent 集成层（Main 进程）
-    │   ├── workspace-session.ts   # createAgentSession() 封装
-    │   ├── extension-factory.ts   # createXiaoaExtension()（系统提示 + 权限钩子）
-    │   ├── system-prompt.ts       # 系统提示组装
+    ├── agent/           # pi-coding-agent 集成层（Main 进程，pi 唯一入口）
+    │   ├── paths.ts             # 工作区/全局路径约定（公共路径计算）
+    │   ├── workspace-session.ts # createAgentSession() 封装
+    │   ├── session-store.ts     # 会话 CRUD（pi SessionManager 封装）
+    │   ├── extension-factory.ts # createXiaoaExtension()（系统提示 + 权限钩子）
+    │   ├── system-prompt.ts     # 系统提示组装
     │   ├── auth/        # AuthStorage 适配
     │   ├── tools/       # 自定义 ToolDefinition（memory / knowledge）
     │   └── run/         # ActiveRun 状态 + 事件桥接
@@ -26,14 +28,13 @@ xiaoa/
     ├── components/      # React 组件
     │   └── ui/          # shadcn/ui 组件
     ├── constants/       # 常量
-    ├── ipc/             # oRPC handlers（Main 进程）
+    ├── ipc/             # oRPC handlers（Main 进程，极薄委托，不直接引用 pi）
     │   ├── app/         # 应用信息
-    │   ├── chat/        # 对话 IPC（极薄，3 文件）
-    │   ├── session/     # 会话管理
+    │   ├── chat/        # 对话 IPC（极薄，委托 agent/run/）
+    │   ├── session/     # 会话 IPC（极薄，委托 agent/session-store）
     │   ├── shell/       # Shell 操作
     │   ├── theme/       # 主题管理
     │   └── window/      # 窗口控制
-    ├── layouts/         # 布局组件
     ├── localization/    # i18n 配置（i18next）
     ├── routes/          # TanStack Router 文件路由
     ├── styles/          # 全局样式
@@ -63,7 +64,8 @@ bun run test:all     # Run both unit and E2E tests
 
 ## 架构概览
 
-- **IPC 通信**: 使用 oRPC 实现 Main ↔ Renderer 类型安全通信，通过 MessagePort 传输。IPC handlers 按领域组织在 `src/ipc/` 下，客户端调用封装在 `src/actions/` 下。
+- **IPC 通信**: 使用 oRPC 实现 Main ↔ Renderer 类型安全通信，通过 MessagePort 传输。IPC handlers 按领域组织在 `src/ipc/` 下（极薄委托，不直接引用 pi），客户端调用封装在 `src/actions/` 下。
+- **Agent 集成分层**: `src/agent/` 是 pi-coding-agent 的**唯一入口**，`src/ipc/` 不得直接 import pi 的任何模块。IPC handler 仅做 schema 校验 + 路由，业务逻辑委托给 `agent/` 层。
 - **路由**: 使用 TanStack Router 文件路由（`src/routes/`），`__root.tsx` 为根路由，各页面为独立路由文件。
 - **状态管理**: 服务端状态使用 TanStack Query（`useQuery` / `useMutation`），导航状态由 TanStack Router 管理，UI 局部状态使用 `useState`。
 - **国际化**: 使用 i18next，配置在 `src/localization/`。
@@ -84,10 +86,9 @@ bun run test:all     # Run both unit and E2E tests
 - **agentSession.messages**: 获取当前会话所有消息，用于 UI 渲染
 - **AgentSessionEvent**: 事件类型包含 `message_update/end`、`tool_execution_start/end`、`auto_compaction_start/end`、`auto_retry_start/end`
 
-**关键代码模式**：
+**自定义工具示例**（TypeBox，非 Zod）：
 
 ```typescript
-// 自定义工具定义（TypeBox，非 Zod）
 import { Type } from "@sinclair/typebox";
 import type { ToolDefinition } from "@mariozechner/pi-coding-agent";
 
@@ -95,37 +96,18 @@ const myTool: ToolDefinition<typeof schema> = {
   name: "my_tool",
   label: "工具名称",
   description: "工具描述",
-  inputSchema: Type.Object({ query: Type.String() }),
+  parameters: Type.Object({ query: Type.String() }),
   execute: async (toolCallId, params, signal, onUpdate, ctx) => {
     return { content: "结果", details: {} };
   },
 };
-
-// Extension 工厂（系统提示 + 权限钩子）
-const extension: ExtensionFactory = (pi) => {
-  pi.on("before_agent_start", async () => ({ systemPrompt: "..." }));
-  pi.on("tool_call", async (event) => {
-    if (shouldBlock(event)) return { block: true, reason: "权限不足" };
-  });
-};
-
-// 创建会话
-const session = await createAgentSession({
-  cwd, agentDir, model, thinkingLevel,
-  tools: [readTool, bashTool, editTool, writeTool],  // pi 内置 Tool[]
-  customTools: [myTool],                             // 自定义 ToolDefinition[]
-  resourceLoader: new DefaultResourceLoader({ agentDir, extensionFactories: [extension] }),
-  sessionManager: SessionManager.open(sessionFilePath),
-  authStorage,
-});
-
-// 发送消息 + 监听事件
-session.subscribe((event) => { /* handle AgentSessionEvent */ });
-await session.send("Hello");
 ```
+
+→ createAgentSession / Extension 工厂 / 事件系统等完整代码示例详见 `docs/design/architecture.md` §9
 
 ## 反模式
 
+- **不要在 `src/ipc/` 中直接 import pi-coding-agent** — `src/agent/` 是 pi 的唯一入口，IPC 层仅做 schema 校验 + 极薄委托。会话管理通过 `agent/session-store.ts`，对话运行通过 `agent/run/`。
 - **不要使用传统 `ipcMain.handle` / `ipcRenderer.invoke`** — 所有 IPC 通信通过 oRPC router 实现。
 - **不要引入全局状态库（Redux / Jotai / Zustand）** — 服务端状态用 TanStack Query，局部状态用 `useState`。
 - **不要手写路由配置** — 使用 TanStack Router 文件路由约定，路由文件放在 `src/routes/` 下。
