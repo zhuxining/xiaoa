@@ -17,13 +17,23 @@ xiaoa/
 └── src/
     ├── agent/           # pi-coding-agent 集成层（Main 进程，pi 唯一入口）
     │   ├── paths.ts             # 工作区/全局路径约定（公共路径计算）
-    │   ├── workspace-session.ts # createAgentSession() 封装
-    │   ├── session-store.ts     # 会话 CRUD（pi SessionManager 封装）
-    │   ├── extension-factory.ts # createXiaoaExtension()（系统提示 + 权限钩子）
-    │   ├── system-prompt.ts     # 系统提示组装
-    │   ├── auth/        # AuthStorage 适配
-    │   ├── tools/       # 自定义 ToolDefinition（memory / knowledge）
-    │   └── run/         # ActiveRun 状态 + 事件桥接
+    │   ├── auth/                # AuthStorage 适配
+    │   ├── extension/           # Extension 钩子体系
+    │   │   ├── extension-factory.ts  # createXiaoaExtension()（系统提示 + 权限钩子）
+    │   │   ├── permission.ts         # 权限请求/响应管理
+    │   │   └── system-prompt.ts      # 系统提示组装
+    │   ├── model/               # 模型解析
+    │   │   ├── model.ts              # getModelFromConfig()
+    │   │   └── providers.ts          # 非原生 provider 模型定义
+    │   ├── run/                 # 运行时管理
+    │   │   ├── run-executor.ts       # AgentSessionEvent → ChatEvent 桥接
+    │   │   ├── run-store.ts          # ActiveRun 状态 + 事件缓冲
+    │   │   └── run-types.ts          # ActiveRun 接口
+    │   ├── session/             # 会话生命周期
+    │   │   ├── session-pool.ts       # AgentSession 长生命周期缓存
+    │   │   ├── session-store.ts      # 会话 CRUD（pi SessionManager 封装）
+    │   │   └── workspace-session.ts  # createAgentSession() 封装
+    │   └── tools/               # 自定义 ToolDefinition（memory / knowledge）
     ├── actions/         # 客户端 IPC 调用封装（Renderer → Main）
     ├── components/      # React 组件
     │   └── ui/          # shadcn/ui 组件
@@ -31,7 +41,7 @@ xiaoa/
     ├── ipc/             # oRPC handlers（Main 进程，极薄委托，不直接引用 pi）
     │   ├── app/         # 应用信息
     │   ├── chat/        # 对话 IPC（极薄，委托 agent/run/）
-    │   ├── session/     # 会话 IPC（极薄，委托 agent/session-store）
+    │   ├── session/     # 会话 IPC（极薄，委托 agent/session/）
     │   ├── shell/       # Shell 操作
     │   ├── theme/       # 主题管理
     │   └── window/      # 窗口控制
@@ -75,16 +85,20 @@ bun run test:all     # Run both unit and E2E tests
 
 小A的 Agent 能力完全基于 `@mariozechner/pi-coding-agent`（[pi-mono](https://github.com/badlogic/pi-mono)）。核心概念：
 
+- **SessionPool**: AgentSession 长生命周期缓存，以 `sessionKey` 为键复用 session，避免每条消息重新创建
 - **createAgentSession**: 主入口，创建 `AgentSession`，自动处理 Compaction、SessionManager、ResourceLoader
 - **DefaultResourceLoader**: 加载技能（`agentDir/skills/`）、上下文文件、系统提示；支持 `systemPromptOverride`、`agentsFilesOverride`、`extensionFactories`
-- **ExtensionFactory**: `(pi: ExtensionAPI) => void`，用于注册 `before_agent_start` / `tool_call` 等钩子
+- **ExtensionFactory**: `(pi: ExtensionAPI) => void`，用于注册 `before_agent_start` / `tool_call` / `session_before_compact` 等钩子
+- **registerProvider**: 注册非原生 provider（deepseek/ollama/custom），支持 `models[]` 完整模型定义
 - **before_agent_start**: 每轮 LLM 调用前触发，可返回 `{ systemPrompt }` 动态替换提示
 - **tool_call**: 工具调用前触发，可返回 `{ block: true, reason }` 阻止执行（权限控制入口）
 - **SessionManager.open(path)**: 加载指定路径的 JSONL 会话文件（深度集成自定义路径）
 - **Tool[]**: pi 内置工具选择器（`readTool, bashTool, editTool, writeTool, grepTool` 等）
 - **ToolDefinition**: 自定义工具接口，`execute(toolCallId, params, signal, onUpdate, ctx)` 签名
 - **agentSession.messages**: 获取当前会话所有消息，用于 UI 渲染
-- **AgentSessionEvent**: 事件类型包含 `message_update/end`、`tool_execution_start/end`、`auto_compaction_start/end`、`auto_retry_start/end`
+- **AgentSessionEvent**: 事件类型包含 `message_update/end`、`tool_execution_start/end/update`、`turn_start/end`、`auto_compaction_start/end`、`auto_retry_start/end`
+- **getSessionStats() / getContextUsage()**: 获取会话统计和上下文用量
+- **setActiveToolsByName()**: 运行时切换工具集
 
 **自定义工具示例**（TypeBox，非 Zod）：
 
@@ -107,7 +121,7 @@ const myTool: ToolDefinition<typeof schema> = {
 
 ## 反模式
 
-- **不要在 `src/ipc/` 中直接 import pi-coding-agent** — `src/agent/` 是 pi 的唯一入口，IPC 层仅做 schema 校验 + 极薄委托。会话管理通过 `agent/session-store.ts`，对话运行通过 `agent/run/`。
+- **不要在 `src/ipc/` 中直接 import pi-coding-agent** — `src/agent/` 是 pi 的唯一入口，IPC 层仅做 schema 校验 + 极薄委托。会话管理通过 `agent/session/`，对话运行通过 `agent/run/`。
 - **不要使用传统 `ipcMain.handle` / `ipcRenderer.invoke`** — 所有 IPC 通信通过 oRPC router 实现。
 - **不要引入全局状态库（Redux / Jotai / Zustand）** — 服务端状态用 TanStack Query，局部状态用 `useState`。
 - **不要手写路由配置** — 使用 TanStack Router 文件路由约定，路由文件放在 `src/routes/` 下。
@@ -115,8 +129,9 @@ const myTool: ToolDefinition<typeof schema> = {
 - **不要在 Renderer 进程直接调用 LLM API** — Agent 运行在 Main 进程，Renderer 通过 oRPC `chat.send` / `chat.abort` 交互。
 - **不要将全部记忆注入 System Prompt** — 仅注入 MEMORY.md（通过 `agentsFilesOverride`），Daily Log 通过 `memory_search` 工具按需检索。
 - **不要自己实现文件/bash 工具** — 使用 pi 内置的 `readTool / bashTool / editTool / writeTool / grepTool`，通过 `tool_call` 钩子控制权限。
-- **不要在工具 execute() 内嵌权限逻辑** — 权限判断统一在 `extension-factory.ts` 的 `tool_call` 钩子中处理。
+- **不要在工具 execute() 内嵌权限逻辑** — 权限判断统一在 `agent/extension/extension-factory.ts` 的 `tool_call` 钩子中处理。
 - **不要手动实现 Compaction** — pi-coding-agent 自动处理上下文压缩，无需手写 `transformContext`。
+- **不要每次 prompt 都创建新 AgentSession** — 使用 SessionPool 复用，session 在 run 结束后释放回 pool，删除会话时才 dispose。
 
 ## 相关资源
 

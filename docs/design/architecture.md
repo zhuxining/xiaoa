@@ -925,23 +925,28 @@ src/
 │
 ├── agent/                         # pi-coding-agent 集成层（Main 进程，pi 唯一入口）
 │   ├── paths.ts                   # 工作区/全局路径约定（公共路径计算）
-│   ├── model.ts                   # getModelFromConfig() — provider/model 映射
-│   ├── workspace-session.ts       # createWorkspaceSession / createGlobalSession
-│   ├── session-store.ts           # 会话 CRUD（pi SessionManager 封装）
-│   ├── extension-factory.ts       # createXiaoaExtension() — 系统提示 + 权限钩子
-│   ├── system-prompt.ts           # composeWorkspaceSystemPrompt / composeGlobalSystemPrompt
-│   ├── permission.ts              # requestPermission / respondToPermission（Promise 阻塞流）
 │   ├── auth/
 │   │   └── auth-bridge.ts         # AuthStorage.inMemory() + setFallbackResolver
-│   ├── tools/
-│   │   ├── index.ts               # buildCustomTools(workspaceId) → ToolDefinition[]
-│   │   ├── memory-tools.ts        # memory_search, memory_write（ToolDefinition）
-│   │   └── knowledge-tools.ts     # knowledge_read, knowledge_list（ToolDefinition）
-│   └── run/
-│       ├── index.ts               # 公开 API 导出
-│       ├── run-types.ts           # ActiveRun, ToolContext 接口
-│       ├── run-store.ts           # Map 状态（activeRuns, eventBuffers）
-│       └── run-executor.ts        # AgentSessionEvent → ChatEvent 桥接
+│   ├── extension/                 # Extension 钩子体系
+│   │   ├── extension-factory.ts   # createXiaoaExtension() — 系统提示 + 权限钩子
+│   │   ├── permission.ts          # requestPermission / respondToPermission（Promise 阻塞流）
+│   │   └── system-prompt.ts       # composeWorkspaceSystemPrompt / composeGlobalSystemPrompt
+│   ├── model/                     # 模型解析
+│   │   ├── model.ts               # getModelFromConfig() — provider/model 映射
+│   │   └── providers.ts           # 非原生 provider 模型定义（deepseek/ollama/custom）
+│   ├── run/
+│   │   ├── index.ts               # 公开 API 导出
+│   │   ├── run-types.ts           # ActiveRun, ToolContext 接口
+│   │   ├── run-store.ts           # Map 状态（activeRuns, eventBuffers）
+│   │   └── run-executor.ts        # AgentSessionEvent → ChatEvent 桥接
+│   ├── session/                   # 会话生命周期
+│   │   ├── session-pool.ts        # AgentSession 长生命周期缓存（跨消息复用）
+│   │   ├── session-store.ts       # 会话 CRUD（pi SessionManager 封装）
+│   │   └── workspace-session.ts   # createWorkspaceSession / createGlobalSession
+│   └── tools/
+│       ├── index.ts               # buildCustomTools(workspaceId) → ToolDefinition[]
+│       ├── memory-tools.ts        # memory_search, memory_write（ToolDefinition）
+│       └── knowledge-tools.ts     # knowledge_read, knowledge_list（ToolDefinition）
 │
 ├── actions/                       # 客户端 IPC 调用封装（Renderer → Main）
 │   ├── chat.ts                    # 对话操作
@@ -961,7 +966,7 @@ src/
 │   ├── theme/                     # 主题管理
 │   ├── window/                    # 窗口控制
 │   ├── chat/                      # 极薄对话 IPC（委托 agent/run/）
-│   └── session/                   # 极薄会话 IPC（委托 agent/session-store）
+│   └── session/                   # 极薄会话 IPC（委托 agent/session/）
 │
 ├── components/                    # React 组件
 │   ├── ui/                        # shadcn/ui 基础组件
@@ -1145,9 +1150,9 @@ export const router = {
   theme,       // 主题管理：get / set
   window,      // 窗口控制：minimize / maximize / close
   app,         // 应用信息：getVersion / getName
-  chat,        // 对话：send / abort / events / respondPermission（极薄，委托 agent/run/）
+  chat,        // 对话：send / abort / events / respondPermission / stats / contextUsage / activeTools（极薄，委托 agent/run/）
   shell,       // Shell 操作：openExternal
-  session,     // 会话管理：list / create / delete / getMessages（极薄，委托 agent/session-store）
+  session,     // 会话管理：list / create / delete / rename / getMessages（极薄，委托 agent/session/）
   config,      // 全局配置：get / update
   workspace,   // 工作区 CRUD：list / get / create / update / delete
   skill,       // 技能管理：list / get / create / update / delete / import
@@ -1236,7 +1241,7 @@ await client.theme.set({ mode: "dark" });
 ### 9.3 工作区 Agent 创建
 
 ```typescript
-// src/agent/workspace-session.ts
+// src/agent/session/workspace-session.ts
 export async function createWorkspaceSession(
   run: ActiveRun
 ): Promise<CreateAgentSessionResult> {
@@ -1297,7 +1302,7 @@ export async function createGlobalSession(
 ### 9.4 Extension 工厂（系统提示 + 权限）
 
 ```typescript
-// src/agent/extension-factory.ts
+// src/agent/extension/extension-factory.ts
 
 // 无需用户确认的只读工具（自动放行）
 const AUTO_ALLOWED_TOOLS = new Set([
@@ -1501,6 +1506,22 @@ Anthropic / OpenAI / Google / xAI / Groq / Mistral / DeepSeek / Ollama / Custom 
 - ✅ `src/ipc/session/handlers.ts`：改为极薄委托（仅 schema 校验 + 调用 agent/session-store）
 - ✅ `src/agent/workspace-session.ts`：复用 `agent/paths.ts` 公共路径，消除重复
 - ✅ 确立分层规则：`src/ipc/` 不得直接 import pi-coding-agent，`src/agent/` 是 pi 唯一入口
+
+### Phase 2.5 — 全面拥抱 pi-coding-agent + 领域重组 ✅
+
+**已完成**：
+
+- ✅ **Session Pool**：新建 `src/agent/session/session-pool.ts`，AgentSession 长生命周期缓存，跨消息复用
+- ✅ **ModelRegistry**：`registerProvider()` 携带 `models[]`，替代手工 Model 构造
+- ✅ **事件转发增强**：新增 `turn_start/end`、`compaction_start/end`、`retry_start/end`、`tool_update` 事件
+- ✅ **新 IPC APIs**：`chat.stats`、`chat.contextUsage`、`chat.activeTools`、`session.rename`
+- ✅ **领域重组**：
+  - `extension/`：extension-factory.ts、permission.ts、system-prompt.ts
+  - `model/`：model.ts、providers.ts
+  - `session/`：session-pool.ts、session-store.ts、workspace-session.ts
+  - `run/`：run-executor.ts、run-store.ts、run-types.ts（位置不变）
+- ✅ **Auth 优化**：多 provider API key 按 provider 分发
+- ✅ 更新 CLAUDE.md 和 architecture.md 反映新目录结构
 
 ### Phase 3 — 权限守卫 + 对话 UI
 
