@@ -14,7 +14,7 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { basename, join, relative } from "node:path";
+import { basename, dirname, join, relative } from "node:path";
 import { app } from "electron";
 import type { z } from "zod";
 import type { skillSchema } from "./schemas";
@@ -565,7 +565,7 @@ export function exportSkillToDir(
     const refsOutDir = join(outDir, "references");
     mkdirSync(refsOutDir, { recursive: true });
     const refsSrcDir = getReferencesDir(skillDir);
-    const { copyFileSync, dirname } = require("node:fs");
+    const { copyFileSync } = require("node:fs");
     for (const ref of skill.references) {
       const src = join(refsSrcDir, ref.path);
       const dest = join(refsOutDir, ref.path);
