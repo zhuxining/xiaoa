@@ -10,8 +10,7 @@
  *   if (result.alwaysAllow) run.allowedPermissions.add("bash");
  */
 
-import { appendEvent } from "./run/run-store";
-import type { ActiveRun } from "./run/run-types";
+import { type ActiveRun, appendEvent } from "../run";
 
 /** 权限请求结果 */
 export interface PermissionResult {

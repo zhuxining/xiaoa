@@ -1,9 +1,12 @@
 import {
   abort,
+  activeTools,
+  contextUsage,
   events,
   followUp,
   respondPermission,
   send,
+  stats,
   steer,
 } from "./handlers";
 
@@ -14,4 +17,7 @@ export const chat = {
   respondPermission,
   steer,
   followUp,
+  stats,
+  contextUsage,
+  activeTools,
 };

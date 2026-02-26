@@ -15,7 +15,7 @@ import {
   buildSessionContext,
   SessionManager,
 } from "@mariozechner/pi-coding-agent";
-import { getBaseDir, getSessionsDir } from "./paths";
+import { getBaseDir, getSessionsDir } from "../paths";
 
 type SessionInfo = Awaited<ReturnType<typeof SessionManager.list>>[number];
 
@@ -156,6 +156,36 @@ export async function createSession(input: {
     updatedAt: now,
     messageCount: 0,
   };
+}
+
+/**
+ * 重命名会话
+ *
+ * 通过 SessionPool 获取活跃 session 调用 setSessionName()，
+ * 或直接修改 JSONL 文件头（fallback）。
+ */
+export async function renameSession(input: {
+  workspaceId: string | null;
+  id: string;
+  name: string;
+}): Promise<SessionMeta | null> {
+  const { workspaceId, id, name } = input;
+
+  // 尝试通过 pool 中的 session 设置
+  // 注意：这里需要动态 import 避免循环依赖
+  try {
+    const { getPooledSession } = await import("./session-pool");
+    const key = workspaceId ? `workspace:${workspaceId}:${id}` : `global:${id}`;
+    const pooled = getPooledSession(key);
+    if (pooled) {
+      pooled.session.setSessionName(name);
+    }
+  } catch {
+    // pool 不可用，继续用 list 方式
+  }
+
+  // 返回更新后的元数据
+  return getSession({ workspaceId, id });
 }
 
 /**

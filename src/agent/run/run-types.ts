@@ -24,6 +24,9 @@ export interface ActiveRun {
   /** 用户输入内容 */
   content: string;
 
+  /** 是否从 SessionPool 复用的 session（true = 非首次创建） */
+  isResumed: boolean;
+
   /** 会话键（格式: scope:workspaceId:sessionId 或 global:sessionId） */
   key: string;
 
@@ -33,14 +36,17 @@ export interface ActiveRun {
   /** 会话范围 */
   scope: ChatScope;
 
-  /** AgentSession 实例（来自 pi-coding-agent） */
-  session?: AgentSession;
+  /** AgentSession 实例（来自 pi-coding-agent，从 pool 获取后立即赋值） */
+  session: AgentSession | null;
 
   /** 会话 ID */
   sessionId: string;
 
   /** 思考级别（可选，默认 minimal） */
   thinkingLevel?: "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
+
+  /** 事件订阅取消函数 */
+  unsubscribe?: () => void;
 
   /** 工作区 ID（仅 workspace scope） */
   workspaceId: string | null;

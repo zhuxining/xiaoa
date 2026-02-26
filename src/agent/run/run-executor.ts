@@ -3,17 +3,24 @@
  *
  * 将 pi-coding-agent 的 AgentSessionEvent 转换为 xiaoa 的 ChatEvent，
  * 并提供对话运行的启动、中止、Steering 等管理功能。
+ *
+ * AgentSession 通过 SessionPool 实现长生命周期复用，
+ * 避免每次 prompt 都重新创建/销毁。
  */
 
 import type { AgentSessionEvent } from "@mariozechner/pi-coding-agent";
 import {
   cancelPendingPermissions,
   respondToPermission,
-} from "@/agent/permission";
+} from "@/agent/extension";
 import {
   createGlobalSession,
   createWorkspaceSession,
-} from "@/agent/workspace-session";
+  disposeSession,
+  getOrCreateSession,
+  getPooledSession,
+  releaseSession,
+} from "@/agent/session";
 import type { ChatScope } from "@/ipc/chat/schemas";
 import {
   appendEvent,
@@ -104,8 +111,76 @@ export function bridgeEvent(key: string, event: AgentSessionEvent): void {
       break;
 
     case "auto_compaction_start":
+      appendEvent(key, {
+        runId: run.runId,
+        scope: run.scope,
+        workspaceId: run.workspaceId,
+        sessionId: run.sessionId,
+        type: "compaction_start",
+      });
+      break;
+
     case "auto_compaction_end":
-      // pi-coding-agent 内部处理，暂不转发
+      appendEvent(key, {
+        runId: run.runId,
+        scope: run.scope,
+        workspaceId: run.workspaceId,
+        sessionId: run.sessionId,
+        type: "compaction_end",
+      });
+      break;
+
+    case "auto_retry_start":
+      appendEvent(key, {
+        runId: run.runId,
+        scope: run.scope,
+        workspaceId: run.workspaceId,
+        sessionId: run.sessionId,
+        type: "retry_start",
+        error: event.errorMessage,
+      });
+      break;
+
+    case "auto_retry_end":
+      appendEvent(key, {
+        runId: run.runId,
+        scope: run.scope,
+        workspaceId: run.workspaceId,
+        sessionId: run.sessionId,
+        type: "retry_end",
+        error: event.finalError,
+      });
+      break;
+
+    case "turn_start":
+      appendEvent(key, {
+        runId: run.runId,
+        scope: run.scope,
+        workspaceId: run.workspaceId,
+        sessionId: run.sessionId,
+        type: "turn_start",
+      });
+      break;
+
+    case "turn_end":
+      appendEvent(key, {
+        runId: run.runId,
+        scope: run.scope,
+        workspaceId: run.workspaceId,
+        sessionId: run.sessionId,
+        type: "turn_end",
+      });
+      break;
+
+    case "tool_execution_update":
+      appendEvent(key, {
+        runId: run.runId,
+        scope: run.scope,
+        workspaceId: run.workspaceId,
+        sessionId: run.sessionId,
+        type: "tool_update",
+        toolName: event.toolName,
+      });
       break;
 
     default:
@@ -115,23 +190,31 @@ export function bridgeEvent(key: string, event: AgentSessionEvent): void {
 
 /**
  * 异步执行 Agent 运行
+ *
+ * 从 SessionPool 获取（或创建）AgentSession，复用跨消息。
  */
 async function executeRun(run: ActiveRun): Promise<void> {
   try {
-    const result =
+    const { result, isResumed } = await getOrCreateSession(run.key, () =>
       run.scope === "workspace"
-        ? await createWorkspaceSession(run)
-        : await createGlobalSession(run);
+        ? createWorkspaceSession(run)
+        : createGlobalSession(run)
+    );
 
     run.session = result.session;
+    run.isResumed = isResumed;
 
+    // 每次 run 都 subscribe，run 结束后 unsubscribe
     const unsub = result.session.subscribe((event) =>
       bridgeEvent(run.key, event)
     );
+    run.unsubscribe = unsub;
+
     try {
       await result.session.prompt(run.content);
     } finally {
       unsub();
+      run.unsubscribe = undefined;
     }
     endChatRun(run);
   } catch (error) {
@@ -180,9 +263,11 @@ export function createActiveRun(input: {
     workspaceRootPath:
       scope === "workspace" ? (workspaceRootPath ?? null) : null,
     aborted: false,
+    isResumed: false,
     assistantBuffer: "",
     allowedPermissions: new Set(),
     thinkingLevel: thinkingLevel ?? "minimal",
+    session: null,
   };
 }
 
@@ -230,6 +315,8 @@ export function startChatRun(input: {
 
 /**
  * 发送 run_end 事件并清理
+ *
+ * 不再销毁 session，仅释放回 pool + 清理 ActiveRun。
  */
 export function endChatRun(
   run: ActiveRun,
@@ -256,6 +343,8 @@ export function endChatRun(
     type: "run_end",
   });
 
+  // 释放 session 回 pool（不 dispose）
+  releaseSession(run.key);
   deleteActiveRun(run.key);
 }
 
@@ -417,6 +506,109 @@ export function followUpChatRun(input: {
     /* fire-and-forget */
   });
   return { queued: true };
+}
+
+/**
+ * 获取会话统计信息（从 pool 中的 session 获取）
+ */
+export function getSessionStats(input: {
+  scope: ChatScope;
+  workspaceId?: string;
+  sessionId: string;
+}): ReturnType<
+  import("@mariozechner/pi-coding-agent").AgentSession["getSessionStats"]
+> | null {
+  const { scope, workspaceId, sessionId } = input;
+  const key =
+    scope === "workspace"
+      ? `workspace:${workspaceId}:${sessionId}`
+      : `global:${sessionId}`;
+
+  const run = getActiveRun(key);
+  if (!run?.session) {
+    // 也尝试从 pool 获取
+    const pooled = getPooledSession(key);
+    if (pooled) {
+      return pooled.session.getSessionStats();
+    }
+    return null;
+  }
+  return run.session.getSessionStats();
+}
+
+/**
+ * 获取上下文用量（从 pool 中的 session 获取）
+ */
+export function getContextUsage(input: {
+  scope: ChatScope;
+  workspaceId?: string;
+  sessionId: string;
+}): ReturnType<
+  import("@mariozechner/pi-coding-agent").AgentSession["getContextUsage"]
+> {
+  const { scope, workspaceId, sessionId } = input;
+  const key =
+    scope === "workspace"
+      ? `workspace:${workspaceId}:${sessionId}`
+      : `global:${sessionId}`;
+
+  const run = getActiveRun(key);
+  if (!run?.session) {
+    const pooled = getPooledSession(key);
+    if (pooled) {
+      return pooled.session.getContextUsage();
+    }
+    return undefined;
+  }
+  return run.session.getContextUsage();
+}
+
+/**
+ * 设置活跃工具集（从 pool 中的 session 设置）
+ */
+export function setActiveTools(input: {
+  scope: ChatScope;
+  workspaceId?: string;
+  sessionId: string;
+  toolNames: string[];
+}): { applied: boolean } {
+  const { scope, workspaceId, sessionId, toolNames } = input;
+  const key =
+    scope === "workspace"
+      ? `workspace:${workspaceId}:${sessionId}`
+      : `global:${sessionId}`;
+
+  const run = getActiveRun(key);
+  if (run?.session) {
+    run.session.setActiveToolsByName(toolNames);
+    return { applied: true };
+  }
+
+  const { getPooledSession } = require("@/agent/session-pool");
+  const pooled = getPooledSession(key);
+  if (pooled) {
+    pooled.session.setActiveToolsByName(toolNames);
+    return { applied: true };
+  }
+
+  return { applied: false };
+}
+
+/**
+ * 删除会话时清理 pool 中对应的 session
+ */
+export function disposeSessionFromPool(input: {
+  scope: ChatScope;
+  workspaceId?: string;
+  sessionId: string;
+}): void {
+  const { scope, workspaceId, sessionId } = input;
+  const key =
+    scope === "workspace"
+      ? `workspace:${workspaceId}:${sessionId}`
+      : `global:${sessionId}`;
+
+  disposeSession(key);
 }
 
 export {

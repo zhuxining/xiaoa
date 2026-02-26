@@ -45,6 +45,12 @@ export const deleteSessionInputSchema = z.object({
   id: z.string(),
 });
 
+export const renameSessionInputSchema = z.object({
+  workspaceId: z.string().nullable(),
+  id: z.string(),
+  name: z.string().min(1).max(200),
+});
+
 export type SessionMeta = z.infer<typeof sessionMetaSchema>;
 export type ListSessionsInput = z.infer<typeof listSessionsInputSchema>;
 export type GetSessionInput = z.infer<typeof getSessionInputSchema>;

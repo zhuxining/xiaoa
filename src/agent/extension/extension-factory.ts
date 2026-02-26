@@ -4,7 +4,9 @@
  * 通过 pi 的 ExtensionFactory 接口为每个 ActiveRun 注入：
  * 1. before_agent_start: 动态刷新系统 Prompt（含最新记忆）
  * 2. tool_call: 权限控制（询问用户是否允许 bash/write/edit）
- * 3. registerProvider: 注册自定义 provider（deepseek / ollama / custom）
+ * 3. registerProvider: 注册自定义 provider（deepseek / ollama / custom）含完整 models[]
+ * 4. session_before_compact: 预压缩记忆写入
+ * 5. tool_result: 工具结果后处理
  */
 
 import type {
@@ -12,8 +14,13 @@ import type {
   ExtensionFactory,
 } from "@mariozechner/pi-coding-agent";
 import { readConfig } from "@/ipc/config/store";
+import {
+  createCustomModel,
+  createOllamaModel,
+  DEEPSEEK_MODELS,
+} from "../model";
+import type { ActiveRun } from "../run";
 import { cancelPendingPermissions, requestPermission } from "./permission";
-import type { ActiveRun } from "./run/run-types";
 import {
   composeGlobalSystemPrompt,
   composeWorkspaceSystemPrompt,
@@ -39,7 +46,7 @@ const AUTO_ALLOWED_TOOLS = new Set([
  */
 export function createXiaoaExtension(run: ActiveRun): ExtensionFactory {
   return (pi: ExtensionAPI) => {
-    // 注册自定义 provider（deepseek / ollama / custom）
+    // 注册自定义 provider（deepseek / ollama / custom），含完整 models[]
     registerCustomProviders(pi);
 
     // 每次 prompt 前动态刷新系统 Prompt
@@ -82,11 +89,27 @@ export function createXiaoaExtension(run: ActiveRun): ExtensionFactory {
         return { block: true, reason: "操作被用户拒绝" };
       }
     });
+
+    // 预压缩记忆写入：在 pi 自动压缩上下文前写入 daily log
+    pi.on("session_before_compact", async (_event) => {
+      // TODO: 从即将被压缩的消息中提取关键信息，写入 daily log
+      // const { branchEntries } = event;
+      // await appendDailyLog(run.workspaceId, extractSummary(branchEntries));
+    });
+
+    // 工具结果后处理
+    pi.on("tool_result", async (_event) => {
+      // TODO: 可在工具执行完成后追加信息或修改结果
+      // 例：bash 执行后追加工作区上下文信息
+    });
   };
 }
 
 /**
- * 为 pi 注册非原生 provider 的 baseUrl 和 API key 解析
+ * 为 pi 注册非原生 provider（含完整 models[]）
+ *
+ * 使用 registerProvider 的 models 参数，让 ModelRegistry 管理模型定义，
+ * 替代之前在 model.ts 中手工构造完整 Model 对象的方式。
  */
 function registerCustomProviders(pi: ExtensionAPI): void {
   const config = readConfig();
@@ -97,6 +120,7 @@ function registerCustomProviders(pi: ExtensionAPI): void {
       baseUrl: "https://api.deepseek.com/v1",
       api: "openai-completions",
       apiKey,
+      models: DEEPSEEK_MODELS,
     });
   }
 
@@ -104,7 +128,8 @@ function registerCustomProviders(pi: ExtensionAPI): void {
     pi.registerProvider("ollama", {
       baseUrl: endpoint || "http://localhost:11434/v1",
       api: "openai-completions",
-      apiKey: "ollama", // ollama 不需要真实 key，占位
+      apiKey: "ollama",
+      models: [createOllamaModel(config.llm.model)],
     });
   }
 
@@ -113,6 +138,7 @@ function registerCustomProviders(pi: ExtensionAPI): void {
       baseUrl: endpoint,
       api: "openai-completions",
       apiKey,
+      models: [createCustomModel(config.llm.model)],
     });
   }
 }

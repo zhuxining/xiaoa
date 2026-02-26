@@ -16,9 +16,16 @@ export const chatEventTypeSchema = z.enum([
   "message_end",
   "tool_start",
   "tool_end",
+  "tool_update",
   "tool_call",
   "tool_result",
   "compaction",
+  "compaction_start",
+  "compaction_end",
+  "retry_start",
+  "retry_end",
+  "turn_start",
+  "turn_end",
   "permission_request",
   "permission_resolved",
   "run_aborted",
@@ -125,6 +132,60 @@ export const chatFollowUpInputSchema = z.object({
 
 export const chatFollowUpResultSchema = z.object({
   queued: z.boolean(),
+});
+
+// Session stats
+export const chatGetStatsInputSchema = z.object({
+  scope: chatScopeSchema,
+  workspaceId: z.string().optional(),
+  sessionId: z.string(),
+});
+
+export const chatGetStatsResultSchema = z
+  .object({
+    sessionFile: z.string().optional(),
+    sessionId: z.string(),
+    userMessages: z.number(),
+    assistantMessages: z.number(),
+    toolCalls: z.number(),
+    toolResults: z.number(),
+    totalMessages: z.number(),
+    tokens: z.object({
+      input: z.number(),
+      output: z.number(),
+      cacheRead: z.number(),
+      cacheWrite: z.number(),
+      total: z.number(),
+    }),
+    cost: z.number(),
+  })
+  .nullable();
+
+// Context usage
+export const chatGetContextUsageInputSchema = z.object({
+  scope: chatScopeSchema,
+  workspaceId: z.string().optional(),
+  sessionId: z.string(),
+});
+
+export const chatGetContextUsageResultSchema = z
+  .object({
+    tokens: z.number().nullable(),
+    contextWindow: z.number(),
+    percent: z.number().nullable(),
+  })
+  .nullable();
+
+// Set active tools
+export const chatSetActiveToolsInputSchema = z.object({
+  scope: chatScopeSchema,
+  workspaceId: z.string().optional(),
+  sessionId: z.string(),
+  toolNames: z.array(z.string()),
+});
+
+export const chatSetActiveToolsResultSchema = z.object({
+  applied: z.boolean(),
 });
 
 export type ChatScope = z.infer<typeof chatScopeSchema>;

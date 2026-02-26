@@ -88,6 +88,11 @@ app.whenReady().then(async () => {
   }
 });
 
+// 应用退出时清理所有 AgentSession
+app.once("will-quit", () => {
+  import("@/agent/session").then(({ disposeAll }) => disposeAll());
+});
+
 //osX only
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {

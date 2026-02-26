@@ -18,12 +18,12 @@ import {
   DefaultResourceLoader,
   SessionManager,
 } from "@mariozechner/pi-coding-agent";
-import { createAuthBridge } from "./auth/auth-bridge";
-import { createXiaoaExtension } from "./extension-factory";
-import { getModelFromConfig } from "./model";
-import { getGlobalDir, getSessionFilePath, getWorkspaceDir } from "./paths";
-import type { ActiveRun } from "./run/run-types";
-import { buildCustomTools } from "./tools";
+import { createAuthBridge } from "../auth/auth-bridge";
+import { createXiaoaExtension } from "../extension";
+import { getModelFromConfig } from "../model";
+import { getGlobalDir, getSessionFilePath, getWorkspaceDir } from "../paths";
+import type { ActiveRun } from "../run";
+import { buildCustomTools } from "../tools";
 
 /**
  * 创建工作区 AgentSession
