@@ -6,13 +6,12 @@ import type {
   ChangeEventHandler,
   ClipboardEventHandler,
   ComponentProps,
-  FormEvent,
-  FormEventHandler,
   HTMLAttributes,
   KeyboardEventHandler,
   PropsWithChildren,
   ReactNode,
   RefObject,
+  SyntheticEvent,
 } from "react";
 
 import {
@@ -385,7 +384,7 @@ export type PromptInputProps = Omit<
   }) => void;
   onSubmit: (
     message: PromptInputMessage,
-    event: FormEvent<HTMLFormElement>
+    event: SyntheticEvent<HTMLFormElement>
   ) => void | Promise<void>;
 };
 
@@ -720,8 +719,8 @@ export const PromptInput = ({
     [referencedSources, clearReferencedSources]
   );
 
-  const handleSubmit: FormEventHandler<HTMLFormElement> = useCallback(
-    async (event) => {
+  const handleSubmit = useCallback(
+    async (event: SyntheticEvent<HTMLFormElement>) => {
       event.preventDefault();
 
       const form = event.currentTarget;
