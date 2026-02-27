@@ -4,8 +4,6 @@
  * 统一管理所有 pi 相关的磁盘路径计算，供 agent/ 内各模块共享。
  */
 
-// biome-ignore lint/performance/noNamespaceImport: Node.js fs 惯用命名空间导入
-import * as fs from "node:fs";
 // biome-ignore lint/performance/noNamespaceImport: Node.js path 惯用命名空间导入
 import * as path from "node:path";
 import { app } from "electron";
@@ -41,27 +39,28 @@ export function getSessionsDir(workspaceId: string | null): string {
 /**
  * 获取会话文件完整路径
  *
- * pi-coding-agent 的文件名格式为 {timestamp}_{sessionId}.jsonl
- * 此函数会查找匹配的文件，如果找不到则返回新文件路径
+ * 通过 SessionManager.list() 按 header ID 精确匹配会话文件。
+ * 找不到时返回新文件路径供 SessionManager.open() 创建。
  */
-export function getSessionFilePath(
+export async function getSessionFilePath(
   workspaceId: string | null,
   sessionId: string
-): string {
+): Promise<string> {
+  const baseDir = getBaseDir(workspaceId);
   const sessionsDir = getSessionsDir(workspaceId);
 
-  // pi 文件名格式：{timestamp}_{sessionId}.jsonl
-  // 查找以 _{sessionId}.jsonl 结尾的文件
   try {
-    const files = fs.readdirSync(sessionsDir);
-    const matchedFile = files.find((f) => f.endsWith(`_${sessionId}.jsonl`));
-    if (matchedFile) {
-      return path.join(sessionsDir, matchedFile);
+    // 使用 pi 的 SessionManager.list() 按 header ID 精确查找
+    const { SessionManager } = await import("@mariozechner/pi-coding-agent");
+    const sessions = await SessionManager.list(baseDir, sessionsDir);
+    const match = sessions.find((s) => s.id === sessionId);
+    if (match) {
+      return match.path;
     }
   } catch {
-    // 目录不存在，继续返回新路径
+    // sessions 目录不存在或其他错误，继续返回新路径
   }
 
-  // 找不到时返回新文件路径（SessionManager.open 会创建新 session）
-  return path.join(sessionsDir, `${sessionId}.jsonl`);
+  // 找不到时返回新文件路径，使用 pi 命名规范
+  return path.join(sessionsDir, `${Date.now()}_${sessionId}.jsonl`);
 }

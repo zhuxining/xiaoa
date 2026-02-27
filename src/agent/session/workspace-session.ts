@@ -35,7 +35,7 @@ export async function createWorkspaceSession(
 ): Promise<CreateAgentSessionResult> {
   const workspaceDir = getWorkspaceDir(run.workspaceId ?? "default");
   const cwd = run.workspaceRootPath ?? process.cwd();
-  const sessionFile = getSessionFilePath(run.workspaceId, run.sessionId);
+  const sessionFile = await getSessionFilePath(run.workspaceId, run.sessionId);
 
   const loader = new DefaultResourceLoader({
     cwd,
@@ -67,7 +67,7 @@ export async function createGlobalSession(
   run: ActiveRun
 ): Promise<CreateAgentSessionResult> {
   const globalDir = getGlobalDir();
-  const sessionFile = getSessionFilePath(null, run.sessionId);
+  const sessionFile = await getSessionFilePath(null, run.sessionId);
 
   const loader = new DefaultResourceLoader({
     cwd: process.cwd(),

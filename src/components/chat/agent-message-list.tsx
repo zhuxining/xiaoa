@@ -79,10 +79,15 @@ export function AgentMessageList({
     ? [...messages, streamingMessage]
     : messages;
 
-  // 自动滚动到底部
+  // 自动滚动到底部（需要操作 Viewport 而非 Root）
   useEffect(() => {
     if (scrollRef.current && (isStreaming || allMessages.length > 0)) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      const viewport = scrollRef.current.querySelector(
+        '[data-slot="scroll-area-viewport"]'
+      );
+      if (viewport) {
+        viewport.scrollTop = viewport.scrollHeight;
+      }
     }
   }, [allMessages, isStreaming]);
 
@@ -96,18 +101,26 @@ export function AgentMessageList({
       if (rawContent === undefined || rawContent === null) {
         // 防御性处理：content 为空
         textContent = "";
-        console.warn("[agent-message-list] User message has no content:", message);
+        console.warn(
+          "[agent-message-list] User message has no content:",
+          message
+        );
       } else if (typeof rawContent === "string") {
         textContent = rawContent;
       } else if (Array.isArray(rawContent)) {
         // content 是数组
         textContent = rawContent
-          .filter((c): c is { type: "text"; text: string } => c?.type === "text")
+          .filter(
+            (c): c is { type: "text"; text: string } => c?.type === "text"
+          )
           .map((c) => c.text)
           .join("\n");
       } else {
         // 未知格式
-        console.warn("[agent-message-list] User message has unexpected content format:", rawContent);
+        console.warn(
+          "[agent-message-list] User message has unexpected content format:",
+          rawContent
+        );
         textContent = String(rawContent);
       }
 
@@ -115,7 +128,9 @@ export function AgentMessageList({
         <UserMessage
           content={textContent}
           key={`user-${index}`}
-          timestamp={(message as { timestamp?: number }).timestamp ?? Date.now()}
+          timestamp={
+            (message as { timestamp?: number }).timestamp ?? Date.now()
+          }
         />
       );
     }
@@ -251,7 +266,9 @@ export function AgentMessageList({
       }
 
       // 然后添加每个 ToolCall（配对结果）
-      const toolCalls = contentArray.filter((c) => (c as { type?: string })?.type === "toolCall");
+      const toolCalls = contentArray.filter(
+        (c) => (c as { type?: string })?.type === "toolCall"
+      );
       for (const toolCall of toolCalls) {
         const tc = toolCall as { id: string };
         const result = findToolResult(allMessages, tc.id);
@@ -268,7 +285,7 @@ export function AgentMessageList({
 
   return (
     <ScrollArea
-      className={cn("flex-1", className)}
+      className={cn("min-h-0 flex-1", className)}
       data-slot="agent-message-list"
       ref={scrollRef}
     >

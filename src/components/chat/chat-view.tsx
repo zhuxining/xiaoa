@@ -137,7 +137,7 @@ export function ChatView({
           sessions={sessions}
         />
       )}
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col">
         {/* 顶部工具栏 */}
         <div className="nodraglayer flex items-center justify-between border-b px-4 py-2">
           <div className="flex items-center gap-2">

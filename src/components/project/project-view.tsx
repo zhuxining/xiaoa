@@ -176,46 +176,49 @@ export function ProjectView({
         <ResizableHandle withHandle />
         {/* 右侧：内容区 */}
         <ResizablePanel defaultSize={75}>
-          <div className="flex items-center justify-end gap-2 border-b px-3 py-1.5">
-            <Badge variant="outline">权限模式: {modeLabel}</Badge>
-            <Select
-              onValueChange={(value) =>
-                onPermissionModeChange?.(value as PermissionMode)
-              }
-              value={permissionMode}
-            >
-              <SelectTrigger className="w-[128px]" size="sm">
-                <SelectValue placeholder="选择模式" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="explore">Explore（只读）</SelectItem>
-                <SelectItem value="review">Review（确认）</SelectItem>
-                <SelectItem value="auto">Auto（自动）</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex h-full flex-col">
+            <div className="flex items-center justify-end gap-2 border-b px-3 py-1.5">
+              <Badge variant="outline">权限模式: {modeLabel}</Badge>
+              <Select
+                onValueChange={(value) =>
+                  onPermissionModeChange?.(value as PermissionMode)
+                }
+                value={permissionMode}
+              >
+                <SelectTrigger className="w-[128px]" size="sm">
+                  <SelectValue placeholder="选择模式" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="explore">Explore（只读）</SelectItem>
+                  <SelectItem value="review">Review（确认）</SelectItem>
+                  <SelectItem value="auto">Auto（自动）</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {viewMode === "chat" ? (
+              <ChatView
+                agentName={agentName}
+                className="min-h-0 flex-1"
+                currentSessionId={currentSessionId}
+                files={filesForMention}
+                isGenerating={isGenerating}
+                messages={messages}
+                onAbort={onAbort}
+                onMessageSend={onMessageSend}
+                onPermissionAllow={onPermissionAllow}
+                onPermissionDeny={onPermissionDeny}
+                onSessionCreate={onSessionCreate}
+                onSessionSelect={onSessionSelect}
+                permissionRequest={permissionRequest}
+                sessions={sessions}
+                showSessionList={false}
+                skills={skills}
+                streamingMessage={streamingMessage}
+              />
+            ) : (
+              <FilePreview file={fileInfo ?? null} />
+            )}
           </div>
-          {viewMode === "chat" ? (
-            <ChatView
-              agentName={agentName}
-              currentSessionId={currentSessionId}
-              files={filesForMention}
-              isGenerating={isGenerating}
-              messages={messages}
-              onAbort={onAbort}
-              onMessageSend={onMessageSend}
-              onPermissionAllow={onPermissionAllow}
-              onPermissionDeny={onPermissionDeny}
-              onSessionCreate={onSessionCreate}
-              onSessionSelect={onSessionSelect}
-              permissionRequest={permissionRequest}
-              sessions={sessions}
-              showSessionList={false}
-              skills={skills}
-              streamingMessage={streamingMessage}
-            />
-          ) : (
-            <FilePreview file={fileInfo ?? null} />
-          )}
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

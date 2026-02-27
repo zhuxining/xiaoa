@@ -92,6 +92,25 @@ export async function getSession(input: {
 }
 
 /**
+ * 通过 SessionManager.list() 查找会话文件路径（按 header ID 匹配，非文件名）
+ */
+async function findSessionFilePath(
+  workspaceId: string | null,
+  sessionId: string
+): Promise<string | null> {
+  const baseDir = getBaseDir(workspaceId);
+  const sessionsDir = getSessionsDir(workspaceId);
+
+  try {
+    const sessions = await SessionManager.list(baseDir, sessionsDir);
+    const match = sessions.find((s) => s.id === sessionId);
+    return match?.path ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * 获取会话消息列表
  */
 export async function getSessionMessages(input: {
@@ -99,17 +118,13 @@ export async function getSessionMessages(input: {
   sessionId: string;
 }): Promise<AgentMessage[]> {
   const { workspaceId, sessionId } = input;
-  const sessionsDir = getSessionsDir(workspaceId);
 
   try {
-    const files = await fs.readdir(sessionsDir);
-    const sessionFile = files.find((f) => f.endsWith(`_${sessionId}.jsonl`));
-
-    if (!sessionFile) {
+    const filePath = await findSessionFilePath(workspaceId, sessionId);
+    if (!filePath) {
       return [];
     }
 
-    const filePath = `${sessionsDir}/${sessionFile}`;
     const sm = SessionManager.open(filePath);
     const { messages } = buildSessionContext(sm.getEntries());
     return messages;
@@ -215,14 +230,10 @@ export async function deleteSession(input: {
   const info = sessions.find((s) => s.id === id);
 
   try {
-    const files = await fs.readdir(sessionsDir);
-    const sessionFile = files.find((f) => f.endsWith(`_${id}.jsonl`));
-
-    if (sessionFile) {
-      const filePath = `${sessionsDir}/${sessionFile}`;
-      await fs.unlink(filePath);
+    // 使用 SessionManager.list() 返回的 path 精确定位文件
+    if (info?.path) {
+      await fs.unlink(info.path);
     }
-
     return info ? toSessionMeta(info, workspaceId) : null;
   } catch {
     return null;
