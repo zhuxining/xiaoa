@@ -13,6 +13,7 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectProps,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -503,7 +504,7 @@ export const CodeBlockCopyButton = ({
   );
 };
 
-export type CodeBlockLanguageSelectorProps = ComponentProps<typeof Select>;
+export type CodeBlockLanguageSelectorProps = SelectProps;
 
 export const CodeBlockLanguageSelector = (
   props: CodeBlockLanguageSelectorProps

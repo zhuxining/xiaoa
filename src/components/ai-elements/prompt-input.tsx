@@ -45,6 +45,7 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectProps,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -1140,7 +1141,7 @@ export const PromptInputSubmit = ({
   );
 };
 
-export type PromptInputSelectProps = ComponentProps<typeof Select>;
+export type PromptInputSelectProps = SelectProps;
 
 export const PromptInputSelect = (props: PromptInputSelectProps) => (
   <Select {...props} />

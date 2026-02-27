@@ -1,6 +1,7 @@
 "use client";
 
 import type { CarouselApi } from "@/components/ui/carousel";
+import type { CarouselProps } from "@/components/ui/carousel";
 import type { ComponentProps } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -97,7 +98,7 @@ const useCarouselApi = () => {
   return context;
 };
 
-export type InlineCitationCarouselProps = ComponentProps<typeof Carousel>;
+export type InlineCitationCarouselProps = ComponentProps<"div"> & CarouselProps;
 
 export const InlineCitationCarousel = ({
   className,

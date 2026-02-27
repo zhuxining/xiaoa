@@ -4,9 +4,26 @@ import { Select as SelectPrimitive } from "radix-ui"
 import { cn } from "@/utils/tailwind"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
+// Define our own SelectProps to avoid referencing internal Radix types like SelectSharedProps
+export interface SelectProps {
+  children?: React.ReactNode;
+  open?: boolean;
+  defaultOpen?: boolean;
+  onOpenChange?(open: boolean): void;
+  dir?: "ltr" | "rtl";
+  name?: string;
+  autoComplete?: string;
+  disabled?: boolean;
+  required?: boolean;
+  form?: string;
+  value?: string;
+  defaultValue?: string;
+  onValueChange?(value: string): void;
+}
+
 function Select({
   ...props
-}: React.ComponentProps<typeof SelectPrimitive.Root>) {
+}: SelectProps) {
   return <SelectPrimitive.Root data-slot="select" {...props} />
 }
 
