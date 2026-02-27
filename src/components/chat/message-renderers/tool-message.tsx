@@ -1,6 +1,8 @@
 import type { ToolResultMessage } from "@mariozechner/pi-ai";
 import {
   AlertCircle,
+  ChevronDown,
+  ChevronRight,
   CheckCircle,
   Clock,
   FileText,
@@ -8,6 +10,8 @@ import {
   Terminal,
   Wrench,
 } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/utils/tailwind";
 
 interface ToolCallData {
@@ -24,6 +28,8 @@ interface ToolMessageProps {
 
 type ToolState = "inprogress" | "complete" | "error";
 
+const COLLAPSE_THRESHOLD = 500;
+
 function getToolState(result?: ToolResultMessage): ToolState {
   if (!result) {
     return "inprogress";
@@ -32,7 +38,6 @@ function getToolState(result?: ToolResultMessage): ToolState {
 }
 
 function getToolIcon(toolName: string) {
-  // 根据工具名称选择图标
   if (toolName.includes("bash") || toolName.includes("shell")) {
     return Terminal;
   }
@@ -67,10 +72,21 @@ function formatOutput(result: ToolResultMessage): string | null {
   return textContents.length > 0 ? textContents.join("\n") : null;
 }
 
+function getOutputSummary(output: string, maxLength = 80): string {
+  const firstLine = output.split("\n")[0] ?? "";
+  if (firstLine.length <= maxLength) {
+    return firstLine;
+  }
+  return `${firstLine.slice(0, maxLength)}...`;
+}
+
 export function ToolMessage({ toolCall, result, className }: ToolMessageProps) {
   const state = getToolState(result);
   const Icon = getToolIcon(toolCall.name);
   const output = result ? formatOutput(result) : null;
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const shouldCollapse = output && output.length > COLLAPSE_THRESHOLD;
 
   const statusText = {
     inprogress: "执行中...",
@@ -108,13 +124,42 @@ export function ToolMessage({ toolCall, result, className }: ToolMessageProps) {
 
       {/* 输出内容 */}
       {output && (
-        <div
-          className={cn(
-            "max-h-40 overflow-auto whitespace-pre-wrap rounded bg-muted/50 p-2 font-mono text-xs",
-            state === "error" && "text-destructive"
+        <div className="space-y-1">
+          {shouldCollapse && !isExpanded && (
+            <div className="rounded bg-muted/50 px-2 py-1 font-mono text-muted-foreground text-xs">
+              {getOutputSummary(output)}
+            </div>
           )}
-        >
-          {output}
+          {(!shouldCollapse || isExpanded) && (
+            <div
+              className={cn(
+                "max-h-60 overflow-auto whitespace-pre-wrap rounded bg-muted/50 p-2 font-mono text-xs",
+                state === "error" && "text-destructive"
+              )}
+            >
+              {output}
+            </div>
+          )}
+          {shouldCollapse && (
+            <Button
+              className="h-6 px-2 text-xs"
+              onClick={() => setIsExpanded(!isExpanded)}
+              size="sm"
+              variant="ghost"
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronDown className="mr-1 size-3" />
+                  收起
+                </>
+              ) : (
+                <>
+                  <ChevronRight className="mr-1 size-3" />
+                  展开全部 ({output.length} 字符)
+                </>
+              )}
+            </Button>
+          )}
         </div>
       )}
 

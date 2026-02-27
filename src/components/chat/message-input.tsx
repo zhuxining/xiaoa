@@ -8,6 +8,8 @@ import { SkillMenu, type SkillMenuItem } from "./skill-menu";
 
 const _TRAILING_SLASH_REGEX = /\/$/;
 const _TRAILING_AT_REGEX = /@$/;
+const MAX_HISTORY_SIZE = 50;
+const MAX_INPUT_LENGTH = 128000;
 
 interface MessageInputProps {
   className?: string;
@@ -38,12 +40,24 @@ export function MessageInput({
   const [selectedSkill, setSelectedSkill] = useState<SkillMenuItem | null>(
     null
   );
+  const [inputHistory, setInputHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const charCount = value.length;
+  const isNearLimit = charCount > MAX_INPUT_LENGTH * 0.9;
+  const isOverLimit = charCount > MAX_INPUT_LENGTH;
 
   const handleSubmit = () => {
     const trimmed = value.trim();
-    if (trimmed && !disabled && !isGenerating) {
+    if (trimmed && !disabled && !isGenerating && !isOverLimit) {
       onSend(trimmed);
+      // 保存到历史记录
+      setInputHistory((prev) => {
+        const newHistory = [trimmed, ...prev.filter((h) => h !== trimmed)];
+        return newHistory.slice(0, MAX_HISTORY_SIZE);
+      });
+      setHistoryIndex(-1);
       setValue("");
       setSelectedSkill(null);
       requestAnimationFrame(resizeTextarea);
@@ -51,7 +65,25 @@ export function MessageInput({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey && !showSkillMenu && !showFileMenu) {
+    // 上下箭头浏览历史（当输入框为空或在行首/行尾时）
+    if (e.key === "ArrowUp" && (value === "" || textareaRef.current?.selectionStart === 0)) {
+      e.preventDefault();
+      if (inputHistory.length > 0) {
+        const newIndex = Math.min(historyIndex + 1, inputHistory.length - 1);
+        setHistoryIndex(newIndex);
+        setValue(inputHistory[newIndex] ?? "");
+      }
+    } else if (e.key === "ArrowDown" && historyIndex >= 0) {
+      e.preventDefault();
+      const newIndex = historyIndex - 1;
+      if (newIndex < 0) {
+        setHistoryIndex(-1);
+        setValue("");
+      } else {
+        setHistoryIndex(newIndex);
+        setValue(inputHistory[newIndex] ?? "");
+      }
+    } else if (e.key === "Enter" && !e.shiftKey && !showSkillMenu && !showFileMenu) {
       e.preventDefault();
       handleSubmit();
     }
@@ -67,6 +99,10 @@ export function MessageInput({
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
     setValue(newValue);
+    // 重置历史索引
+    if (historyIndex >= 0) {
+      setHistoryIndex(-1);
+    }
     requestAnimationFrame(resizeTextarea);
 
     // 检测 "/" 触发技能菜单
@@ -136,16 +172,39 @@ export function MessageInput({
         open={showFileMenu}
       />
       <div className="flex items-end gap-2">
-        <Textarea
-          className="max-h-32 min-h-9 flex-1 resize-none"
-          disabled={disabled || isGenerating}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          ref={textareaRef}
-          rows={1}
-          value={value}
-        />
+        <div className="flex-1">
+          <Textarea
+            className={cn(
+              "max-h-32 min-h-9 resize-none",
+              isOverLimit && "border-destructive focus-visible:ring-destructive"
+            )}
+            disabled={disabled || isGenerating}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            ref={textareaRef}
+            rows={1}
+            value={value}
+          />
+          {/* 字符计数 */}
+          <div className="mt-1 flex justify-between text-xs">
+            <span className="text-muted-foreground">
+              {skills.length > 0 && "输入 / 调用技能，输入 @ 引用文件"}
+              {selectedSkill?.argumentHint && (
+                <span className="ml-2">参数提示: {selectedSkill.argumentHint}</span>
+              )}
+            </span>
+            <span
+              className={cn(
+                "text-muted-foreground",
+                isNearLimit && !isOverLimit && "text-yellow-500",
+                isOverLimit && "text-destructive"
+              )}
+            >
+              {charCount.toLocaleString()}/{MAX_INPUT_LENGTH.toLocaleString()}
+            </span>
+          </div>
+        </div>
         {isGenerating ? (
           <Button
             disabled={!onAbort}
@@ -157,7 +216,7 @@ export function MessageInput({
           </Button>
         ) : (
           <Button
-            disabled={!value.trim() || disabled}
+            disabled={!value.trim() || disabled || isOverLimit}
             onClick={handleSubmit}
             size="icon"
           >
@@ -165,16 +224,6 @@ export function MessageInput({
           </Button>
         )}
       </div>
-      {skills.length > 0 && (
-        <div className="mt-1 text-muted-foreground text-xs">
-          输入 / 调用技能，输入 @ 引用文件
-        </div>
-      )}
-      {selectedSkill?.argumentHint && (
-        <div className="mt-1 text-muted-foreground text-xs">
-          参数提示: {selectedSkill.argumentHint}
-        </div>
-      )}
     </div>
   );
 }

@@ -106,11 +106,14 @@ function processChatEvent(
 
 // ─── Streaming Message Factory ──────────────────────────────────
 
-function buildStreamingMessage(content: string): AgentMessage {
+function buildStreamingMessage(
+  content: string,
+  timestamp: number
+): AgentMessage {
   return {
     role: "assistant",
     content: [{ type: "text", text: content }],
-    timestamp: Date.now(),
+    timestamp,
     api: "openai-completions" as const,
     provider: "openai" as const,
     model: "streaming",
@@ -149,11 +152,19 @@ export function useChatSession(
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [permissionRequest, setPermissionRequest] =
     useState<PermissionRequest | null>(null);
+  // 乐观更新：用户发送但服务器尚未确认的消息
+  const [pendingUserMessage, setPendingUserMessage] =
+    useState<AgentMessage | null>(null);
+  // 保留最后的流式消息，避免刷新闪烁
+  const [lastStreamingMessage, setLastStreamingMessage] =
+    useState<AgentMessage | null>(null);
 
   // Use ref for event cursor to avoid queryKey churn
   const eventCursorRef = useRef(0);
   // Guard against concurrent auto-create
   const isCreatingRef = useRef(false);
+  // 保存流式消息的开始时间戳，避免每次更新都刷新
+  const streamingStartTimestampRef = useRef<number | null>(null);
 
   // ── Query Keys ───────────────────────────────────────────────
   const sessionsQueryKey = [
@@ -229,6 +240,8 @@ export function useChatSession(
     setActiveRunId(null);
     eventCursorRef.current = 0;
     setPermissionRequest(null);
+    setPendingUserMessage(null);
+    setLastStreamingMessage(null);
   }, [currentSessionId]);
 
   // ── Event Polling ────────────────────────────────────────────
@@ -260,8 +273,25 @@ export function useChatSession(
 
     for (const event of eventResult.events) {
       processChatEvent(event, {
-        onDelta: (delta) => setStreamingContent((prev) => prev + delta),
-        onReset: () => setStreamingContent(""),
+        onDelta: (delta) => {
+          setStreamingContent((prev) => {
+            const newContent = prev + delta;
+            // 初始化开始时间戳（只在第一次）
+            if (streamingStartTimestampRef.current === null) {
+              streamingStartTimestampRef.current = Date.now();
+            }
+            // 使用固定的开始时间戳，避免每次更新都刷新
+            setLastStreamingMessage(
+              buildStreamingMessage(newContent, streamingStartTimestampRef.current)
+            );
+            return newContent;
+          });
+        },
+        onReset: () => {
+          setStreamingContent("");
+          setLastStreamingMessage(null);
+          streamingStartTimestampRef.current = null;
+        },
         onPermissionRequest: (evt) => {
           setPermissionRequest({
             id: evt.permissionId ?? `perm-${evt.seq}`,
@@ -282,19 +312,31 @@ export function useChatSession(
       setStreamingContent("");
       setActiveRunId(null);
       setPermissionRequest(null);
+      // 注意：不清空 lastStreamingMessage，保留直到服务器消息刷新
       // Delay refetch to allow pi JSONL flush
       setTimeout(() => {
         refetchMessages();
         refetchSessionList();
+        // 服务器消息已刷新，清除乐观更新的消息
+        setPendingUserMessage(null);
+        setLastStreamingMessage(null);
+        streamingStartTimestampRef.current = null;
       }, 300);
     }
   }, [eventResult, isGenerating, refetchMessages, refetchSessionList]);
 
   // ── Streaming Message ────────────────────────────────────────
-  const streamingMessage: AgentMessage | null =
-    isGenerating && streamingContent
-      ? buildStreamingMessage(streamingContent)
-      : null;
+  // 生成中返回当前流式消息，否则返回保留的最后流式消息（避免刷新闪烁）
+  const streamingMessage: AgentMessage | null = isGenerating
+    ? streamingContent
+      ? buildStreamingMessage(streamingContent, streamingStartTimestampRef.current ?? Date.now())
+      : lastStreamingMessage
+    : lastStreamingMessage;
+
+  // ── Combined Messages (with optimistic user message) ──────────
+  const displayMessages: AgentMessage[] = pendingUserMessage
+    ? [...messages, pendingUserMessage]
+    : messages;
 
   // ── Create Session ───────────────────────────────────────────
   const createSessionMutation = useMutation({
@@ -351,6 +393,14 @@ export function useChatSession(
         }
       }
 
+      // 乐观更新：立即显示用户消息
+      const optimisticUserMessage: AgentMessage = {
+        role: "user",
+        content: [{ type: "text", text: content }],
+        timestamp: Date.now(),
+      } as AgentMessage;
+      setPendingUserMessage(optimisticUserMessage);
+
       setIsGenerating(true);
       setStreamingContent("");
       eventCursorRef.current = 0;
@@ -369,6 +419,7 @@ export function useChatSession(
         setStreamingContent("");
         setActiveRunId(null);
         setPermissionRequest(null);
+        setPendingUserMessage(null);
         console.error("[useChatSession] sendChat failed:", error);
       }
     },
@@ -446,7 +497,7 @@ export function useChatSession(
     renameSession: (id: string, name: string) =>
       renameSessionMutation.mutate({ id, name }),
 
-    messages,
+    messages: displayMessages,
     streamingMessage,
 
     isGenerating,

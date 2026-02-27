@@ -1,7 +1,7 @@
 import type { AgentMessage, AgentTool } from "@mariozechner/pi-agent-core";
 import type { ToolResultMessage } from "@mariozechner/pi-ai";
 import { Bot } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/utils/tailwind";
 import { AssistantMessage } from "./message-renderers/assistant-message";
@@ -55,6 +55,44 @@ function isCustomMessage(message: AgentMessage, role: string): boolean {
 }
 
 /**
+ * 获取消息的 ARIA 标签
+ */
+function getMessageAriaLabel(
+  message: AgentMessage,
+  agentName: string
+): string {
+  if (message.role === "user") {
+    return "用户消息";
+  }
+  if (message.role === "assistant") {
+    return `${agentName} 消息`;
+  }
+  return message.role;
+}
+
+/**
+ * 检查流式消息是否已被服务器消息包含
+ * 通过比较时间戳和内容来判断
+ */
+function isStreamingMessageRedundant(
+  messages: AgentMessage[],
+  streamingMsg: AgentMessage | null
+): boolean {
+  if (!streamingMsg || messages.length === 0) {
+    return false;
+  }
+  const lastMessage = messages[messages.length - 1];
+  // 如果最后一条是 assistant 消息且时间戳更新，说明服务器消息已包含内容
+  if (
+    lastMessage.role === "assistant" &&
+    lastMessage.timestamp >= streamingMsg.timestamp
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * AgentMessageList - 纯 React 消息列表组件
  *
  * 支持渲染所有 AgentMessage 类型：
@@ -73,11 +111,12 @@ export function AgentMessageList({
   className,
 }: AgentMessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
 
-  // 合并 messages + streaming message
-  const allMessages = streamingMessage
-    ? [...messages, streamingMessage]
-    : messages;
+  // 合并 messages + streaming message（避免重复）
+  const isRedundant = isStreamingMessageRedundant(messages, streamingMessage ?? null);
+  const allMessages =
+    streamingMessage && !isRedundant ? [...messages, streamingMessage] : messages;
 
   // 自动滚动到底部（需要操作 Viewport 而非 Root）
   useEffect(() => {
@@ -91,6 +130,75 @@ export function AgentMessageList({
     }
   }, [allMessages, isStreaming]);
 
+  // 预处理消息：将 ToolCall 从 assistant 消息中提取出来
+  const processedMessages: Array<{
+    type: "message" | "toolCall";
+    data: unknown;
+    index: number;
+  }> = [];
+
+  for (let i = 0; i < allMessages.length; i++) {
+    const message = allMessages[i];
+    const msgContent = (message as { content?: unknown }).content;
+
+    if (message.role === "assistant") {
+      const contentArray = Array.isArray(msgContent) ? msgContent : [];
+
+      const contentWithoutToolCalls = contentArray.filter(
+        (c) => (c as { type?: string })?.type !== "toolCall"
+      );
+      if (contentWithoutToolCalls.length > 0) {
+        processedMessages.push({
+          type: "message",
+          data: { ...message, content: contentWithoutToolCalls },
+          index: i,
+        });
+      }
+
+      const toolCalls = contentArray.filter(
+        (c) => (c as { type?: string })?.type === "toolCall"
+      );
+      for (const toolCall of toolCalls) {
+        const tc = toolCall as { id: string };
+        const result = findToolResult(allMessages, tc.id);
+        processedMessages.push({
+          type: "toolCall",
+          data: { toolCall, result },
+          index: i,
+        });
+      }
+    } else {
+      processedMessages.push({ type: "message", data: message, index: i });
+    }
+  }
+
+  // 键盘导航
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        const direction = e.key === "ArrowDown" ? 1 : -1;
+        const newIndex =
+          focusedIndex === null
+            ? direction === 1
+              ? 0
+              : processedMessages.length - 1
+            : Math.max(
+                0,
+                Math.min(processedMessages.length - 1, focusedIndex + direction)
+              );
+        setFocusedIndex(newIndex);
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        setFocusedIndex(0);
+      } else if (e.key === "End") {
+        e.preventDefault();
+        setFocusedIndex(processedMessages.length - 1);
+      }
+    },
+    [focusedIndex, processedMessages.length]
+  );
+
   // 渲染单条消息
   const renderMessage = (message: AgentMessage, index: number) => {
     // 用户消息
@@ -99,7 +207,6 @@ export function AgentMessageList({
       let textContent: string;
 
       if (rawContent === undefined || rawContent === null) {
-        // 防御性处理：content 为空
         textContent = "";
         console.warn(
           "[agent-message-list] User message has no content:",
@@ -108,7 +215,6 @@ export function AgentMessageList({
       } else if (typeof rawContent === "string") {
         textContent = rawContent;
       } else if (Array.isArray(rawContent)) {
-        // content 是数组
         textContent = rawContent
           .filter(
             (c): c is { type: "text"; text: string } => c?.type === "text"
@@ -116,7 +222,6 @@ export function AgentMessageList({
           .map((c) => c.text)
           .join("\n");
       } else {
-        // 未知格式
         console.warn(
           "[agent-message-list] User message has unexpected content format:",
           rawContent
@@ -137,11 +242,13 @@ export function AgentMessageList({
 
     // 助手消息
     if (message.role === "assistant") {
+      // 只有当流式消息不是冗余的，且是最后一条消息时才显示流式状态
+      const isActuallyStreaming = isStreaming && !isRedundant && index === allMessages.length - 1;
       return (
         <AssistantMessage
           avatar={agentAvatar}
           content={message.content}
-          isStreaming={isStreaming && index === allMessages.length - 1}
+          isStreaming={isActuallyStreaming}
           key={`assistant-${index}`}
           name={agentName}
           timestamp={message.timestamp}
@@ -151,7 +258,6 @@ export function AgentMessageList({
 
     // 工具结果（配对显示）
     if (message.role === "toolResult") {
-      // 工具结果在 assistant 消息中已通过 ToolCall 渲染，这里跳过
       return null;
     }
 
@@ -167,6 +273,7 @@ export function AgentMessageList({
         <div
           className="rounded-lg border bg-yellow-500/10 p-3 text-sm"
           key={`permission-${index}`}
+          role="alert"
         >
           <div className="font-medium text-yellow-600 dark:text-yellow-400">
             {permMsg.permissionTitle}
@@ -227,7 +334,7 @@ export function AgentMessageList({
       );
     }
 
-    // 未知消息类型 - 显示为调试信息
+    // 未知消息类型
     return (
       <div
         className="rounded-lg border bg-muted p-3 text-muted-foreground text-sm"
@@ -238,56 +345,16 @@ export function AgentMessageList({
     );
   };
 
-  // 预处理消息：将 ToolCall 从 assistant 消息中提取出来
-  const processedMessages: Array<{
-    type: "message" | "toolCall";
-    data: unknown;
-    index: number;
-  }> = [];
-
-  for (let i = 0; i < allMessages.length; i++) {
-    const message = allMessages[i];
-    const msgContent = (message as { content?: unknown }).content;
-
-    if (message.role === "assistant") {
-      // 防御性检查：确保 content 是数组
-      const contentArray = Array.isArray(msgContent) ? msgContent : [];
-
-      // 先添加助手消息（不含 toolCall）
-      const contentWithoutToolCalls = contentArray.filter(
-        (c) => (c as { type?: string })?.type !== "toolCall"
-      );
-      if (contentWithoutToolCalls.length > 0) {
-        processedMessages.push({
-          type: "message",
-          data: { ...message, content: contentWithoutToolCalls },
-          index: i,
-        });
-      }
-
-      // 然后添加每个 ToolCall（配对结果）
-      const toolCalls = contentArray.filter(
-        (c) => (c as { type?: string })?.type === "toolCall"
-      );
-      for (const toolCall of toolCalls) {
-        const tc = toolCall as { id: string };
-        const result = findToolResult(allMessages, tc.id);
-        processedMessages.push({
-          type: "toolCall",
-          data: { toolCall, result },
-          index: i,
-        });
-      }
-    } else {
-      processedMessages.push({ type: "message", data: message, index: i });
-    }
-  }
-
   return (
     <ScrollArea
+      aria-label="消息列表"
+      aria-live="polite"
       className={cn("min-h-0 flex-1", className)}
       data-slot="agent-message-list"
+      onKeyDown={handleKeyDown}
       ref={scrollRef}
+      role="log"
+      tabIndex={0}
     >
       <div className="flex flex-col gap-4 p-4">
         {processedMessages.length === 0 && (
@@ -298,6 +365,8 @@ export function AgentMessageList({
           </div>
         )}
         {processedMessages.map((item, displayIndex) => {
+          const isFocused = focusedIndex === displayIndex;
+
           if (item.type === "toolCall") {
             const { toolCall, result } = item.data as {
               toolCall: {
@@ -308,17 +377,28 @@ export function AgentMessageList({
               result: ToolResultMessage | undefined;
             };
             return (
-              <ToolMessage
+              <div
+                aria-label={`工具调用: ${toolCall.name}`}
+                className={cn(isFocused && "ring-2 ring-ring/30 rounded-lg")}
                 key={`tool-${item.index}-${toolCall.id}`}
-                result={result}
-                toolCall={toolCall}
-              />
+                role="article"
+                tabIndex={-1}
+              >
+                <ToolMessage result={result} toolCall={toolCall} />
+              </div>
             );
           }
 
+          const message = item.data as AgentMessage;
           return (
-            <div key={`msg-${item.index}-${displayIndex}`}>
-              {renderMessage(item.data as AgentMessage, item.index)}
+            <div
+              aria-label={getMessageAriaLabel(message, agentName)}
+              className={cn(isFocused && "ring-2 ring-ring/30 rounded-lg")}
+              key={`msg-${item.index}-${displayIndex}`}
+              role="article"
+              tabIndex={-1}
+            >
+              {renderMessage(message, item.index)}
             </div>
           );
         })}
