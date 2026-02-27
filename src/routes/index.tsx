@@ -113,7 +113,10 @@ function HomePage() {
   );
 
   // 使用新的 session IPC
-  const { data: sessionsData = [] } = useQuery({
+  const {
+    data: sessionsData = [],
+    refetch: refetchSessionList,
+  } = useQuery({
     queryKey: ["session", "global", "list"],
     queryFn: () => listSessions({ workspaceId: null }),
   });
@@ -150,10 +153,9 @@ function HomePage() {
 
   const createSessionMutation = useMutation({
     mutationFn: () => createSession({ workspaceId: null }),
-    onSuccess: (newSession) => {
-      queryClient.invalidateQueries({
-        queryKey: ["session", "global", "list"],
-      });
+    onSuccess: async (newSession) => {
+      // 使用 refetch 确保立即同步获取最新列表
+      await refetchSessionList();
       setCurrentSessionId(newSession.id);
     },
   });
@@ -161,10 +163,9 @@ function HomePage() {
   const deleteSessionMutation = useMutation({
     mutationFn: (sessionId: string) =>
       deleteSession({ workspaceId: null, id: sessionId }),
-    onSuccess: (_, sessionId) => {
-      queryClient.invalidateQueries({
-        queryKey: ["session", "global", "list"],
-      });
+    onSuccess: async (_, sessionId) => {
+      // 使用 refetch 确保立即同步获取最新列表
+      await refetchSessionList();
       if (currentSessionId === sessionId) {
         const next = sessions.find((s) => s.id !== sessionId);
         setCurrentSessionId(next?.id);
@@ -230,9 +231,10 @@ function HomePage() {
       queryClient.invalidateQueries({
         queryKey: ["session", "global", "messages", currentSessionId],
       });
-      queryClient.invalidateQueries({
-        queryKey: ["session", "global", "list"],
-      });
+      // 延迟刷新列表，确保文件写入完成
+      setTimeout(() => {
+        refetchSessionList();
+      }, 100);
     },
     onError: (error) => {
       setIsGenerating(false);
@@ -305,11 +307,12 @@ function HomePage() {
       queryClient.invalidateQueries({
         queryKey: ["session", "global", "messages", currentSessionId],
       });
-      queryClient.invalidateQueries({
-        queryKey: ["session", "global", "list"],
-      });
+      // 延迟刷新列表，确保文件写入完成
+      setTimeout(() => {
+        refetchSessionList();
+      }, 100);
     }
-  }, [currentSessionId, eventCursor, eventResult, queryClient]);
+  }, [currentSessionId, eventCursor, eventResult, queryClient, refetchSessionList]);
 
   const handleSessionSelect = useCallback((id: string) => {
     setCurrentSessionId(id);

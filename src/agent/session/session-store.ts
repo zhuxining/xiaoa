@@ -146,8 +146,18 @@ export async function createSession(input: {
     }
   }
 
-  const now = Date.now();
+  // 从 SessionManager.list 重新读取，确保返回的数据与列表一致
+  const sessions = await SessionManager.list(baseDir, sessionsDir).catch(
+    () => []
+  );
+  const newSession = sessions.find((s) => s.id === id);
 
+  if (newSession) {
+    return toSessionMeta(newSession, workspaceId);
+  }
+
+  // Fallback: 如果 list 没有找到（极少情况），返回硬编码值
+  const now = Date.now();
   return {
     id,
     workspaceId,
