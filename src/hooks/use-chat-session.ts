@@ -330,14 +330,19 @@ export function useChatSession(
 
   // ── Streaming Message ────────────────────────────────────────
   // 生成中返回当前流式消息，否则返回保留的最后流式消息（避免刷新闪烁）
-  const streamingMessage: AgentMessage | null = isGenerating
-    ? streamingContent
-      ? buildStreamingMessage(
-          streamingContent,
-          streamingStartTimestampRef.current ?? Date.now()
-        )
-      : lastStreamingMessage
-    : lastStreamingMessage;
+  const getStreamingMessage = (): AgentMessage | null => {
+    if (!isGenerating) {
+      return lastStreamingMessage;
+    }
+    if (streamingContent) {
+      return buildStreamingMessage(
+        streamingContent,
+        streamingStartTimestampRef.current ?? Date.now()
+      );
+    }
+    return lastStreamingMessage;
+  };
+  const streamingMessage = getStreamingMessage();
 
   // ── Combined Messages (with optimistic user message) ──────────
   const displayMessages: AgentMessage[] = pendingUserMessage

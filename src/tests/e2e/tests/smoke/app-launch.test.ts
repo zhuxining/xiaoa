@@ -33,7 +33,9 @@ test.describe("Smoke Tests", () => {
     // 验证关键元素存在
     await expect(page.locator('[data-slot="chat-view"]')).toBeVisible();
     await expect(page.locator('[data-slot="session-list"]')).toBeVisible();
-    await expect(page.locator('[data-slot="message-input"]')).toBeVisible();
+    await expect(
+      page.locator('[data-slot="agent-prompt-input"]')
+    ).toBeVisible();
   });
 
   /**

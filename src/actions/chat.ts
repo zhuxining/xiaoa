@@ -1,11 +1,13 @@
+import type { ChatEvent, ChatScope, ThinkingLevel } from "@/ipc/chat/schemas";
 import { ipc } from "@/ipc/manager";
 
-export type ChatScope = "global" | "workspace";
+export type { ChatEvent, ChatScope, ThinkingLevel } from "@/ipc/chat/schemas";
 
 export interface ChatSendInput {
   content: string;
   scope: ChatScope;
   sessionId: string;
+  thinkingLevel?: ThinkingLevel;
   workspaceId?: string;
   workspaceRootPath?: string;
 }
@@ -22,57 +24,6 @@ export interface ChatGetEventsInput {
   scope: ChatScope;
   sessionId: string;
   workspaceId?: string;
-}
-
-export interface ChatEvent {
-  args?: string;
-  // message events
-  content?: string;
-  decision?: "allow" | "deny";
-  // error events
-  error?: string;
-  isError?: boolean;
-  messagesAfter?: number;
-  // compaction events
-  messagesBefore?: number;
-  permissionDescription?: string;
-  permissionDetails?: string;
-  // permission events
-  permissionId?: string;
-  permissionRisk?: "low" | "medium" | "high";
-  permissionTitle?: string;
-  permissionType?: "file_read" | "file_write" | "execute" | "network";
-  runId: string;
-  scope: ChatScope;
-  seq: number;
-  sessionId: string;
-  timestamp: number;
-  toolCallId?: string;
-  // tool events
-  toolName?: string;
-  type:
-    | "run_start"
-    | "message_start"
-    | "message_delta"
-    | "message_end"
-    | "tool_start"
-    | "tool_end"
-    | "tool_update"
-    | "tool_call"
-    | "tool_result"
-    | "compaction"
-    | "compaction_start"
-    | "compaction_end"
-    | "retry_start"
-    | "retry_end"
-    | "turn_start"
-    | "turn_end"
-    | "permission_request"
-    | "permission_resolved"
-    | "run_aborted"
-    | "run_error"
-    | "run_end";
-  workspaceId: string | null;
 }
 
 export interface ChatEventsResult {

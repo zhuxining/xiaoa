@@ -19,7 +19,7 @@ export class HomePage extends BasePage {
     noSessionsText: "text=暂无会话",
 
     // 消息区域
-    messageInput: '[data-slot="message-input"]',
+    messageInput: '[data-slot="agent-prompt-input"]',
     messageTextarea: "textarea",
     sendButton: "button[type=submit], button:has(svg)", // 发送按钮包含 Send 图标
     abortButton: "button:has(svg)", // 中止按钮包含 Square 图标

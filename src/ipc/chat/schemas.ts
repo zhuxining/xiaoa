@@ -8,6 +8,14 @@ export const permissionTypeSchema = z.enum([
   "network",
 ]);
 export const permissionRiskSchema = z.enum(["low", "medium", "high"]);
+export const thinkingLevelSchema = z.enum([
+  "off",
+  "minimal",
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+]);
 
 export const chatEventTypeSchema = z.enum([
   "run_start",
@@ -26,6 +34,9 @@ export const chatEventTypeSchema = z.enum([
   "retry_end",
   "turn_start",
   "turn_end",
+  "thinking_start",
+  "thinking_delta",
+  "thinking_end",
   "permission_request",
   "permission_resolved",
   "run_aborted",
@@ -51,6 +62,9 @@ export const chatEventSchema = z.object({
   // compaction events
   messagesBefore: z.number().optional(),
   messagesAfter: z.number().optional(),
+  // thinking events
+  thinkingContent: z.string().optional(),
+  thinkingDuration: z.number().optional(),
   // permission events
   permissionId: z.string().optional(),
   permissionType: permissionTypeSchema.optional(),
@@ -69,6 +83,7 @@ export const chatSendInputSchema = z.object({
   sessionId: z.string(),
   content: z.string().min(1),
   workspaceRootPath: z.string().optional(),
+  thinkingLevel: thinkingLevelSchema.optional(),
 });
 
 export const chatSendResultSchema = z.object({
@@ -193,3 +208,4 @@ export type ChatEventType = z.infer<typeof chatEventTypeSchema>;
 export type ChatEvent = z.infer<typeof chatEventSchema>;
 export type PermissionType = z.infer<typeof permissionTypeSchema>;
 export type PermissionRisk = z.infer<typeof permissionRiskSchema>;
+export type ThinkingLevel = z.infer<typeof thinkingLevelSchema>;

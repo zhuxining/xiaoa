@@ -27,6 +27,7 @@
 | --- | --- |
 | 框架 | Electron Forge + React 19 |
 | 样式 | TailwindCSS 4 + shadcn/ui |
+| AI 组件 | ai-elements（自定义 AI 对话组件库）+ Streamdown（Markdown 流式渲染）+ Shiki（代码高亮） |
 | 路由 | TanStack Router（文件路由） |
 | 状态管理 | TanStack Query（服务端状态） + useState（局部状态） |
 | IPC | oRPC（类型安全，MessagePort 通信） |
@@ -970,17 +971,46 @@ src/
 │
 ├── components/                    # React 组件
 │   ├── ui/                        # shadcn/ui 基础组件
+│   ├── ai-elements/               # AI 对话专用组件库（§6.3 详细说明）
+│   │   ├── conversation.tsx       # 对话容器（自动滚动、空状态、下载）
+│   │   ├── prompt-input.tsx       # 输入框（文件拖放、粘贴、Provider 模式）
+│   │   ├── attachments.tsx        # 附件管理（图片/文档/来源引用）
+│   │   ├── tool.tsx               # 工具调用展示（状态徽章、参数/结果）
+│   │   ├── reasoning.tsx          # 推理过程（自动展开/收起、时长显示）
+│   │   ├── chain-of-thought.tsx   # 思维链（步骤、搜索结果）
+│   │   ├── code-block.tsx         # 代码块（Shiki 高亮、复制、语言选择）
+│   │   ├── context.tsx            # Token 使用量（输入/输出/推理/缓存）
+│   │   ├── confirmation.tsx       # 权限确认（请求/接受/拒绝）
+│   │   ├── sources.tsx            # 来源引用列表
+│   │   ├── artifact.tsx           # 工件展示
+│   │   ├── file-tree.tsx          # 文件树
+│   │   ├── model-selector.tsx     # 模型选择器
+│   │   ├── plan.tsx               # 计划展示
+│   │   ├── task.tsx               # 任务展示
+│   │   ├── terminal.tsx           # 终端输出
+│   │   ├── stack-trace.tsx        # 堆栈跟踪
+│   │   ├── sandbox.tsx            # 沙箱环境
+│   │   └── shimmer.tsx            # 闪烁加载效果
 │   ├── chat/
-│   │   ├── chat-view.tsx          # 对话视图容器
-│   │   ├── message-list.tsx       # 纯 React 消息列表（读取 agentSession.messages）
-│   │   ├── agent-message-list.tsx # Agent 消息列表（分组渲染）
-│   │   ├── message-input.tsx      # 输入框（含技能 / 菜单）
-│   │   ├── message-renderers/     # 消息渲染器（assistant / user / tool / code-block）
-│   │   ├── permission-dialog.tsx  # 权限确认对话（tool_call 钩子触发）
-│   │   ├── permission-bar.tsx     # 权限操作栏
-│   │   ├── session-list.tsx       # 会话列表
-│   │   ├── skill-menu.tsx         # 技能菜单
-│   │   └── file-menu.tsx          # 文件菜单
+│   │   ├── chat-view.tsx              # 对话视图容器（组合 ai-elements）
+│   │   ├── agent-message-list.tsx     # 消息列表（Conversation + Reasoning + Checkpoint）
+│   │   ├── agent-prompt-input.tsx     # 输入框（PromptInput 包装 + 历史/菜单）
+│   │   ├── agent-confirmation.tsx     # 权限确认（Confirmation 包装 + 风险等级）
+│   │   ├── permission-dialog.tsx      # 权限类型/请求接口定义
+│   │   ├── context-usage.tsx          # Token 使用量（使用 Context 组件）
+│   │   ├── skill-menu.tsx             # 技能选择菜单（/ 触发）
+│   │   ├── file-menu.tsx              # 文件选择菜单（@ 触发）
+│   │   ├── adapters/                  # pi → ai-elements 类型桥接层（§6.4）
+│   │   │   ├── input-adapter.ts       # isGenerating/disabled → ChatStatus
+│   │   │   ├── permission-adapter.ts  # PermissionRequest → Confirmation state
+│   │   │   ├── reasoning-adapter.ts   # ThinkingContent → Reasoning props
+│   │   │   ├── tool-adapter.ts        # ToolCall → DynamicToolUIPart
+│   │   │   ├── context-adapter.ts     # SessionStats → Context props
+│   │   │   └── message-adapter.ts     # AgentMessage → ConversationMessage
+│   │   └── message-renderers/         # 单条消息渲染器
+│   │       ├── assistant-message.tsx   # 助手消息（Markdown + CodeBlock + Reasoning + Shimmer）
+│   │       ├── tool-message.tsx        # 工具调用消息（Tool 组件）
+│   │       └── user-message.tsx        # 用户消息
 │   ├── layout/                    # 布局组件（app-layout / sidebar / workspace-switcher）
 │   └── ...                        # 其他组件
 │
@@ -1016,6 +1046,236 @@ __root.tsx (TanStack Router 根路由)
 ```
 
 **路由说明**：导航状态完全由 TanStack Router URL 驱动，不再使用 `activeView` atom。页面切换即路由切换。
+
+### 6.3 ai-elements 组件库
+
+`ai-elements/` 是专为 AI 对话场景设计的 React 组件库，参考 [AI SDK UI](https://sdk.vercel.ai/docs/ai-sdk-ui/overview) 的设计模式，提供可组合、类型安全、无样式的 AI 交互原语。
+
+**设计原则**：
+
+- **组合优于继承**：每个组件职责单一，通过组合构建复杂 UI
+- **Context 驱动状态**：使用 React Context 共享组件间状态，避免 prop drilling
+- **无样式/弱样式**：仅提供必要布局样式，外观由 TailwindCSS 控制
+- **受控/非受控双模式**：支持 `open/defaultOpen`、`value/onChange` 等模式
+
+**组件分类**：
+
+| 分类 | 组件 | 用途 |
+|------|------|------|
+| **对话容器** | `Conversation`, `ConversationContent`, `ConversationEmptyState`, `ConversationScrollButton`, `ConversationDownload` | 消息列表容器，自动滚动，空状态，下载对话 |
+| **输入组件** | `PromptInput`, `PromptInputTextarea`, `PromptInputSubmit`, `PromptInputProvider`, `PromptInputTools`, `PromptInputActionMenu` | 多功能输入框，支持文件拖放、粘贴、Provider 模式 |
+| **附件管理** | `Attachments`, `Attachment`, `AttachmentPreview`, `AttachmentInfo`, `AttachmentRemove`, `AttachmentHoverCard` | 图片/文档/来源引用的展示与管理 |
+| **工具调用** | `Tool`, `ToolHeader`, `ToolContent`, `ToolInput`, `ToolOutput` | 展示工具调用的状态、参数、结果 |
+| **推理过程** | `Reasoning`, `ReasoningTrigger`, `ReasoningContent` | 展示 AI 推理/思考过程（自动展开/收起） |
+| **思维链** | `ChainOfThought`, `ChainOfThoughtHeader`, `ChainOfThoughtStep`, `ChainOfThoughtSearchResults` | 展示分步骤推理过程 |
+| **代码块** | `CodeBlock`, `CodeBlockHeader`, `CodeBlockContent`, `CodeBlockCopyButton`, `CodeBlockLanguageSelector` | Shiki 语法高亮，行号，复制 |
+| **上下文用量** | `Context`, `ContextTrigger`, `ContextContent`, `ContextInputUsage`, `ContextOutputUsage`, `ContextReasoningUsage`, `ContextCacheUsage` | Token 使用量展示，费用计算 |
+| **权限确认** | `Confirmation`, `ConfirmationRequest`, `ConfirmationAccepted`, `ConfirmationRejected`, `ConfirmationActions` | 工具调用前的用户确认交互 |
+| **来源引用** | `Sources`, `SourcesTrigger`, `SourcesContent`, `Source` | 展示 AI 回答引用的来源 |
+
+**核心组件详解**：
+
+#### Conversation 对话容器
+
+```tsx
+import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements";
+
+<Conversation>
+  <ConversationContent>
+    {/* 消息列表 */}
+  </ConversationContent>
+  <ConversationScrollButton />
+</Conversation>
+```
+
+- 使用 `use-stick-to-bottom` 实现自动滚动
+- 支持 `role="log"` ARIA 属性
+- 提供 `ConversationDownload` 导出 Markdown
+
+#### PromptInput 输入组件
+
+```tsx
+import { PromptInput, PromptInputTextarea, PromptInputSubmit, PromptInputProvider } from "@/components/ai-elements";
+
+<PromptInputProvider initialInput="">
+  <PromptInput onSubmit={handleSubmit}>
+    <PromptInputTextarea placeholder="输入消息..." />
+    <PromptInputSubmit status={status} onStop={handleStop} />
+  </PromptInput>
+</PromptInputProvider>
+```
+
+- 支持文件拖放、粘贴（自动检测 MIME 类型）
+- `PromptInputProvider` 提供全局状态（可选）
+- `PromptInputSubmit` 自动切换发送/停止图标
+- 支持组合输入法（IME）正确处理
+
+#### Tool 工具调用
+
+```tsx
+import { Tool, ToolHeader, ToolContent, ToolInput, ToolOutput } from "@/components/ai-elements";
+
+<Tool>
+  <ToolHeader type="tool-read" state="output-available" title="读取文件" />
+  <ToolContent>
+    <ToolInput input={{ path: "src/index.ts" }} />
+    <ToolOutput output={content} errorText={null} />
+  </ToolContent>
+</Tool>
+```
+
+- 状态徽章：`Running` / `Completed` / `Error` / `Denied` / `Awaiting Approval`
+- 自动折叠/展开
+- JSON 输入/输出高亮
+
+#### Reasoning 推理过程
+
+```tsx
+import { Reasoning, ReasoningTrigger, ReasoningContent } from "@/components/ai-elements";
+
+<Reasoning isStreaming={isThinking} duration={thinkingDuration}>
+  <ReasoningTrigger />
+  <ReasoningContent>{thinkingText}</ReasoningContent>
+</Reasoning>
+```
+
+- 流式输出时自动展开，完成后延迟收起
+- 显示思考时长
+- 使用 Streamdown 渲染 Markdown（支持代码、数学、Mermaid）
+
+#### Confirmation 权限确认
+
+```tsx
+import { Confirmation, ConfirmationRequest, ConfirmationActions, ConfirmationAction } from "@/components/ai-elements";
+
+<Confirmation approval={approval} state="approval-requested">
+  <ConfirmationRequest>
+    <p>Agent 请求执行写入操作</p>
+  </ConfirmationRequest>
+  <ConfirmationActions>
+    <ConfirmationAction onClick={handleAllow}>允许</ConfirmationAction>
+    <ConfirmationAction onClick={handleDeny}>拒绝</ConfirmationAction>
+  </ConfirmationActions>
+</Confirmation>
+```
+
+- 与 `tool_call` 钩子配合使用
+- 支持请求/接受/拒绝三种状态展示
+
+#### Context 上下文用量
+
+```tsx
+import { Context, ContextTrigger, ContextContent, ContextInputUsage } from "@/components/ai-elements";
+
+<Context usedTokens={5000} maxTokens={200000} usage={usage} modelId="claude-3-5-sonnet">
+  <ContextTrigger />
+  <ContextContent>
+    <ContextContentHeader />
+    <ContextContentBody>
+      <ContextInputUsage />
+      <ContextOutputUsage />
+      <ContextReasoningUsage />
+      <ContextCacheUsage />
+    </ContextContentBody>
+    <ContextContentFooter />
+  </ContextContent>
+</Context>
+```
+
+- 环形进度指示器
+- 使用 `tokenlens` 计算费用
+- 支持输入/输出/推理/缓存四类 token 统计
+
+**与 chat/ 组件的关系**：
+
+```text
+components/chat/                  # 业务组件（组合 ai-elements + adapters 桥接）
+├── chat-view.tsx                 # 顶层容器：AgentModelSelector + AgentMessageList + AgentPromptInput + AgentConfirmation
+├── agent-message-list.tsx        # → Conversation + ConversationContent + Reasoning + Checkpoint
+├── agent-prompt-input.tsx        # → PromptInput + PromptInputTextarea + PromptInputSubmit（包装层保留历史/菜单）
+├── agent-confirmation.tsx        # → Confirmation + ConfirmationActions（包装层保留风险等级 + 记住会话）
+├── adapters/                     # pi-agent-core 类型 → ai-elements 类型映射
+│   ├── input-adapter.ts          # isGenerating → ChatStatus("streaming"/"ready"/"error")
+│   ├── permission-adapter.ts     # PermissionRequest → AdaptedConfirmation
+│   ├── reasoning-adapter.ts      # ThinkingContent[] → { content, isStreaming }
+│   ├── tool-adapter.ts           # ToolCall + ToolResult → DynamicToolUIPart
+│   ├── context-adapter.ts        # SessionStats + ContextUsage → ContextProps
+│   └── message-adapter.ts        # AgentMessage[] → ConversationMessage[]
+└── message-renderers/
+    └── assistant-message.tsx      # → CodeBlock(Shiki) + Reasoning(inline) + Shimmer(streaming)
+```
+
+`chat/` 目录下的业务组件负责：
+
+- 连接 IPC 数据（`useChat`、`useSession` 等）
+- 通过 `adapters/` 层桥接 pi-agent-core 类型到 ai-elements 类型
+- 包装 `ai-elements/` 原语，添加 xiaoa 特有功能（输入历史、技能菜单、权限风险等级等）
+
+`ai-elements/` 目录下的原语组件负责：
+
+- 纯 UI 展示（不依赖 pi-agent-core 类型）
+- 交互状态管理（展开/折叠、输入状态）
+- 可复用的视觉模式
+
+### 6.4 pi → ai-elements 适配层（adapters/）
+
+pi-coding-agent 使用自有类型体系（`AgentMessage`, `ContentBlock`, `ToolCall`, `ThinkingContent`），而 ai-elements 期望 `ai` SDK 类型（`ChatStatus`, `DynamicToolUIPart`, `FileUIPart`）。`adapters/` 层统一做桥接，避免在组件内部做类型转换。
+
+**设计原则**：
+
+- **单向映射**：adapter 函数仅做 pi → ai-elements 方向的转换，不修改原始数据
+- **纯函数**：所有 adapter 均为无副作用的纯函数，便于测试
+- **组件不感知 pi 类型**：ai-elements 组件仅接收标准 props，不依赖 pi-agent-core
+
+**适配器清单**：
+
+| 适配器 | 输入（pi 类型） | 输出（ai-elements 类型） | 用途 |
+|--------|-----------------|--------------------------|------|
+| `input-adapter` | `isGenerating: boolean, disabled: boolean` | `ChatStatus` | 控制 `PromptInputSubmit` 的发送/停止/错误状态 |
+| `permission-adapter` | `PermissionRequest \| null` | `AdaptedConfirmation \| null` | 映射权限请求到 Confirmation 组件 state |
+| `reasoning-adapter` | `AssistantMessage.content[]` | `{ content: string, isStreaming: boolean }` | 提取 thinking block 供 Reasoning 组件渲染 |
+| `tool-adapter` | `ToolCall + ToolResult` | `DynamicToolUIPart` (state/input/output) | 映射工具调用状态到 Tool 组件 |
+| `context-adapter` | `SessionStats + ContextUsage` | `ContextProps` | 映射会话统计到 Context 组件 |
+| `message-adapter` | `AgentMessage[]` | `ConversationMessage[]` | 映射消息列表供 ConversationDownload 导出 |
+
+**包装组件与 ai-elements 原语的关系**：
+
+```text
+AgentPromptInput（包装层）
+├── 输入历史（ArrowUp/Down 浏览）
+├── / 触发 SkillMenu、@ 触发 FileMenu
+├── 字符计数 + 限制提示
+└── ai-elements PromptInput（原语）
+    ├── PromptInputTextarea
+    ├── PromptInputFooter
+    │   ├── PromptInputTools
+    │   └── PromptInputSubmit ← input-adapter.toChatStatus()
+    └── onSubmit → 提取 text → onSend(string)
+
+AgentConfirmation（包装层）
+├── 权限类型图标（file_read/write/execute/network）
+├── 风险等级显示（低/中/高）
+├── "本次会话始终允许" 复选框
+└── ai-elements Confirmation（原语）
+    ├── ConfirmationTitle
+    ├── ConfirmationRequest
+    └── ConfirmationActions → onAllow/onDeny
+
+AgentMessageList（统一容器）
+├── isStreamingMessageRedundant → 防闪烁
+├── processMessages → 拆分 assistant content + toolCalls
+└── ai-elements Conversation（原语）
+    ├── ConversationContent
+    │   ├── ConversationEmptyState
+    │   ├── Reasoning（列表级 thinking panel）
+    │   ├── AssistantMessage → CodeBlock(Shiki) + Reasoning(inline) + Shimmer
+    │   ├── UserMessage
+    │   ├── ToolMessage → Tool + ToolHeader + ToolContent
+    │   ├── CompactionCheckpoint → Checkpoint + CheckpointTrigger
+    │   ├── PermissionMessage（无 ai-elements 对应，保留自写）
+    │   └── MemoryMessage（无 ai-elements 对应，保留自写）
+    └── ConversationScrollButton
+```
 
 ---
 
@@ -1441,18 +1701,21 @@ export const memorySearchTool: ToolDefinition<typeof memorySearchSchema> = {
 
 ### 9.7 ChatEvent 类型（AgentSessionEvent 映射）
 
-| AgentSessionEvent | ChatEvent | 说明 |
-|---|---|---|
-| `message_update` | `message_delta` | 流式文本增量 |
-| `message_end` | `message_end` | 消息完成 |
-| `tool_execution_start` | `tool_call` | 工具调用开始 |
-| `tool_execution_end` | `tool_result` | 工具执行结果 |
-| `auto_compaction_start` | `compaction_start` | 上下文压缩开始 |
-| `auto_compaction_end` | `compaction_end` | 上下文压缩完成 |
-| `auto_retry_start` | `retry_start` | 自动重试开始 |
-| `auto_retry_end` | `retry_end` | 自动重试完成 |
-| — | `run_start / run_end / run_error` | 运行生命周期 |
-| — | `permission_request / permission_resolved` | 权限对话 |
+| AgentSessionEvent | ChatEvent | 说明 | ai-elements 组件 |
+|---|---|---|---|
+| `message_update` | `message_delta` | 流式文本增量 | `ConversationContent` + Streamdown |
+| `message_end` | `message_end` | 消息完成 | — |
+| `tool_execution_start` | `tool_call` | 工具调用开始 | `Tool` + `ToolHeader` (state=input-available) |
+| `tool_execution_end` | `tool_result` | 工具执行结果 | `ToolContent` + `ToolOutput` |
+| `auto_compaction_start` | `compaction_start` | 上下文压缩开始 | — |
+| `auto_compaction_end` | `compaction_end` | 上下文压缩完成 | — |
+| `auto_retry_start` | `retry_start` | 自动重试开始 | — |
+| `auto_retry_end` | `retry_end` | 自动重试完成 | — |
+| `turn_start` | `turn_start` | 对话轮次开始 | `Reasoning` (isStreaming=true) |
+| `turn_end` | `turn_end` | 对话轮次结束 | `Reasoning` (isStreaming=false) |
+| — | `run_start / run_end / run_error` | 运行生命周期 | `PromptInputSubmit` (status 切换) |
+| — | `permission_request` | 权限请求 | `Confirmation` (state=approval-requested) |
+| — | `permission_resolved` | 权限响应 | `ConfirmationAccepted` / `ConfirmationRejected` |
 
 ### 9.8 认证适配
 
@@ -1529,6 +1792,39 @@ Anthropic / OpenAI / Google / xAI / Groq / Mistral / DeepSeek / Ollama / Custom 
 - 会话列表读取 `sessions/index.json`（适配 pi SessionManager JSONL 格式）
 - 纯 React 消息列表（`agentSession.messages` 驱动）
 - 极薄 IPC 层 `src/ipc/chat/` 精简（handlers / schemas / store 三文件）
+
+### Phase 3.5 — ai-elements 组件库集成
+
+**目标**：建立可复用的 AI 对话组件库，为后续 UI 开发提供基础
+
+**核心组件**：
+
+- ✅ `Conversation` 对话容器（use-stick-to-bottom 自动滚动）
+- ✅ `PromptInput` 输入组件（文件拖放、粘贴、Provider 模式）
+- ✅ `Attachments` 附件管理（图片/文档预览、来源引用）
+- ✅ `Tool` 工具调用展示（状态徽章、参数/结果折叠）
+- ✅ `Reasoning` 推理过程（流式输出、自动展开/收起）
+- ✅ `ChainOfThought` 思维链（步骤展示、搜索结果）
+- ✅ `CodeBlock` 代码块（Shiki 高亮、行号、复制）
+- ✅ `Context` Token 使用量（输入/输出/推理/缓存统计）
+- ✅ `Confirmation` 权限确认（请求/接受/拒绝状态）
+- ✅ `Sources` 来源引用列表
+
+**业务组件迁移**：
+
+- `chat-view.tsx` → 组合 `Conversation` + `PromptInput`
+- `message-list.tsx` → 使用 `ConversationContent`
+- `message-input.tsx` → 使用 `PromptInputTextarea` + `PromptInputSubmit`
+- `tool-call-display.tsx` → 使用 `Tool` 组件
+- `permission-dialog.tsx` → 使用 `Confirmation` 组件
+- `context-usage.tsx` → 使用 `Context` 组件
+
+**依赖安装**：
+
+- `use-stick-to-bottom` — 自动滚动
+- `streamdown` — Markdown 流式渲染（支持代码、数学、Mermaid）
+- `shiki` — 代码语法高亮
+- `tokenlens` — Token 费用计算
 
 ### Phase 4 — Agent 配置 + Skill 系统
 

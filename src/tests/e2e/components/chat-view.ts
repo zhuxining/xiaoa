@@ -10,7 +10,7 @@ export class ChatViewComponent {
   private readonly selectors = {
     container: '[data-slot="chat-view"]',
     messageList: '[data-slot="agent-message-list"]',
-    messageInput: '[data-slot="message-input"]',
+    messageInput: '[data-slot="agent-prompt-input"]',
     textarea: "textarea",
     sendButton: "button:has(.lucide-send)",
     abortButton: "button:has(.lucide-square)",

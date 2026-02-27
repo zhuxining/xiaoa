@@ -2,19 +2,31 @@ import type { AgentMessage, AgentTool } from "@mariozechner/pi-agent-core";
 import { useNavigate } from "@tanstack/react-router";
 import { Settings, Sparkles } from "lucide-react";
 import { useState } from "react";
+import {
+  ModelSelector,
+  ModelSelectorContent,
+  ModelSelectorEmpty,
+  ModelSelectorGroup,
+  ModelSelectorInput,
+  ModelSelectorItem,
+  ModelSelectorList,
+  ModelSelectorLogo,
+  ModelSelectorName,
+  ModelSelectorTrigger,
+} from "@/components/ai-elements/model-selector";
 import { Button } from "@/components/ui/button";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { MODELS, type ModelInfo } from "@/constants/models";
+  getModelsByProvider,
+  type ModelInfo,
+  PROVIDERS,
+} from "@/constants/models";
+import type { ThinkingLevel } from "@/ipc/chat/schemas";
 import type { ChatSession } from "@/types/session";
 import { cn } from "@/utils/tailwind";
+import { AgentConfirmation } from "./agent-confirmation";
 import { AgentMessageList } from "./agent-message-list";
+import { AgentPromptInput } from "./agent-prompt-input";
 import type { FileMenuItem } from "./file-menu";
-import { MessageInput } from "./message-input";
-import { PermissionBar } from "./permission-bar";
 import type { PermissionRequest } from "./permission-dialog";
 import { SessionList } from "./session-list";
 import type { SkillMenuItem } from "./skill-menu";
@@ -45,6 +57,7 @@ interface ChatViewProps {
   skills?: SkillMenuItem[];
   /** 流式消息（追加到 messages 末尾） */
   streamingMessage?: AgentMessage | null;
+  thinkingLevel?: ThinkingLevel;
   /** 可用工具列表 */
   tools?: AgentTool[];
 }
@@ -52,7 +65,7 @@ interface ChatViewProps {
 /**
  * 模型选择器组件
  */
-function ModelSelector({
+function AgentModelSelector({
   currentModel,
   onModelChange,
 }: {
@@ -61,37 +74,45 @@ function ModelSelector({
 }) {
   const [open, setOpen] = useState(false);
 
-  const handleSelect = (model: ModelInfo) => {
-    onModelChange?.(model);
-    setOpen(false);
-  };
-
   const displayName = currentModel?.name || "选择模型";
 
   return (
-    <Popover onOpenChange={setOpen} open={open}>
-      <PopoverTrigger asChild>
+    <ModelSelector onOpenChange={setOpen} open={open}>
+      <ModelSelectorTrigger asChild>
         <Button className="text-muted-foreground" size="sm" variant="ghost">
           {displayName}
         </Button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-56 p-2">
-        <div className="space-y-1">
-          {MODELS.map((model) => (
-            <button
-              className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent ${
-                currentModel?.id === model.id ? "bg-accent" : ""
-              }`}
-              key={model.id}
-              onClick={() => handleSelect(model)}
-              type="button"
-            >
-              {model.name}
-            </button>
-          ))}
-        </div>
-      </PopoverContent>
-    </Popover>
+      </ModelSelectorTrigger>
+      <ModelSelectorContent title="选择模型">
+        <ModelSelectorInput placeholder="搜索模型..." />
+        <ModelSelectorList>
+          <ModelSelectorEmpty>未找到匹配模型</ModelSelectorEmpty>
+          {PROVIDERS.map((provider) => {
+            const models = getModelsByProvider(provider.id);
+            if (models.length === 0) {
+              return null;
+            }
+            return (
+              <ModelSelectorGroup heading={provider.name} key={provider.id}>
+                {models.map((model) => (
+                  <ModelSelectorItem
+                    key={model.id}
+                    onSelect={() => {
+                      onModelChange?.(model);
+                      setOpen(false);
+                    }}
+                    value={model.id}
+                  >
+                    <ModelSelectorLogo provider={model.provider} />
+                    <ModelSelectorName>{model.name}</ModelSelectorName>
+                  </ModelSelectorItem>
+                ))}
+              </ModelSelectorGroup>
+            );
+          })}
+        </ModelSelectorList>
+      </ModelSelectorContent>
+    </ModelSelector>
   );
 }
 
@@ -101,6 +122,7 @@ export function ChatView({
   messages,
   isGenerating,
   streamingMessage,
+  thinkingLevel = "minimal",
   skills = [],
   files = [],
   tools = [],
@@ -149,7 +171,7 @@ export function ChatView({
           </div>
           <div className="flex items-center gap-2">
             {/* 模型选择按钮 */}
-            <ModelSelector
+            <AgentModelSelector
               currentModel={currentModel}
               onModelChange={onModelChange}
             />
@@ -173,11 +195,12 @@ export function ChatView({
           isStreaming={isGenerating}
           messages={messages}
           streamingMessage={streamingMessage}
+          thinkingLevel={thinkingLevel}
           tools={tools}
         />
 
         {/* 输入区域 */}
-        <MessageInput
+        <AgentPromptInput
           files={files}
           isGenerating={isGenerating}
           onAbort={onAbort}
@@ -186,8 +209,8 @@ export function ChatView({
           skills={skills}
         />
 
-        {/* 权限确认条 */}
-        <PermissionBar
+        {/* 权限确认 */}
+        <AgentConfirmation
           key={permissionRequest?.id ?? "permission-none"}
           onAllow={onPermissionAllow}
           onDeny={onPermissionDeny}

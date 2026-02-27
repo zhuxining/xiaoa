@@ -35,6 +35,96 @@ import type { ActiveRun } from "./run-types";
 // biome-ignore lint/performance/noBarrelFile: 便捷重导出
 export { extractMessageText } from "./run-store";
 
+type AssistantMessageEvent = Extract<
+  AgentSessionEvent,
+  { type: "message_update" }
+>["assistantMessageEvent"];
+
+function makeBaseEvent(run: ActiveRun) {
+  return {
+    runId: run.runId,
+    scope: run.scope,
+    workspaceId: run.workspaceId,
+    sessionId: run.sessionId,
+  };
+}
+
+function handleThinkingEvent(
+  key: string,
+  run: ActiveRun,
+  event: AssistantMessageEvent
+): boolean {
+  if (event.type === "thinking_start") {
+    appendEvent(key, { ...makeBaseEvent(run), type: "thinking_start" });
+    return true;
+  }
+  if (event.type === "thinking_delta") {
+    const delta = event.delta ?? "";
+    if (delta) {
+      appendEvent(key, {
+        ...makeBaseEvent(run),
+        type: "thinking_delta",
+        thinkingContent: delta,
+      });
+    }
+    return true;
+  }
+  if (event.type === "thinking_end") {
+    appendEvent(key, {
+      ...makeBaseEvent(run),
+      type: "thinking_end",
+      thinkingContent: event.content ?? "",
+    });
+    return true;
+  }
+  return false;
+}
+
+function handleMessageUpdate(
+  key: string,
+  run: ActiveRun,
+  event: Extract<AgentSessionEvent, { type: "message_update" }>
+): void {
+  if (event.assistantMessageEvent.type === "text_delta") {
+    const delta = event.assistantMessageEvent.delta ?? "";
+    if (!delta) {
+      return;
+    }
+    run.assistantBuffer += delta;
+    appendEvent(key, {
+      ...makeBaseEvent(run),
+      type: "message_delta",
+      content: delta,
+    });
+  } else {
+    handleThinkingEvent(key, run, event.assistantMessageEvent);
+  }
+}
+
+function handleMessageEnd(
+  key: string,
+  run: ActiveRun,
+  event: Extract<AgentSessionEvent, { type: "message_end" }>
+): void {
+  const message = event.message;
+  if (message && (!("role" in message) || message.role === "assistant")) {
+    const text = message.content
+      .filter(
+        (part): part is { type: "text"; text: string } => part.type === "text"
+      )
+      .map((p) => p.text)
+      .join("");
+    if (text) {
+      run.assistantBuffer = text;
+    }
+  }
+  appendEvent(key, {
+    ...makeBaseEvent(run),
+    type: "message_end",
+    content: run.assistantBuffer,
+  });
+}
+
 /**
  * 将 AgentSessionEvent 转换并追加到 ChatEvent 缓冲
  */
@@ -44,140 +134,60 @@ export function bridgeEvent(key: string, event: AgentSessionEvent): void {
     return;
   }
 
+  const base = makeBaseEvent(run);
+
   switch (event.type) {
     case "message_update":
-      if (event.assistantMessageEvent.type === "text_delta") {
-        const delta = event.assistantMessageEvent.delta ?? "";
-        if (!delta) {
-          return;
-        }
-        run.assistantBuffer += delta;
-        appendEvent(key, {
-          runId: run.runId,
-          scope: run.scope,
-          workspaceId: run.workspaceId,
-          sessionId: run.sessionId,
-          type: "message_delta",
-          content: delta,
-        });
-      }
+      handleMessageUpdate(key, run, event);
       break;
 
-    case "message_end": {
-      const message = event.message;
-      if (message && (!("role" in message) || message.role === "assistant")) {
-        const text = message.content
-          .filter(
-            (part): part is { type: "text"; text: string } =>
-              part.type === "text"
-          )
-          .map((p) => p.text)
-          .join("");
-        if (text) {
-          run.assistantBuffer = text;
-        }
-      }
-      appendEvent(key, {
-        runId: run.runId,
-        scope: run.scope,
-        workspaceId: run.workspaceId,
-        sessionId: run.sessionId,
-        type: "message_end",
-        content: run.assistantBuffer,
-      });
+    case "message_end":
+      handleMessageEnd(key, run, event);
       break;
-    }
 
     case "tool_execution_start":
       appendEvent(key, {
-        runId: run.runId,
-        scope: run.scope,
-        workspaceId: run.workspaceId,
-        sessionId: run.sessionId,
+        ...base,
         type: "tool_start",
         toolName: event.toolName,
       });
       break;
 
     case "tool_execution_end":
-      appendEvent(key, {
-        runId: run.runId,
-        scope: run.scope,
-        workspaceId: run.workspaceId,
-        sessionId: run.sessionId,
-        type: "tool_end",
-        toolName: event.toolName,
-      });
+      appendEvent(key, { ...base, type: "tool_end", toolName: event.toolName });
       break;
 
     case "auto_compaction_start":
-      appendEvent(key, {
-        runId: run.runId,
-        scope: run.scope,
-        workspaceId: run.workspaceId,
-        sessionId: run.sessionId,
-        type: "compaction_start",
-      });
+      appendEvent(key, { ...base, type: "compaction_start" });
       break;
 
     case "auto_compaction_end":
-      appendEvent(key, {
-        runId: run.runId,
-        scope: run.scope,
-        workspaceId: run.workspaceId,
-        sessionId: run.sessionId,
-        type: "compaction_end",
-      });
+      appendEvent(key, { ...base, type: "compaction_end" });
       break;
 
     case "auto_retry_start":
       appendEvent(key, {
-        runId: run.runId,
-        scope: run.scope,
-        workspaceId: run.workspaceId,
-        sessionId: run.sessionId,
+        ...base,
         type: "retry_start",
         error: event.errorMessage,
       });
       break;
 
     case "auto_retry_end":
-      appendEvent(key, {
-        runId: run.runId,
-        scope: run.scope,
-        workspaceId: run.workspaceId,
-        sessionId: run.sessionId,
-        type: "retry_end",
-        error: event.finalError,
-      });
+      appendEvent(key, { ...base, type: "retry_end", error: event.finalError });
       break;
 
     case "turn_start":
-      appendEvent(key, {
-        runId: run.runId,
-        scope: run.scope,
-        workspaceId: run.workspaceId,
-        sessionId: run.sessionId,
-        type: "turn_start",
-      });
+      appendEvent(key, { ...base, type: "turn_start" });
       break;
 
     case "turn_end":
-      appendEvent(key, {
-        runId: run.runId,
-        scope: run.scope,
-        workspaceId: run.workspaceId,
-        sessionId: run.sessionId,
-        type: "turn_end",
-      });
+      appendEvent(key, { ...base, type: "turn_end" });
       break;
 
     case "tool_execution_update":
       appendEvent(key, {
-        runId: run.runId,
-        scope: run.scope,
-        workspaceId: run.workspaceId,
-        sessionId: run.sessionId,
+        ...base,
         type: "tool_update",
         toolName: event.toolName,
       });

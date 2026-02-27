@@ -36,6 +36,7 @@ xiaoa/
     │   └── tools/               # 自定义 ToolDefinition（memory / knowledge）
     ├── actions/         # 客户端 IPC 调用封装（Renderer → Main）
     ├── components/      # React 组件
+    │   ├── ai-elements/ # AI 相关组件（消息气泡、工具调用等）
     │   └── ui/          # shadcn/ui 组件
     ├── constants/       # 常量
     ├── ipc/             # oRPC handlers（Main 进程，极薄委托，不直接引用 pi）
