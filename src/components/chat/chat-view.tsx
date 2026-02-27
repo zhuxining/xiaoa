@@ -36,6 +36,7 @@ interface ChatViewProps {
   onPermissionDeny?: (request: PermissionRequest) => void;
   onSessionCreate?: () => void;
   onSessionDelete?: (id: string) => void;
+  onSessionRename?: (id: string, name: string) => void;
   onSessionSelect: (id: string) => void;
   onSkillSelect?: (skill: SkillMenuItem) => void;
   permissionRequest?: PermissionRequest | null;
@@ -108,6 +109,7 @@ export function ChatView({
   onSessionSelect,
   onSessionCreate,
   onSessionDelete,
+  onSessionRename,
   onMessageSend,
   onAbort,
   onSkillSelect,
@@ -133,6 +135,7 @@ export function ChatView({
           currentSessionId={currentSessionId}
           onSessionCreate={onSessionCreate}
           onSessionDelete={onSessionDelete}
+          onSessionRename={onSessionRename}
           onSessionSelect={onSessionSelect}
           sessions={sessions}
         />

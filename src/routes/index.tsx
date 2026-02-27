@@ -51,6 +51,7 @@ function HomePage() {
       onPermissionDeny={chat.denyPermission}
       onSessionCreate={chat.createSession}
       onSessionDelete={chat.deleteSession}
+      onSessionRename={chat.renameSession}
       onSessionSelect={chat.selectSession}
       permissionRequest={chat.permissionRequest}
       sessions={chat.sessions}

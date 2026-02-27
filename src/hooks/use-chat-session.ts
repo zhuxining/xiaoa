@@ -19,6 +19,7 @@ import {
 import {
   createSession as createSessionAction,
   deleteSession as deleteSessionAction,
+  renameSession as renameSessionAction,
   getSessionMessages,
   listSessions,
 } from "@/actions/session";
@@ -48,6 +49,7 @@ export interface UseChatSessionReturn {
   createSession: () => void;
   currentSessionId: string | undefined;
   deleteSession: (id: string) => void;
+  renameSession: (id: string, name: string) => void;
   denyPermission: (request: PermissionRequest) => void;
 
   isGenerating: boolean;
@@ -317,6 +319,14 @@ export function useChatSession(
     },
   });
 
+  const renameSessionMutation = useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) =>
+      renameSessionAction({ workspaceId, id, name }),
+    onSuccess: async () => {
+      await refetchSessionList();
+    },
+  });
+
   // ── Send Message ─────────────────────────────────────────────
   const sendMessage = useCallback(
     async (content: string) => {
@@ -433,6 +443,8 @@ export function useChatSession(
     selectSession: setCurrentSessionId,
     createSession: () => createSessionMutation.mutate(),
     deleteSession: (id: string) => deleteSessionMutation.mutate(id),
+    renameSession: (id: string, name: string) =>
+      renameSessionMutation.mutate({ id, name }),
 
     messages,
     streamingMessage,
