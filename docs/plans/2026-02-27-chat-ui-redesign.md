@@ -29,6 +29,7 @@
 **状态**：todo
 
 **文件：**
+
 - 创建: `src/components/chat/types/turn.ts`
 - 创建: `src/components/chat/utils/turn-utils.ts`
 
@@ -212,6 +213,7 @@ git commit -m "feat(chat): add Turn data model and grouping utilities"
 **状态**：todo
 
 **文件：**
+
 - 创建: `src/components/chat/hooks/use-turn-phase.ts`
 
 **步骤 1: 编写 useTurnPhase Hook**
@@ -279,6 +281,7 @@ git commit -m "feat(chat): add useTurnPhase hook for phase state machine"
 **状态**：todo
 
 **文件：**
+
 - 创建: `src/components/chat/components/activity-item.tsx`
 - 创建: `src/components/chat/components/activity-tree.tsx`
 
@@ -350,7 +353,7 @@ export function ActivityItemView({ activity, isExpanded, onToggle }: ActivityIte
     >
       {/* 树形连接线 */}
       {activity.depth > 0 && (
-        <div className="absolute left-[-4px] top-2 bottom-2 w-px bg-border/30" />
+        <div className="absolute -left-1 top-2 bottom-2 w-px bg-border/30" />
       )}
 
       {/* 状态图标 */}
@@ -437,6 +440,7 @@ git commit -m "feat(chat): add ActivityTree component with depth indentation"
 **状态**：todo
 
 **文件：**
+
 - 创建: `src/components/chat/components/turn-card.tsx`
 - 创建: `src/components/chat/components/response-card.tsx`
 
@@ -651,6 +655,7 @@ git commit -m "feat(chat): add TurnCard component with phase-based rendering"
 **状态**：todo
 
 **文件：**
+
 - 创建: `src/components/chat/components/turn-list.tsx`
 
 **步骤 1: 编写 TurnList 组件**
@@ -735,6 +740,7 @@ git commit -m "feat(chat): add TurnList container component"
 **状态**：todo
 
 **文件：**
+
 - 创建: `src/components/chat/hooks/use-turn-expansion.ts`
 
 **步骤 1: 编写 useTurnExpansion Hook**
@@ -861,6 +867,7 @@ git commit -m "feat(chat): add useTurnExpansion hook with LRU persistence"
 **状态**：todo
 
 **文件：**
+
 - 创建: `src/components/chat/components/fade-scroll-area.tsx`
 
 **步骤 1: 编写 FadeScrollArea 组件**
@@ -960,6 +967,7 @@ git commit -m "feat(chat): add FadeScrollArea with gradient fade boundaries"
 **状态**：todo
 
 **文件：**
+
 - 创建: `src/components/chat/components/input-container.tsx`
 
 **步骤 1: 编写 InputContainer 组件**
@@ -1062,12 +1070,14 @@ git commit -m "feat(chat): add InputContainer with Framer Motion animation"
 **状态**：todo
 
 **文件：**
+
 - 修改: `src/components/chat/chat-view.tsx`
 - 修改: `src/components/chat/index.ts`（添加导出）
 
 **步骤 1: 更新 ChatView 使用 TurnList**
 
 在 `chat-view.tsx` 中：
+
 1. 导入 `TurnList` 替换 `AgentMessageList`
 2. 传递新的 props 结构
 3. 保持向后兼容的 API
@@ -1111,6 +1121,7 @@ git commit -m "refactor(chat): integrate TurnList into ChatView"
 **状态**：todo
 
 **文件：**
+
 - 创建: `src/components/chat/index.ts`
 - 创建: `src/components/chat/types/index.ts`
 
@@ -1168,6 +1179,7 @@ git commit -m "feat(chat): add component and type exports"
 **状态**：todo
 
 **文件：**
+
 - 创建: `src/tests/unit/turn-utils.test.ts`
 - 创建: `src/tests/unit/use-turn-phase.test.ts`
 
@@ -1260,11 +1272,13 @@ git commit -m "test(chat): add unit tests for turn-utils"
 **状态**：todo
 
 **文件：**
+
 - 修改: `docs/design/architecture.md`（更新 Chat 模块架构说明）
 
 **步骤 1: 更新架构文档**
 
 在 `docs/design/architecture.md` 中添加 Turn-Based Chat UI 章节，说明：
+
 1. Turn 数据模型
 2. Phase 状态机
 3. 组件层级结构

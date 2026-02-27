@@ -1741,106 +1741,19 @@ Anthropic / OpenAI / Google / xAI / Groq / Mistral / DeepSeek / Ollama / Custom 
 
 ## 10. 实现路线图
 
-### Phase 1 — 基础骨架 + UI 壳
+### 已完成阶段 ✅
 
-- 左侧栏 + 主内容区布局
-- 全局设置（config.json + 设置页面）
-- 工作区 CRUD 和切换
-- 本地存储层（credentials.enc 加密存储）
+| 阶段 | 内容 |
+| --- | --- |
+| Phase 1 | 基础骨架 + UI 壳（布局、全局设置、工作区 CRUD、本地存储层） |
+| Phase 2 | Agent 核心重构（pi `codingTools` 替代手工工具、Extension 钩子体系、分层规则确立） |
+| Phase 2.5 | pi-coding-agent 集成（Session Pool、ModelRegistry、事件转发、领域重组） |
+| Phase 3 | 权限守卫 + 对话 UI（`tool_call` 钩子驱动权限、会话列表、极薄 IPC 层） |
+| Phase 3.5 | ai-elements 组件库（25 个核心组件 + 业务组件迁移） |
+| Phase 4 | Agent 配置 + Skill 系统（人设/模型配置、技能/记忆/知识库管理 GUI） |
+| Phase 5 | 项目工作视图（文件树、文件预览、@引用、技能快捷调用） |
 
-### Phase 2 — Agent 核心重构 ✅
-
-**已完成**：
-
-- ✅ 删除 `src/agent/tools/file-tools.ts`、`src/agent/tools/bash-tool.ts`（已由 pi `codingTools` 替代）
-- ✅ 删除 `src/agent/permission/`（权限逻辑移至 `extension-factory.ts` `tool_call` 钩子）
-- ✅ 新建 `src/agent/model.ts`（`getModelFromConfig()`，支持所有 Provider）
-- ✅ 新建 `src/agent/extension-factory.ts`（`createXiaoaExtension`）
-- ✅ 新建 `src/agent/system-prompt.ts`（`composeWorkspaceSystemPrompt / composeGlobalSystemPrompt`）
-- ✅ 新建 `src/agent/permission.ts`（Promise 阻塞式权限流）
-- ✅ 重写 `src/agent/workspace-session.ts`：`DefaultResourceLoader` + `SessionManager.open` + `codingTools`
-- ✅ 重写 `memory-tools.ts` / `knowledge-tools.ts` 为 `ToolDefinition` 接口
-- ✅ 删除死代码：`src/ipc/chat/agent/`、`src/ipc/chat/run/`、`src/ipc/chat/tools/`、`src/ipc/chat/permission/`、`src/ipc/sisson/`（目录不存在，无需删除）
-- ✅ `src/ipc/chat/store.ts`：`PendingPermission` 定义在 `src/agent/permission.ts`，非 IPC 层，store.ts 为有效重导出模块
-- ✅ 更新路由文件：修复 `routes/workspace/$workspaceId/project/$projectId.tsx` 中 queryKey 拼写错误（"sisson" → "session"）
-- ✅ 删除废弃测试：`tests/unit/sisson-workspace-store.test.ts`（文件不存在，无需删除）
-- ✅ 新建 `src/agent/paths.ts`：抽出公共路径计算（getWorkspaceDir / getGlobalDir / getBaseDir / getSessionsDir / getSessionFilePath）
-- ✅ 新建 `src/agent/session-store.ts`：将 `ipc/session/handlers.ts` 中的 pi SessionManager 交互下沉到 agent 层
-- ✅ `src/ipc/session/handlers.ts`：改为极薄委托（仅 schema 校验 + 调用 agent/session-store）
-- ✅ `src/agent/workspace-session.ts`：复用 `agent/paths.ts` 公共路径，消除重复
-- ✅ 确立分层规则：`src/ipc/` 不得直接 import pi-coding-agent，`src/agent/` 是 pi 唯一入口
-
-### Phase 2.5 — 全面拥抱 pi-coding-agent + 领域重组 ✅
-
-**已完成**：
-
-- ✅ **Session Pool**：新建 `src/agent/session/session-pool.ts`，AgentSession 长生命周期缓存，跨消息复用
-- ✅ **ModelRegistry**：`registerProvider()` 携带 `models[]`，替代手工 Model 构造
-- ✅ **事件转发增强**：新增 `turn_start/end`、`compaction_start/end`、`retry_start/end`、`tool_update` 事件
-- ✅ **新 IPC APIs**：`chat.stats`、`chat.contextUsage`、`chat.activeTools`、`session.rename`
-- ✅ **领域重组**：
-  - `extension/`：extension-factory.ts、permission.ts、system-prompt.ts
-  - `model/`：model.ts、providers.ts
-  - `session/`：session-pool.ts、session-store.ts、workspace-session.ts
-  - `run/`：run-executor.ts、run-store.ts、run-types.ts（位置不变）
-- ✅ **Auth 优化**：多 provider API key 按 provider 分发
-- ✅ 更新 CLAUDE.md 和 architecture.md 反映新目录结构
-
-### Phase 3 — 权限守卫 + 对话 UI
-
-- Extension `tool_call` 钩子驱动权限判断（requestPermission → PermissionDialog → IPC resolve）
-- 会话列表读取 `sessions/index.json`（适配 pi SessionManager JSONL 格式）
-- 纯 React 消息列表（`agentSession.messages` 驱动）
-- 极薄 IPC 层 `src/ipc/chat/` 精简（handlers / schemas / store 三文件）
-
-### Phase 3.5 — ai-elements 组件库集成
-
-**目标**：建立可复用的 AI 对话组件库，为后续 UI 开发提供基础
-
-**核心组件**：
-
-- ✅ `Conversation` 对话容器（use-stick-to-bottom 自动滚动）
-- ✅ `PromptInput` 输入组件（文件拖放、粘贴、Provider 模式）
-- ✅ `Attachments` 附件管理（图片/文档预览、来源引用）
-- ✅ `Tool` 工具调用展示（状态徽章、参数/结果折叠）
-- ✅ `Reasoning` 推理过程（流式输出、自动展开/收起）
-- ✅ `ChainOfThought` 思维链（步骤展示、搜索结果）
-- ✅ `CodeBlock` 代码块（Shiki 高亮、行号、复制）
-- ✅ `Context` Token 使用量（输入/输出/推理/缓存统计）
-- ✅ `Confirmation` 权限确认（请求/接受/拒绝状态）
-- ✅ `Sources` 来源引用列表
-
-**业务组件迁移**：
-
-- `chat-view.tsx` → 组合 `Conversation` + `PromptInput`
-- `message-list.tsx` → 使用 `ConversationContent`
-- `message-input.tsx` → 使用 `PromptInputTextarea` + `PromptInputSubmit`
-- `tool-call-display.tsx` → 使用 `Tool` 组件
-- `permission-dialog.tsx` → 使用 `Confirmation` 组件
-- `context-usage.tsx` → 使用 `Context` 组件
-
-**依赖安装**：
-
-- `use-stick-to-bottom` — 自动滚动
-- `streamdown` — Markdown 流式渲染（支持代码、数学、Mermaid）
-- `shiki` — 代码语法高亮
-- `tokenlens` — Token 费用计算
-
-### Phase 4 — Agent 配置 + Skill 系统
-
-- Agent 配置页面（人设 / 模型 / 头像）
-- 技能管理 GUI（SKILL.md 文件操作，存于 `{userData}/workspaces/{id}/skills/`，pi 自动加载）
-- 记忆管理（MEMORY.md 编辑器，通过 `agentsFilesOverride` 注入）
-- 知识库管理（文件拖入 + URL 解析）
-
-### Phase 5 — 项目工作视图
-
-- 打开本地文件夹，文件树浏览器
-- 文件预览（文本 / 图片 / PDF）
-- `@` 引用文件作为上下文
-- 技能快捷调用（`/` 菜单）
-
-### Phase 6 — 高级功能
+### Phase 6 — 高级功能（待实现）
 
 - SessionManager 分支能力 → 会话树可视化
 - 向量记忆搜索（sqlite-vec）
