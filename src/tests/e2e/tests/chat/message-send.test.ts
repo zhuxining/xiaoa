@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures/electron-app";
-import { HomePage } from "../../pages/home.page";
 import { generateTestMessage } from "../../fixtures/test-data";
+import { HomePage } from "../../pages/home.page";
 
 /**
  * Chat Tests - 消息发送相关测试
@@ -80,7 +80,7 @@ test.describe("Chat Message Tests", () => {
       "button:has-text('Claude'), button:has-text('选择模型')"
     );
 
-    if (await modelButton.count() > 0) {
+    if ((await modelButton.count()) > 0) {
       await modelButton.click();
 
       // 等待模型列表出现
@@ -88,7 +88,7 @@ test.describe("Chat Message Tests", () => {
 
       // 选择不同的模型
       const modelOption = page.locator("text=Claude 3.5 Haiku");
-      if (await modelOption.count() > 0) {
+      if ((await modelOption.count()) > 0) {
         await modelOption.click();
 
         // 验证模型已切换
@@ -97,7 +97,7 @@ test.describe("Chat Message Tests", () => {
       }
     } else {
       // 如果没有模型选择器，跳过测试
-      test.skip();
+      test();
     }
   });
 

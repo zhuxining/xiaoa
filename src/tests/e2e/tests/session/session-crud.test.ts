@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures/electron-app";
-import { HomePage } from "../../pages/home.page";
 import { generateTestId } from "../../fixtures/test-data";
+import { HomePage } from "../../pages/home.page";
 
 /**
  * Session Tests - 会话相关测试
@@ -50,7 +50,9 @@ test.describe("Session CRUD Tests", () => {
     }
 
     // 获取会话列表
-    const sessions = page.locator('[data-slot="session-list"] button[data-session-id]');
+    const sessions = page.locator(
+      '[data-slot="session-list"] button[data-session-id]'
+    );
     const count = await sessions.count();
 
     // 断言至少有 3 个会话
@@ -61,7 +63,7 @@ test.describe("Session CRUD Tests", () => {
       const session = sessions.nth(i);
       const title = await session.locator(".font-medium").textContent();
       expect(title).toBeTruthy();
-      expect(title!.length).toBeGreaterThan(0);
+      expect(title?.length).toBeGreaterThan(0);
     }
   });
 
@@ -76,7 +78,9 @@ test.describe("Session CRUD Tests", () => {
     await page.waitForTimeout(300);
 
     // 获取所有会话
-    const sessions = page.locator('[data-slot="session-list"] button[data-session-id]');
+    const sessions = page.locator(
+      '[data-slot="session-list"] button[data-session-id]'
+    );
     const count = await sessions.count();
 
     if (count >= 2) {
@@ -106,7 +110,9 @@ test.describe("Session CRUD Tests", () => {
     await page.waitForTimeout(300);
 
     // 获取第一个会话
-    const session = page.locator('[data-slot="session-list"] button[data-session-id]').first();
+    const session = page
+      .locator('[data-slot="session-list"] button[data-session-id]')
+      .first();
 
     // 尝试右键点击（如果有重命名菜单）
     await session.click({ button: "right" });
@@ -115,12 +121,14 @@ test.describe("Session CRUD Tests", () => {
     // 查找重命名选项
     const renameOption = page.locator("text=重命名, text=Rename");
 
-    if (await renameOption.count() > 0) {
+    if ((await renameOption.count()) > 0) {
       await renameOption.click();
 
       // 输入新名称
-      const input = page.locator("input[name=title], input[placeholder*='名称']");
-      if (await input.count() > 0) {
+      const input = page.locator(
+        "input[name=title], input[placeholder*='名称']"
+      );
+      if ((await input.count()) > 0) {
         const newName = `测试会话-${generateTestId("")}`;
         await input.fill(newName);
         await page.keyboard.press("Enter");
@@ -131,7 +139,7 @@ test.describe("Session CRUD Tests", () => {
       }
     } else {
       // 如果没有重命名功能，跳过测试
-      test.skip();
+      test();
     }
   });
 
@@ -148,7 +156,9 @@ test.describe("Session CRUD Tests", () => {
     const initialCount = await homePage.getSessionCount();
 
     // 获取第一个会话
-    const session = page.locator('[data-slot="session-list"] button[data-session-id]').first();
+    const session = page
+      .locator('[data-slot="session-list"] button[data-session-id]')
+      .first();
 
     // 尝试右键点击（如果有删除菜单）
     await session.click({ button: "right" });
@@ -157,12 +167,14 @@ test.describe("Session CRUD Tests", () => {
     // 查找删除选项
     const deleteOption = page.locator("text=删除, text=Delete");
 
-    if (await deleteOption.count() > 0) {
+    if ((await deleteOption.count()) > 0) {
       await deleteOption.click();
 
       // 确认删除（如果有确认对话框）
-      const confirmButton = page.locator("button:has-text('确认'), button:has-text('确定')");
-      if (await confirmButton.count() > 0) {
+      const confirmButton = page.locator(
+        "button:has-text('确认'), button:has-text('确定')"
+      );
+      if ((await confirmButton.count()) > 0) {
         await confirmButton.click();
       }
 
@@ -174,7 +186,7 @@ test.describe("Session CRUD Tests", () => {
       expect(newCount).toBe(initialCount - 1);
     } else {
       // 如果没有删除功能，跳过测试
-      test.skip();
+      test();
     }
   });
 
@@ -187,7 +199,9 @@ test.describe("Session CRUD Tests", () => {
     await page.waitForTimeout(300);
 
     // 验证会话被创建（应该有默认标题）
-    const sessions = page.locator('[data-slot="session-list"] button[data-session-id]');
+    const sessions = page.locator(
+      '[data-slot="session-list"] button[data-session-id]'
+    );
     const count = await sessions.count();
     expect(count).toBeGreaterThan(0);
 
@@ -195,7 +209,7 @@ test.describe("Session CRUD Tests", () => {
     const lastSession = sessions.last();
     const title = await lastSession.locator(".font-medium").textContent();
     expect(title).toBeTruthy();
-    expect(title!.length).toBeGreaterThan(0);
+    expect(title?.length).toBeGreaterThan(0);
   });
 });
 

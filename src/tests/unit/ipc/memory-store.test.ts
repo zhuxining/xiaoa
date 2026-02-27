@@ -6,7 +6,6 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
-  readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -46,7 +45,12 @@ describe("memory store", () => {
 
     test("returns empty content when file exists but is empty", async () => {
       // Create empty file
-      const memoryDir = join(userDataPath, "workspaces", "ws-empty", "memories");
+      const memoryDir = join(
+        userDataPath,
+        "workspaces",
+        "ws-empty",
+        "memories"
+      );
       mkdirSync(memoryDir, { recursive: true });
       writeFileSync(join(memoryDir, "MEMORY.md"), "", "utf-8");
 
@@ -59,7 +63,12 @@ describe("memory store", () => {
     });
 
     test("reads existing memory file", async () => {
-      const memoryDir = join(userDataPath, "workspaces", "ws-existing", "memories");
+      const memoryDir = join(
+        userDataPath,
+        "workspaces",
+        "ws-existing",
+        "memories"
+      );
       mkdirSync(memoryDir, { recursive: true });
       writeFileSync(
         join(memoryDir, "MEMORY.md"),
@@ -80,7 +89,13 @@ describe("memory store", () => {
       const { saveMemory } = await import("@/ipc/memory/store");
       saveMemory("ws-new", "# New Memory");
 
-      const memoryPath = join(userDataPath, "workspaces", "ws-new", "memories", "MEMORY.md");
+      const memoryPath = join(
+        userDataPath,
+        "workspaces",
+        "ws-new",
+        "memories",
+        "MEMORY.md"
+      );
       expect(existsSync(memoryPath)).toBe(true);
     });
 
@@ -102,7 +117,12 @@ describe("memory store", () => {
     });
 
     test("overwrites existing memory", async () => {
-      const memoryDir = join(userDataPath, "workspaces", "ws-overwrite", "memories");
+      const memoryDir = join(
+        userDataPath,
+        "workspaces",
+        "ws-overwrite",
+        "memories"
+      );
       mkdirSync(memoryDir, { recursive: true });
       writeFileSync(join(memoryDir, "MEMORY.md"), "Old content", "utf-8");
 

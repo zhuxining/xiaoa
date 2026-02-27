@@ -4,6 +4,7 @@
  * 提供测试用的 Mock 对象创建函数。
  */
 
+import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { vi } from "vitest";
 import type { ActiveRun } from "@/agent/run/run-types";
 
@@ -64,7 +65,7 @@ export function createMockAgentSession() {
     }),
     getContextUsage: vi.fn().mockReturnValue({
       usedTokens: 0,
-      maxTokens: 200000,
+      maxTokens: 200_000,
     }),
     setActiveToolsByName: vi.fn(),
     dispose: vi.fn(),
@@ -90,5 +91,8 @@ export function createMockExtensionAPI() {
   return {
     on: vi.fn(),
     registerProvider: vi.fn(),
+  } as unknown as ExtensionAPI & {
+    on: ReturnType<typeof vi.fn>;
+    registerProvider: ReturnType<typeof vi.fn>;
   };
 }

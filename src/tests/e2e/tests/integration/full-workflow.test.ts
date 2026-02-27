@@ -1,8 +1,8 @@
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures/electron-app";
+import { generateTestId, generateTestMessage } from "../../fixtures/test-data";
 import { HomePage } from "../../pages/home.page";
 import { SettingsPage } from "../../pages/settings.page";
-import { generateTestId, generateTestMessage } from "../../fixtures/test-data";
 
 /**
  * Integration Tests - 集成测试
@@ -63,7 +63,7 @@ test.describe("Integration Tests", () => {
       '[data-slot="workspace-switcher"], [data-testid="workspace-switcher"]'
     );
 
-    if (await workspaceSwitcher.count() > 0) {
+    if ((await workspaceSwitcher.count()) > 0) {
       // Step 1: 打开工作区选择器
       await workspaceSwitcher.click();
       await page.waitForTimeout(200);
@@ -73,7 +73,7 @@ test.describe("Integration Tests", () => {
         "button:has-text('创建'), button:has-text('新建')"
       );
 
-      if (await createButton.count() > 0) {
+      if ((await createButton.count()) > 0) {
         await createButton.click();
 
         const workspaceName = `集成测试工作区-${generateTestId("")}`;
@@ -81,7 +81,7 @@ test.describe("Integration Tests", () => {
           "input[placeholder*='名称'], input[name='name']"
         );
 
-        if (await nameInput.count() > 0) {
+        if ((await nameInput.count()) > 0) {
           await nameInput.fill(workspaceName);
           await page.click("button:has-text('创建')");
           await page.waitForTimeout(500);
@@ -145,17 +145,19 @@ test.describe("Integration Tests", () => {
     // 查找权限模式设置
     const permissionSection = page.locator("text=权限").locator("..");
 
-    if (await permissionSection.count() > 0) {
+    if ((await permissionSection.count()) > 0) {
       // 尝试切换权限模式
-      const permissionSelect = permissionSection.locator("select, [role=combobox]");
+      const permissionSelect = permissionSection.locator(
+        "select, [role=combobox]"
+      );
 
-      if (await permissionSelect.count() > 0) {
+      if ((await permissionSelect.count()) > 0) {
         await permissionSelect.click();
         await page.waitForTimeout(200);
 
         // 选择自动模式
         const autoOption = page.locator("text=自动, text=auto");
-        if (await autoOption.count() > 0) {
+        if ((await autoOption.count()) > 0) {
           await autoOption.click();
           await page.waitForTimeout(300);
 
@@ -176,7 +178,7 @@ test.describe("Integration Tests", () => {
       }
     } else {
       // 如果没有权限设置，跳过测试
-      test.skip();
+      test();
     }
   });
 
@@ -197,7 +199,7 @@ test.describe("Integration Tests", () => {
     const themeSection = page.locator("text=主题").locator("..");
     const themeSelect = themeSection.locator("select, [role=combobox]");
 
-    if (await themeSelect.count() > 0) {
+    if ((await themeSelect.count()) > 0) {
       await themeSelect.click();
       await page.waitForTimeout(200);
 
@@ -205,7 +207,7 @@ test.describe("Integration Tests", () => {
       const newTheme = initialTheme?.includes("dark") ? "浅色" : "深色";
       const themeOption = page.locator(`text=${newTheme}`);
 
-      if (await themeOption.count() > 0) {
+      if ((await themeOption.count()) > 0) {
         await themeOption.click();
         await page.waitForTimeout(500);
 
@@ -226,7 +228,7 @@ test.describe("Integration Tests", () => {
         }
       }
     } else {
-      test.skip();
+      test();
     }
   });
 

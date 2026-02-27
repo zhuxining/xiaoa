@@ -1,8 +1,8 @@
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures/electron-app";
+import { generateTestWorkspace } from "../../fixtures/test-data";
 import { HomePage } from "../../pages/home.page";
 import { WorkspacePage } from "../../pages/workspace.page";
-import { generateTestWorkspace } from "../../fixtures/test-data";
 
 /**
  * Workspace Tests - 工作区相关测试
@@ -11,11 +11,11 @@ import { generateTestWorkspace } from "../../fixtures/test-data";
 
 test.describe("Workspace CRUD Tests", () => {
   let homePage: HomePage;
-  let workspacePage: WorkspacePage;
+  let _workspacePage: WorkspacePage;
 
   test.beforeEach(async ({ page, electronApp }) => {
     homePage = new HomePage(page, electronApp);
-    workspacePage = new WorkspacePage(page, electronApp);
+    _workspacePage = new WorkspacePage(page, electronApp);
     await homePage.waitForReady();
   });
 
@@ -28,7 +28,7 @@ test.describe("Workspace CRUD Tests", () => {
       '[data-slot="workspace-switcher"], [data-testid="workspace-switcher"]'
     );
 
-    if (await workspaceSwitcher.count() > 0) {
+    if ((await workspaceSwitcher.count()) > 0) {
       await workspaceSwitcher.click();
 
       // 等待工作区列表出现
@@ -41,7 +41,7 @@ test.describe("Workspace CRUD Tests", () => {
       await expect(workspaceList).toBeVisible();
     } else {
       // 如果没有工作区功能，跳过测试
-      test.skip();
+      test();
     }
   });
 
@@ -54,7 +54,7 @@ test.describe("Workspace CRUD Tests", () => {
       '[data-slot="workspace-switcher"], [data-testid="workspace-switcher"]'
     );
 
-    if (await workspaceSwitcher.count() > 0) {
+    if ((await workspaceSwitcher.count()) > 0) {
       await workspaceSwitcher.click();
       await page.waitForTimeout(200);
 
@@ -63,7 +63,7 @@ test.describe("Workspace CRUD Tests", () => {
         "button:has-text('创建'), button:has-text('新建')"
       );
 
-      if (await createButton.count() > 0) {
+      if ((await createButton.count()) > 0) {
         await createButton.click();
 
         // 填写工作区信息
@@ -71,7 +71,7 @@ test.describe("Workspace CRUD Tests", () => {
         const nameInput = page.locator(
           "input[placeholder*='名称'], input[name='name']"
         );
-        if (await nameInput.count() > 0) {
+        if ((await nameInput.count()) > 0) {
           await nameInput.fill(workspace.name);
 
           // 确认创建
@@ -85,10 +85,10 @@ test.describe("Workspace CRUD Tests", () => {
           await expect(page.locator(`text=${workspace.name}`)).toBeVisible();
         }
       } else {
-        test.skip();
+        test();
       }
     } else {
-      test.skip();
+      test();
     }
   });
 
@@ -101,16 +101,16 @@ test.describe("Workspace CRUD Tests", () => {
       '[data-slot="workspace-switcher"], [data-testid="workspace-switcher"]'
     );
 
-    if (await workspaceSwitcher.count() > 0) {
+    if ((await workspaceSwitcher.count()) > 0) {
       await workspaceSwitcher.click();
       await page.waitForTimeout(200);
 
       // 选择一个工作区
-      const workspaceItem = page.locator(
-        '[data-workspace-id], [role="menuitem"]'
-      ).first();
+      const workspaceItem = page
+        .locator('[data-workspace-id], [role="menuitem"]')
+        .first();
 
-      if (await workspaceItem.count() > 0) {
+      if ((await workspaceItem.count()) > 0) {
         await workspaceItem.click();
         await page.waitForTimeout(300);
 
@@ -121,10 +121,10 @@ test.describe("Workspace CRUD Tests", () => {
         );
         await expect(workspaceHeader.first()).toBeVisible();
       } else {
-        test.skip();
+        test();
       }
     } else {
-      test.skip();
+      test();
     }
   });
 
@@ -137,23 +137,23 @@ test.describe("Workspace CRUD Tests", () => {
       '[data-slot="workspace-switcher"], [data-testid="workspace-switcher"]'
     );
 
-    if (await workspaceSwitcher.count() > 0) {
+    if ((await workspaceSwitcher.count()) > 0) {
       await workspaceSwitcher.click();
       await page.waitForTimeout(200);
 
       // 右键点击工作区（如果有删除选项）
-      const workspaceItem = page.locator(
-        '[data-workspace-id], [role="menuitem"]'
-      ).first();
+      const workspaceItem = page
+        .locator('[data-workspace-id], [role="menuitem"]')
+        .first();
 
-      if (await workspaceItem.count() > 0) {
+      if ((await workspaceItem.count()) > 0) {
         await workspaceItem.click({ button: "right" });
         await page.waitForTimeout(200);
 
         // 查找删除选项
         const deleteOption = page.locator("text=删除, text=Delete");
 
-        if (await deleteOption.count() > 0) {
+        if ((await deleteOption.count()) > 0) {
           const initialCount = await page
             .locator('[data-workspace-id], [role="menuitem"]')
             .count();
@@ -164,7 +164,7 @@ test.describe("Workspace CRUD Tests", () => {
           const confirmButton = page.locator(
             "button:has-text('确认'), button:has-text('确定')"
           );
-          if (await confirmButton.count() > 0) {
+          if ((await confirmButton.count()) > 0) {
             await confirmButton.click();
           }
 
@@ -177,13 +177,13 @@ test.describe("Workspace CRUD Tests", () => {
             .count();
           expect(newCount).toBeLessThan(initialCount);
         } else {
-          test.skip();
+          test();
         }
       } else {
-        test.skip();
+        test();
       }
     } else {
-      test.skip();
+      test();
     }
   });
 
@@ -195,14 +195,14 @@ test.describe("Workspace CRUD Tests", () => {
       '[data-slot="workspace-switcher"], [data-testid="workspace-switcher"]'
     );
 
-    if (await workspaceSwitcher.count() > 0) {
+    if ((await workspaceSwitcher.count()) > 0) {
       await workspaceSwitcher.click();
       await page.waitForTimeout(200);
 
       // 获取第一个工作区名称
-      const firstWorkspace = page.locator(
-        '[data-workspace-id], [role="menuitem"]'
-      ).first();
+      const firstWorkspace = page
+        .locator('[data-workspace-id], [role="menuitem"]')
+        .first();
       const existingName = await firstWorkspace.textContent();
 
       if (existingName) {
@@ -211,13 +211,13 @@ test.describe("Workspace CRUD Tests", () => {
           "button:has-text('创建'), button:has-text('新建')"
         );
 
-        if (await createButton.count() > 0) {
+        if ((await createButton.count()) > 0) {
           await createButton.click();
 
           const nameInput = page.locator(
             "input[placeholder*='名称'], input[name='name']"
           );
-          if (await nameInput.count() > 0) {
+          if ((await nameInput.count()) > 0) {
             await nameInput.fill(existingName);
 
             // 尝试提交
@@ -229,14 +229,14 @@ test.describe("Workspace CRUD Tests", () => {
 
             // 验证是否显示错误提示或阻止创建
             // 根据实际实现调整
-            const errorMessage = page.locator(
+            const _errorMessage = page.locator(
               "text=已存在, text=重复, text=duplicate"
             );
 
             // 如果有错误提示，测试通过
             // 如果没有错误提示但也没有创建，也算通过
             const toast = page.locator("[data-sonner-toast]");
-            if (await toast.count() > 0) {
+            if ((await toast.count()) > 0) {
               // 有提示信息
               await expect(toast).toBeVisible();
             }
@@ -244,7 +244,7 @@ test.describe("Workspace CRUD Tests", () => {
         }
       }
     } else {
-      test.skip();
+      test();
     }
   });
 });
@@ -263,23 +263,21 @@ test.describe("Workspace Agent Config Tests", () => {
     // 导航到工作区设置（如果有）
     const agentTab = page.locator("text=Agent, text=agent");
 
-    if (await agentTab.count() > 0) {
+    if ((await agentTab.count()) > 0) {
       await agentTab.click();
       await page.waitForTimeout(300);
 
       // 查找 Agent 配置表单
-      const agentForm = page.locator(
-        '[data-slot="agent-config-form"], form'
-      );
+      const agentForm = page.locator('[data-slot="agent-config-form"], form');
 
-      if (await agentForm.count() > 0) {
+      if ((await agentForm.count()) > 0) {
         // 验证配置选项存在
         await expect(agentForm).toBeVisible();
       } else {
-        test.skip();
+        test();
       }
     } else {
-      test.skip();
+      test();
     }
   });
 
@@ -295,13 +293,13 @@ test.describe("Workspace Agent Config Tests", () => {
       "label:has-text('权限') + select, [data-testid='permission-mode']"
     );
 
-    if (await permissionSelect.count() > 0) {
+    if ((await permissionSelect.count()) > 0) {
       await permissionSelect.click();
       await page.waitForTimeout(200);
 
       // 选择不同的权限模式
       const autoOption = page.locator("text=自动, text=auto");
-      if (await autoOption.count() > 0) {
+      if ((await autoOption.count()) > 0) {
         await autoOption.click();
         await page.waitForTimeout(300);
 
@@ -309,7 +307,7 @@ test.describe("Workspace Agent Config Tests", () => {
         await expect(permissionSelect).toContainText("自动");
       }
     } else {
-      test.skip();
+      test();
     }
   });
 });

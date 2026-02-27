@@ -12,36 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getModelsByProvider, PROVIDERS } from "@/constants/models";
 
 interface LLMConfigFormProps {
   className?: string;
   onChange: (value: LLMConfig) => void;
   value: LLMConfig;
 }
-
-const PROVIDERS = [
-  { id: "openai", name: "OpenAI" },
-  { id: "anthropic", name: "Anthropic" },
-  { id: "openrouter", name: "OpenRouter" },
-  { id: "deepseek", name: "DeepSeek" },
-  { id: "ollama", name: "Ollama" },
-  { id: "custom", name: "自定义" },
-];
-
-const MODELS_BY_PROVIDER: Record<string, string[]> = {
-  openai: ["gpt-4o", "gpt-4o-mini", "gpt-4.1", "gpt-4-turbo", "gpt-4"],
-  anthropic: [
-    "claude-sonnet-4-5-20250929",
-    "claude-sonnet-4-5",
-    "claude-opus-4-5",
-    "claude-haiku-4-5-20251001",
-    "claude-haiku-4-5",
-  ],
-  openrouter: ["anthropic/claude-3.5-sonnet", "openai/gpt-4o"],
-  deepseek: ["deepseek-chat", "deepseek-reasoner"],
-  ollama: ["llama3.1", "llama3.2", "mistral", "codellama"],
-  custom: [],
-};
 
 export function LLMConfigForm({
   value,
@@ -50,7 +27,7 @@ export function LLMConfigForm({
 }: LLMConfigFormProps) {
   const [showApiKey, setShowApiKey] = useState(false);
 
-  const models = MODELS_BY_PROVIDER[value.provider] || [];
+  const models = getModelsByProvider(value.provider);
 
   return (
     <FormSection
@@ -65,7 +42,7 @@ export function LLMConfigForm({
             onChange({
               ...value,
               provider: provider as LLMConfig["provider"],
-              model: MODELS_BY_PROVIDER[provider]?.[0] || "",
+              model: getModelsByProvider(provider)[0]?.id || "",
             })
           }
           value={value.provider}
@@ -120,8 +97,8 @@ export function LLMConfigForm({
           </SelectTrigger>
           <SelectContent>
             {models.map((model) => (
-              <SelectItem key={model} value={model}>
-                {model}
+              <SelectItem key={model.id} value={model.id}>
+                {model.name}
               </SelectItem>
             ))}
           </SelectContent>

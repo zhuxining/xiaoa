@@ -21,13 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-
-const MODELS = [
-  { id: "claude-sonnet-4-5-20250514", name: "Claude Sonnet 4.5" },
-  { id: "claude-opus-4-5-20250929", name: "Claude Opus 4.6" },
-  { id: "gpt-4o", name: "GPT-4o" },
-  { id: "gpt-4o-mini", name: "GPT-4o Mini" },
-];
+import { MODELS } from "@/constants/models";
 
 function AgentConfigPage() {
   const { workspaceId } = Route.useParams();

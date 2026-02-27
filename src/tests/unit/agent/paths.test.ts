@@ -86,7 +86,13 @@ describe("paths", () => {
     test("returns correct session file path for workspace", async () => {
       const { getSessionFilePath } = await import("@/agent/paths");
       expect(getSessionFilePath("ws-123", "session-456")).toBe(
-        join(mockUserDataPath, "workspaces", "ws-123", "sessions", "session-456.jsonl")
+        join(
+          mockUserDataPath,
+          "workspaces",
+          "ws-123",
+          "sessions",
+          "session-456.jsonl"
+        )
       );
     });
 

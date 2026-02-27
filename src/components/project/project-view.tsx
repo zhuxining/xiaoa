@@ -1,6 +1,5 @@
 import type { AgentMessage } from "@mariozechner/pi-agent-core";
 import { Plus, Trash2 } from "lucide-react";
-import type { Session } from "@/components/chat/chat-view";
 import { ChatView } from "@/components/chat/chat-view";
 import type { FileMenuItem } from "@/components/chat/file-menu";
 import type { PermissionRequest } from "@/components/chat/permission-dialog";
@@ -19,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { ChatSession } from "@/types/session";
 import { cn } from "@/utils/tailwind";
 import { type FileInfo, FilePreview } from "./file-preview";
 import { type FileNode, FileTree } from "./file-tree";
@@ -46,8 +46,9 @@ interface ProjectViewProps {
   permissionMode?: PermissionMode;
   permissionRequest?: PermissionRequest | null;
   selectedFileId?: string | null;
-  sessions: Session[];
+  sessions: ChatSession[];
   skills?: SkillMenuItem[];
+  streamingMessage?: AgentMessage | null;
   viewMode: "chat" | "preview";
 }
 
@@ -74,6 +75,7 @@ export function ProjectView({
   onPermissionAllow,
   onPermissionDeny,
   agentName,
+  streamingMessage,
   className,
 }: ProjectViewProps) {
   let modeLabel = "Review";
@@ -209,6 +211,7 @@ export function ProjectView({
               sessions={sessions}
               showSessionList={false}
               skills={skills}
+              streamingMessage={streamingMessage}
             />
           ) : (
             <FilePreview file={fileInfo ?? null} />

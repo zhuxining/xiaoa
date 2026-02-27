@@ -2,9 +2,12 @@
  * run-executor.test.ts - AgentSessionEvent → ChatEvent 桥接测试
  */
 
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { AgentSessionEvent } from "@mariozechner/pi-coding-agent";
-import { createMockActiveRun, createMockAgentSession } from "../utils/mock-factory";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import {
+  createMockActiveRun,
+  createMockAgentSession,
+} from "../utils/mock-factory";
 
 // Mock dependencies
 vi.mock("@/agent/session", () => ({
@@ -100,13 +103,15 @@ describe("run-executor", () => {
       const run = createMockActiveRun({ key: "test-bridge-1" });
       setActiveRun(run.key, run);
 
-      const event: AgentSessionEvent = {
+      const event = {
         type: "message_update",
         assistantMessageEvent: {
           type: "text_delta",
+          contentIndex: 0,
           delta: "Hello ",
+          partial: {},
         },
-      };
+      } as unknown as AgentSessionEvent;
 
       bridgeEvent(run.key, event);
 
@@ -120,13 +125,15 @@ describe("run-executor", () => {
       const run = createMockActiveRun({ key: "test-bridge-2" });
       setActiveRun(run.key, run);
 
-      const event: AgentSessionEvent = {
+      const event = {
         type: "message_update",
         assistantMessageEvent: {
           type: "text_delta",
+          contentIndex: 0,
           delta: "",
+          partial: {},
         },
-      };
+      } as unknown as AgentSessionEvent;
 
       bridgeEvent(run.key, event);
 
@@ -140,13 +147,13 @@ describe("run-executor", () => {
       const run = createMockActiveRun({ key: "test-bridge-3" });
       setActiveRun(run.key, run);
 
-      const event: AgentSessionEvent = {
+      const event = {
         type: "message_end",
         message: {
           role: "assistant",
           content: [{ type: "text", text: "Full response" }],
         },
-      };
+      } as unknown as AgentSessionEvent;
 
       bridgeEvent(run.key, event);
 
@@ -160,11 +167,12 @@ describe("run-executor", () => {
       const run = createMockActiveRun({ key: "test-bridge-4" });
       setActiveRun(run.key, run);
 
-      const event: AgentSessionEvent = {
+      const event = {
         type: "tool_execution_start",
         toolName: "bash",
         toolCallId: "tc-123",
-      };
+        args: { command: "test" },
+      } as unknown as AgentSessionEvent;
 
       expect(() => bridgeEvent(run.key, event)).not.toThrow();
     });
@@ -176,11 +184,13 @@ describe("run-executor", () => {
       const run = createMockActiveRun({ key: "test-bridge-5" });
       setActiveRun(run.key, run);
 
-      const event: AgentSessionEvent = {
+      const event = {
         type: "tool_execution_end",
         toolName: "bash",
         toolCallId: "tc-123",
-      };
+        result: "done",
+        isError: false,
+      } as unknown as AgentSessionEvent;
 
       expect(() => bridgeEvent(run.key, event)).not.toThrow();
     });
@@ -192,8 +202,20 @@ describe("run-executor", () => {
       const run = createMockActiveRun({ key: "test-bridge-6" });
       setActiveRun(run.key, run);
 
-      expect(() => bridgeEvent(run.key, { type: "auto_compaction_start" })).not.toThrow();
-      expect(() => bridgeEvent(run.key, { type: "auto_compaction_end" })).not.toThrow();
+      expect(() =>
+        bridgeEvent(run.key, {
+          type: "auto_compaction_start",
+          reason: "threshold",
+        } as AgentSessionEvent)
+      ).not.toThrow();
+      expect(() =>
+        bridgeEvent(run.key, {
+          type: "auto_compaction_end",
+          result: undefined,
+          aborted: false,
+          willRetry: false,
+        } as AgentSessionEvent)
+      ).not.toThrow();
     });
 
     test("does not throw for auto_retry events", async () => {
@@ -207,13 +229,18 @@ describe("run-executor", () => {
         bridgeEvent(run.key, {
           type: "auto_retry_start",
           errorMessage: "Network error",
-        })
+          attempt: 1,
+          maxAttempts: 3,
+          delayMs: 1000,
+        } as AgentSessionEvent)
       ).not.toThrow();
       expect(() =>
         bridgeEvent(run.key, {
           type: "auto_retry_end",
+          success: true,
+          attempt: 1,
           finalError: undefined,
-        })
+        } as AgentSessionEvent)
       ).not.toThrow();
     });
 
@@ -224,8 +251,16 @@ describe("run-executor", () => {
       const run = createMockActiveRun({ key: "test-bridge-8" });
       setActiveRun(run.key, run);
 
-      expect(() => bridgeEvent(run.key, { type: "turn_start" })).not.toThrow();
-      expect(() => bridgeEvent(run.key, { type: "turn_end" })).not.toThrow();
+      expect(() =>
+        bridgeEvent(run.key, { type: "turn_start" } as AgentSessionEvent)
+      ).not.toThrow();
+      expect(() =>
+        bridgeEvent(run.key, {
+          type: "turn_end",
+          message: {} as unknown,
+          toolResults: [],
+        } as AgentSessionEvent)
+      ).not.toThrow();
     });
 
     test("ignores events when run is aborted", async () => {
@@ -238,23 +273,31 @@ describe("run-executor", () => {
       // Should not throw and should not update buffer
       bridgeEvent(run.key, {
         type: "message_update",
-        assistantMessageEvent: { type: "text_delta", delta: "test" },
-      });
+        assistantMessageEvent: {
+          type: "text_delta",
+          contentIndex: 0,
+          delta: "test",
+          partial: {},
+        },
+      } as unknown as AgentSessionEvent);
 
       expect(run.assistantBuffer).toBe("");
     });
 
     test("ignores events when run not found", async () => {
-      const { bridgeEvent } = await import(
-        "@/agent/run/run-executor"
-      );
+      const { bridgeEvent } = await import("@/agent/run/run-executor");
 
       // Should not throw
       expect(() =>
         bridgeEvent("non-existent-key", {
           type: "message_update",
-          assistantMessageEvent: { type: "text_delta", delta: "test" },
-        })
+          assistantMessageEvent: {
+            type: "text_delta",
+            contentIndex: 0,
+            delta: "test",
+            partial: {},
+          },
+        } as unknown as AgentSessionEvent)
       ).not.toThrow();
     });
   });
@@ -312,7 +355,7 @@ describe("run-executor", () => {
         content: "Second message",
       });
 
-      expect(firstRun!.aborted).toBe(true);
+      expect(firstRun?.aborted).toBe(true);
     });
   });
 
@@ -370,7 +413,7 @@ describe("run-executor", () => {
       });
 
       expect(result.aborted).toBe(true);
-      expect(run!.aborted).toBe(true);
+      expect(run?.aborted).toBe(true);
       expect(mockSession.abort).toHaveBeenCalled();
     });
   });
@@ -391,9 +434,13 @@ describe("run-executor", () => {
     });
 
     test("filters events by afterSeq", async () => {
-      const { startChatRun, getChatEvents, bridgeEvent, setActiveRun, getActiveRun } = await import(
-        "@/agent/run/run-executor"
-      );
+      const {
+        startChatRun,
+        getChatEvents,
+        bridgeEvent,
+        setActiveRun,
+        getActiveRun,
+      } = await import("@/agent/run/run-executor");
 
       // Start a run to create event buffer
       startChatRun({
@@ -405,8 +452,12 @@ describe("run-executor", () => {
       const run = getActiveRun("global:session-filter");
       if (run) {
         // Add some events
-        bridgeEvent(run.key, { type: "turn_start" });
-        bridgeEvent(run.key, { type: "turn_end" });
+        bridgeEvent(run.key, { type: "turn_start" } as AgentSessionEvent);
+        bridgeEvent(run.key, {
+          type: "turn_end",
+          message: {} as unknown,
+          toolResults: [],
+        } as AgentSessionEvent);
       }
 
       // Get all events first

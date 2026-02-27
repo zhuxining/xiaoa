@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures/electron-app";
-import { HomePage } from "../../pages/home.page";
 import { generateTestSkill } from "../../fixtures/test-data";
+import { HomePage } from "../../pages/home.page";
 
 /**
  * Skill Tests - 技能相关测试
@@ -23,7 +23,7 @@ test.describe("Skill Tests", () => {
     // 导航到技能页面（如果有）
     const skillsTab = page.locator("text=技能, text=Skills");
 
-    if (await skillsTab.count() > 0) {
+    if ((await skillsTab.count()) > 0) {
       await skillsTab.click();
       await page.waitForTimeout(300);
 
@@ -32,11 +32,11 @@ test.describe("Skill Tests", () => {
         '[data-slot="skill-list"], [data-testid="skill-list"]'
       );
 
-      if (await skillList.count() > 0) {
+      if ((await skillList.count()) > 0) {
         await expect(skillList).toBeVisible();
       }
     } else {
-      test.skip();
+      test();
     }
   });
 
@@ -47,7 +47,7 @@ test.describe("Skill Tests", () => {
     // 导航到技能页面
     const skillsTab = page.locator("text=技能, text=Skills");
 
-    if (await skillsTab.count() > 0) {
+    if ((await skillsTab.count()) > 0) {
       await skillsTab.click();
       await page.waitForTimeout(300);
 
@@ -56,7 +56,7 @@ test.describe("Skill Tests", () => {
         "button:has-text('创建'), button:has-text('新建')"
       );
 
-      if (await createButton.count() > 0) {
+      if ((await createButton.count()) > 0) {
         await createButton.click();
         await page.waitForTimeout(200);
 
@@ -66,14 +66,14 @@ test.describe("Skill Tests", () => {
           "input[placeholder*='名称'], input[name='name']"
         );
 
-        if (await nameInput.count() > 0) {
+        if ((await nameInput.count()) > 0) {
           await nameInput.fill(skill.name);
 
           // 填写描述
           const descInput = page.locator(
             "input[placeholder*='描述'], textarea[name='description']"
           );
-          if (await descInput.count() > 0) {
+          if ((await descInput.count()) > 0) {
             await descInput.fill(skill.description);
           }
 
@@ -86,10 +86,10 @@ test.describe("Skill Tests", () => {
           await expect(page.locator(`text=${skill.name}`)).toBeVisible();
         }
       } else {
-        test.skip();
+        test();
       }
     } else {
-      test.skip();
+      test();
     }
   });
 
@@ -99,16 +99,16 @@ test.describe("Skill Tests", () => {
   test("SK03: 更新技能", async ({ page }) => {
     const skillsTab = page.locator("text=技能, text=Skills");
 
-    if (await skillsTab.count() > 0) {
+    if ((await skillsTab.count()) > 0) {
       await skillsTab.click();
       await page.waitForTimeout(300);
 
       // 查找已有技能
-      const skillItem = page.locator(
-        '[data-skill-id], [data-testid="skill-item"]'
-      ).first();
+      const skillItem = page
+        .locator('[data-skill-id], [data-testid="skill-item"]')
+        .first();
 
-      if (await skillItem.count() > 0) {
+      if ((await skillItem.count()) > 0) {
         // 点击编辑
         await skillItem.click();
         await page.waitForTimeout(200);
@@ -118,7 +118,7 @@ test.describe("Skill Tests", () => {
           "input[placeholder*='名称'], input[name='name']"
         );
 
-        if (await nameInput.count() > 0) {
+        if ((await nameInput.count()) > 0) {
           const newName = `更新后的技能-${Date.now()}`;
           await nameInput.fill(newName);
 
@@ -131,10 +131,10 @@ test.describe("Skill Tests", () => {
           await expect(page.locator(`text=${newName}`)).toBeVisible();
         }
       } else {
-        test.skip();
+        test();
       }
     } else {
-      test.skip();
+      test();
     }
   });
 
@@ -144,16 +144,16 @@ test.describe("Skill Tests", () => {
   test("SK04: 删除技能", async ({ page }) => {
     const skillsTab = page.locator("text=技能, text=Skills");
 
-    if (await skillsTab.count() > 0) {
+    if ((await skillsTab.count()) > 0) {
       await skillsTab.click();
       await page.waitForTimeout(300);
 
       // 查找已有技能
-      const skillItem = page.locator(
-        '[data-skill-id], [data-testid="skill-item"]'
-      ).first();
+      const skillItem = page
+        .locator('[data-skill-id], [data-testid="skill-item"]')
+        .first();
 
-      if (await skillItem.count() > 0) {
+      if ((await skillItem.count()) > 0) {
         const initialCount = await page
           .locator('[data-skill-id], [data-testid="skill-item"]')
           .count();
@@ -165,14 +165,14 @@ test.describe("Skill Tests", () => {
         // 查找删除选项
         const deleteOption = page.locator("text=删除, text=Delete");
 
-        if (await deleteOption.count() > 0) {
+        if ((await deleteOption.count()) > 0) {
           await deleteOption.click();
 
           // 确认删除
           const confirmButton = page.locator(
             "button:has-text('确认'), button:has-text('确定')"
           );
-          if (await confirmButton.count() > 0) {
+          if ((await confirmButton.count()) > 0) {
             await confirmButton.click();
           }
 
@@ -185,10 +185,10 @@ test.describe("Skill Tests", () => {
           expect(newCount).toBe(initialCount - 1);
         }
       } else {
-        test.skip();
+        test();
       }
     } else {
-      test.skip();
+      test();
     }
   });
 
@@ -207,13 +207,13 @@ test.describe("Skill Tests", () => {
       '[data-slot="skill-menu"], [role="listbox"]'
     );
 
-    if (await skillMenu.count() > 0) {
+    if ((await skillMenu.count()) > 0) {
       // 验证技能菜单可见
       await expect(skillMenu).toBeVisible();
 
       // 选择一个技能
       const skillOption = skillMenu.locator("button, [role='option']").first();
-      if (await skillOption.count() > 0) {
+      if ((await skillOption.count()) > 0) {
         await skillOption.click();
         await page.waitForTimeout(200);
 
@@ -222,7 +222,7 @@ test.describe("Skill Tests", () => {
         expect(inputValue).toContain("/");
       }
     } else {
-      test.skip();
+      test();
     }
   });
 });

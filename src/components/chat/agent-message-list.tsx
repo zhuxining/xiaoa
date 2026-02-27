@@ -90,24 +90,32 @@ export function AgentMessageList({
   const renderMessage = (message: AgentMessage, index: number) => {
     // 用户消息
     if (message.role === "user") {
-      const content = message.content;
+      const rawContent = (message as { content?: unknown }).content;
       let textContent: string;
 
-      if (typeof content === "string") {
-        textContent = content;
-      } else {
+      if (rawContent === undefined || rawContent === null) {
+        // 防御性处理：content 为空
+        textContent = "";
+        console.warn("[agent-message-list] User message has no content:", message);
+      } else if (typeof rawContent === "string") {
+        textContent = rawContent;
+      } else if (Array.isArray(rawContent)) {
         // content 是数组
-        textContent = content
-          .filter((c): c is { type: "text"; text: string } => c.type === "text")
+        textContent = rawContent
+          .filter((c): c is { type: "text"; text: string } => c?.type === "text")
           .map((c) => c.text)
           .join("\n");
+      } else {
+        // 未知格式
+        console.warn("[agent-message-list] User message has unexpected content format:", rawContent);
+        textContent = String(rawContent);
       }
 
       return (
         <UserMessage
           content={textContent}
           key={`user-${index}`}
-          timestamp={message.timestamp}
+          timestamp={(message as { timestamp?: number }).timestamp ?? Date.now()}
         />
       );
     }
@@ -224,11 +232,15 @@ export function AgentMessageList({
 
   for (let i = 0; i < allMessages.length; i++) {
     const message = allMessages[i];
+    const msgContent = (message as { content?: unknown }).content;
 
     if (message.role === "assistant") {
+      // 防御性检查：确保 content 是数组
+      const contentArray = Array.isArray(msgContent) ? msgContent : [];
+
       // 先添加助手消息（不含 toolCall）
-      const contentWithoutToolCalls = message.content.filter(
-        (c) => c.type !== "toolCall"
+      const contentWithoutToolCalls = contentArray.filter(
+        (c) => (c as { type?: string })?.type !== "toolCall"
       );
       if (contentWithoutToolCalls.length > 0) {
         processedMessages.push({
@@ -239,9 +251,10 @@ export function AgentMessageList({
       }
 
       // 然后添加每个 ToolCall（配对结果）
-      const toolCalls = message.content.filter((c) => c.type === "toolCall");
+      const toolCalls = contentArray.filter((c) => (c as { type?: string })?.type === "toolCall");
       for (const toolCall of toolCalls) {
-        const result = findToolResult(allMessages, toolCall.id);
+        const tc = toolCall as { id: string };
+        const result = findToolResult(allMessages, tc.id);
         processedMessages.push({
           type: "toolCall",
           data: { toolCall, result },

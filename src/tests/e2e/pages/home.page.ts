@@ -1,4 +1,3 @@
-import type { ElectronApplication, Page } from "@playwright/test";
 import { expect } from "@playwright/test";
 import { BasePage } from "./base.page";
 
@@ -41,10 +40,6 @@ export class HomePage extends BasePage {
     permissionDeny: "button:has-text('拒绝')",
     permissionRemember: "#remember-in-session",
   };
-
-  constructor(page: Page, electronApp: ElectronApplication) {
-    super(page, electronApp);
-  }
 
   /**
    * 等待首页加载完成
@@ -213,7 +208,7 @@ export class HomePage extends BasePage {
   /**
    * 等待权限对话框出现
    */
-  async waitForPermissionDialog(timeout = 10000): Promise<void> {
+  async waitForPermissionDialog(timeout = 10_000): Promise<void> {
     await this.waitForElement(this.selectors.permissionDialog, timeout);
   }
 

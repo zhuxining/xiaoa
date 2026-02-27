@@ -31,7 +31,7 @@ describe("permission", () => {
       );
       const run = createMockActiveRun();
 
-      const promise = requestPermission(run, "bash", { command: "ls -la" });
+      const _promise = requestPermission(run, "bash", { command: "ls -la" });
 
       expect(appendEvent).toHaveBeenCalledWith(
         run.key,
@@ -137,9 +137,11 @@ describe("permission", () => {
 
   describe("cancelPendingPermissions", () => {
     test("rejects all pending permissions for a run", async () => {
-      const { requestPermission, cancelPendingPermissions, respondToPermission } = await import(
-        "@/agent/extension/permission"
-      );
+      const {
+        requestPermission,
+        cancelPendingPermissions,
+        respondToPermission,
+      } = await import("@/agent/extension/permission");
       const run = createMockActiveRun({ key: "test-cancel" });
 
       const promise1 = requestPermission(run, "bash", { command: "test1" });

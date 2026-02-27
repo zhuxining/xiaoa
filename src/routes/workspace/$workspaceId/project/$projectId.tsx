@@ -349,10 +349,6 @@ function ProjectPage() {
         }
       : null;
 
-  const displayMessages: AgentMessage[] = streamingMessage
-    ? [...messages, streamingMessage]
-    : messages;
-
   const createSessionMutation = useMutation({
     mutationFn: () =>
       createSession({
@@ -672,7 +668,7 @@ function ProjectPage() {
         files={files}
         filesForMention={mentionFiles}
         isGenerating={isGenerating}
-        messages={displayMessages}
+        messages={messages}
         onAbort={() => {
           if (currentSessionId) {
             abortChat({
@@ -750,6 +746,7 @@ function ProjectPage() {
         selectedFileId={selectedFileId}
         sessions={sessions}
         skills={skills}
+        streamingMessage={streamingMessage}
         viewMode={viewMode}
       />
     </div>

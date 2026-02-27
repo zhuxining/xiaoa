@@ -8,6 +8,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { MODELS, type ModelInfo } from "@/constants/models";
+import type { ChatSession } from "@/types/session";
 import { cn } from "@/utils/tailwind";
 import { AgentMessageList } from "./agent-message-list";
 import type { FileMenuItem } from "./file-menu";
@@ -16,26 +18,6 @@ import { PermissionBar } from "./permission-bar";
 import type { PermissionRequest } from "./permission-dialog";
 import { SessionList } from "./session-list";
 import type { SkillMenuItem } from "./skill-menu";
-
-export interface Session {
-  id: string;
-  messageCount: number;
-  title: string;
-  updatedAt: Date;
-}
-
-interface ModelInfo {
-  id: string;
-  name: string;
-}
-
-// 可用模型列表
-const AVAILABLE_MODELS: ModelInfo[] = [
-  { id: "claude-sonnet-4-5-20250514", name: "Claude Sonnet 4.5" },
-  { id: "claude-3-5-sonnet-20241022", name: "Claude 3.5 Sonnet" },
-  { id: "claude-3-5-haiku-20241022", name: "Claude 3.5 Haiku" },
-  { id: "claude-opus-4-5-20250514", name: "Claude Opus 4.5" },
-];
 
 interface ChatViewProps {
   agentAvatar?: string;
@@ -53,10 +35,11 @@ interface ChatViewProps {
   onPermissionAllow?: (request: PermissionRequest) => void;
   onPermissionDeny?: (request: PermissionRequest) => void;
   onSessionCreate?: () => void;
+  onSessionDelete?: (id: string) => void;
   onSessionSelect: (id: string) => void;
   onSkillSelect?: (skill: SkillMenuItem) => void;
   permissionRequest?: PermissionRequest | null;
-  sessions: Session[];
+  sessions: ChatSession[];
   showSessionList?: boolean;
   skills?: SkillMenuItem[];
   /** 流式消息（追加到 messages 末尾） */
@@ -93,7 +76,7 @@ function ModelSelector({
       </PopoverTrigger>
       <PopoverContent align="end" className="w-56 p-2">
         <div className="space-y-1">
-          {AVAILABLE_MODELS.map((model) => (
+          {MODELS.map((model) => (
             <button
               className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-accent ${
                 currentModel?.id === model.id ? "bg-accent" : ""
@@ -124,6 +107,7 @@ export function ChatView({
   currentModel,
   onSessionSelect,
   onSessionCreate,
+  onSessionDelete,
   onMessageSend,
   onAbort,
   onSkillSelect,
@@ -148,6 +132,7 @@ export function ChatView({
           className="w-60"
           currentSessionId={currentSessionId}
           onSessionCreate={onSessionCreate}
+          onSessionDelete={onSessionDelete}
           onSessionSelect={onSessionSelect}
           sessions={sessions}
         />

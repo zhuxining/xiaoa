@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
+import { PermissionDialogComponent } from "../../components/permission-dialog";
 import { test } from "../../fixtures/electron-app";
 import { HomePage } from "../../pages/home.page";
-import { PermissionDialogComponent } from "../../components/permission-dialog";
 
 /**
  * Chat Tests - 权限流程相关测试
@@ -47,7 +47,7 @@ test.describe("Chat Permission Tests", () => {
       await permissionDialog.waitForDialogHidden();
     } catch {
       // 如果没有权限对话框，跳过测试
-      test.skip();
+      test();
     }
   });
 
@@ -68,7 +68,7 @@ test.describe("Chat Permission Tests", () => {
       await permissionDialog.waitForDialogHidden();
     } catch {
       // 如果没有权限对话框，跳过测试
-      test.skip();
+      test();
     }
   });
 
@@ -92,7 +92,7 @@ test.describe("Chat Permission Tests", () => {
       // 在 Mock 环境下无法完全验证这个行为
     } catch {
       // 如果没有权限对话框，跳过测试
-      test.skip();
+      test();
     }
   });
 });
@@ -112,7 +112,7 @@ test.describe("Permission Dialog UI Tests", () => {
       // 验证对话框标题存在
       const title = await permissionDialog.getTitle();
       expect(title).toBeTruthy();
-      expect(title!.length).toBeGreaterThan(0);
+      expect(title?.length).toBeGreaterThan(0);
 
       // 验证描述存在
       const description = await permissionDialog.getDescription();
@@ -129,7 +129,7 @@ test.describe("Permission Dialog UI Tests", () => {
       await permissionDialog.deny();
     } catch {
       // 如果没有权限对话框，跳过测试
-      test.skip();
+      test();
     }
   });
 
@@ -149,7 +149,7 @@ test.describe("Permission Dialog UI Tests", () => {
       await permissionDialog.deny();
     } catch {
       // 如果没有权限对话框，跳过测试
-      test.skip();
+      test();
     }
   });
 });
@@ -173,7 +173,7 @@ test.describe("Permission Edge Cases", () => {
       await permissionDialog.waitForDialogHidden(1000);
     } catch {
       // 如果没有权限对话框，跳过测试
-      test.skip();
+      test();
     }
   });
 
@@ -188,7 +188,7 @@ test.describe("Permission Edge Cases", () => {
       // 点击对话框外部（如果支持）
       // 注：AlertDialog 通常不支持点击外部关闭
       const overlay = page.locator('[data-state="open"]');
-      if (await overlay.count() > 0) {
+      if ((await overlay.count()) > 0) {
         // 尝试点击遮罩层
         await page.mouse.click(0, 0);
 
@@ -206,7 +206,7 @@ test.describe("Permission Edge Cases", () => {
       }
     } catch {
       // 如果没有权限对话框，跳过测试
-      test.skip();
+      test();
     }
   });
 });

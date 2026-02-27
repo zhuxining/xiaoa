@@ -12,9 +12,9 @@ export interface MockMessageOptions {
 }
 
 export interface MockToolCall {
+  arguments: Record<string, unknown>;
   id: string;
   name: string;
-  arguments: Record<string, unknown>;
 }
 
 /**

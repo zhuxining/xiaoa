@@ -70,9 +70,13 @@ export class ChatViewComponent {
    * 获取最后一条消息
    */
   async getLastMessage(): Promise<string | null> {
-    const messages = this.page.locator('[data-role="user"], [data-role="assistant"]');
+    const messages = this.page.locator(
+      '[data-role="user"], [data-role="assistant"]'
+    );
     const count = await messages.count();
-    if (count === 0) return null;
+    if (count === 0) {
+      return null;
+    }
     return messages.nth(count - 1).textContent();
   }
 
@@ -102,6 +106,8 @@ export class ChatViewComponent {
    * 断言包含消息
    */
   async assertContainsMessage(text: string): Promise<void> {
-    await expect(this.page.locator(this.selectors.messageList)).toContainText(text);
+    await expect(this.page.locator(this.selectors.messageList)).toContainText(
+      text
+    );
   }
 }

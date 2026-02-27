@@ -46,6 +46,7 @@ export function MessageInput({
       onSend(trimmed);
       setValue("");
       setSelectedSkill(null);
+      requestAnimationFrame(resizeTextarea);
     }
   };
 
@@ -56,9 +57,17 @@ export function MessageInput({
     }
   };
 
+  const resizeTextarea = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
     setValue(newValue);
+    requestAnimationFrame(resizeTextarea);
 
     // 检测 "/" 触发技能菜单
     if (newValue.endsWith("/") && skills.length > 0) {

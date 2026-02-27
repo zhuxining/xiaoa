@@ -22,7 +22,7 @@ export class PermissionDialogComponent {
   /**
    * 等待对话框出现
    */
-  async waitForDialog(timeout = 10000): Promise<void> {
+  async waitForDialog(timeout = 10_000): Promise<void> {
     await this.page.waitForSelector(this.selectors.dialog, { timeout });
   }
 
@@ -83,7 +83,9 @@ export class PermissionDialogComponent {
    */
   async getDetails(): Promise<string | null> {
     const element = this.page.locator(this.selectors.details);
-    if (await element.count() === 0) return null;
+    if ((await element.count()) === 0) {
+      return null;
+    }
     return element.textContent();
   }
 
@@ -92,10 +94,18 @@ export class PermissionDialogComponent {
    */
   async getRiskLevel(): Promise<"low" | "medium" | "high" | null> {
     const text = await this.page.textContent(this.selectors.riskIndicator);
-    if (!text) return null;
-    if (text.includes("低")) return "low";
-    if (text.includes("中")) return "medium";
-    if (text.includes("高")) return "high";
+    if (!text) {
+      return null;
+    }
+    if (text.includes("低")) {
+      return "low";
+    }
+    if (text.includes("中")) {
+      return "medium";
+    }
+    if (text.includes("高")) {
+      return "high";
+    }
     return null;
   }
 
@@ -124,7 +134,9 @@ export class PermissionDialogComponent {
    * 断言描述包含
    */
   async assertDescriptionContains(text: string): Promise<void> {
-    await expect(this.page.locator(this.selectors.description)).toContainText(text);
+    await expect(this.page.locator(this.selectors.description)).toContainText(
+      text
+    );
   }
 
   /**
@@ -137,7 +149,9 @@ export class PermissionDialogComponent {
       high: "高",
     };
     await expect(
-      this.page.locator(`${this.selectors.riskIndicator}:contains("${levelText[level]}")`)
+      this.page.locator(
+        `${this.selectors.riskIndicator}:contains("${levelText[level]}")`
+      )
     ).toBeVisible();
   }
 }

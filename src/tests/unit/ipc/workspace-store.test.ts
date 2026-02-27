@@ -2,15 +2,7 @@
  * workspace-store.test.ts - 工作区 CRUD 测试
  */
 
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
@@ -95,7 +87,7 @@ describe("workspace store", () => {
       expect(workspace.id).toBeDefined();
       expect(workspace.name).toBe("New Workspace");
       expect(workspace.agent.name).toBe("小A");
-      expect(workspace.permissions.mode).toBe("review");
+      expect(workspace.permissions?.mode).toBe("review");
     });
 
     test("creates workspace directory structure", async () => {
@@ -179,7 +171,7 @@ describe("workspace store", () => {
       const updated = updateWorkspace(created.id, {
         permissions: { mode: "auto" },
       });
-      expect(updated?.permissions.mode).toBe("auto");
+      expect(updated?.permissions?.mode).toBe("auto");
     });
 
     test("updates updatedAt timestamp", async () => {

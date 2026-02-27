@@ -54,7 +54,9 @@ export class SessionListComponent {
     const result: string[] = [];
     for (let i = 0; i < count; i++) {
       const text = await titles.nth(i).textContent();
-      if (text) result.push(text);
+      if (text) {
+        result.push(text);
+      }
     }
     return result;
   }
@@ -66,7 +68,9 @@ export class SessionListComponent {
     const selected = this.page.locator(
       `${this.selectors.sessionItem}.bg-muted`
     );
-    if (await selected.count() === 0) return null;
+    if ((await selected.count()) === 0) {
+      return null;
+    }
     return selected.getAttribute("data-session-id");
   }
 
@@ -82,7 +86,9 @@ export class SessionListComponent {
    * 断言没有会话
    */
   async assertNoSessions(): Promise<void> {
-    await expect(this.page.locator(this.selectors.noSessionsText)).toBeVisible();
+    await expect(
+      this.page.locator(this.selectors.noSessionsText)
+    ).toBeVisible();
   }
 
   /**

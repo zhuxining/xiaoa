@@ -10,7 +10,7 @@ import type { Page } from "@playwright/test";
 export async function waitForElement(
   page: Page,
   selector: string,
-  timeout = 10000
+  timeout = 10_000
 ): Promise<void> {
   await page.waitForSelector(selector, { timeout });
 }
@@ -21,7 +21,7 @@ export async function waitForElement(
 export async function waitForElementHidden(
   page: Page,
   selector: string,
-  timeout = 10000
+  timeout = 10_000
 ): Promise<void> {
   await page.waitForSelector(selector, { state: "hidden", timeout });
 }
@@ -32,7 +32,7 @@ export async function waitForElementHidden(
 export async function waitForVisible(
   page: Page,
   selector: string,
-  timeout = 10000
+  timeout = 10_000
 ): Promise<void> {
   await page.waitForSelector(selector, { state: "visible", timeout });
 }
@@ -43,7 +43,7 @@ export async function waitForVisible(
 export async function waitForUrl(
   page: Page,
   urlPattern: string | RegExp,
-  timeout = 10000
+  timeout = 10_000
 ): Promise<void> {
   await page.waitForURL(urlPattern, { timeout });
 }
@@ -54,7 +54,7 @@ export async function waitForUrl(
 export async function waitForRequest(
   page: Page,
   urlPattern: string | RegExp,
-  timeout = 30000
+  timeout = 30_000
 ): Promise<void> {
   await page.waitForRequest(urlPattern, { timeout });
 }
@@ -65,7 +65,7 @@ export async function waitForRequest(
 export async function waitForResponse(
   page: Page,
   urlPattern: string | RegExp,
-  timeout = 30000
+  timeout = 30_000
 ): Promise<void> {
   await page.waitForResponse(urlPattern, { timeout });
 }
@@ -75,7 +75,7 @@ export async function waitForResponse(
  */
 export async function waitForCondition(
   condition: () => Promise<boolean>,
-  timeout = 10000,
+  timeout = 10_000,
   interval = 100
 ): Promise<void> {
   const startTime = Date.now();
@@ -99,7 +99,9 @@ export async function waitForAnimation(
   await page.waitForFunction(
     (sel) => {
       const element = document.querySelector(sel);
-      if (!element) return false;
+      if (!element) {
+        return false;
+      }
       const animations = element.getAnimations();
       return animations.every((anim) => anim.playState === "finished");
     },
@@ -119,7 +121,9 @@ export async function waitForReactRender(
     () => {
       // 检查是否有 React 正在渲染的标志
       const root = document.querySelector("#root");
-      if (!root) return true;
+      if (!root) {
+        return true;
+      }
       return !root.hasAttribute("data-reactroot");
     },
     {},
@@ -137,7 +141,7 @@ export async function pollUntil<T>(
     timeout?: number;
   } = {}
 ): Promise<T> {
-  const { interval = 100, timeout = 10000 } = options;
+  const { interval = 100, timeout = 10_000 } = options;
   const startTime = Date.now();
 
   while (Date.now() - startTime < timeout) {

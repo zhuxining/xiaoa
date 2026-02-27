@@ -100,12 +100,8 @@ describe("session-pool", () => {
 
   describe("disposeSession", () => {
     test("disposes and removes session from pool", async () => {
-      const {
-        getOrCreateSession,
-        disposeSession,
-        hasSession,
-        disposeAll,
-      } = await import("@/agent/session/session-pool");
+      const { getOrCreateSession, disposeSession, hasSession, disposeAll } =
+        await import("@/agent/session/session-pool");
       const mockResult = createMockSessionResult();
       const createFn = vi.fn().mockResolvedValue(mockResult);
 

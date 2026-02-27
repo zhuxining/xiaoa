@@ -91,6 +91,7 @@ describe("run-store", () => {
       const event = appendEvent(key, {
         runId: "run-1",
         scope: "global",
+        workspaceId: null,
         sessionId: "session-1",
         type: "run_start",
       });
@@ -109,12 +110,14 @@ describe("run-store", () => {
       const event1 = appendEvent(key, {
         runId: "run-1",
         scope: "global",
+        workspaceId: null,
         sessionId: "session-1",
         type: "run_start",
       });
       const event2 = appendEvent(key, {
         runId: "run-1",
         scope: "global",
+        workspaceId: null,
         sessionId: "session-1",
         type: "message_delta",
         content: "test",
@@ -125,9 +128,8 @@ describe("run-store", () => {
     });
 
     test("limits buffer size to MAX_EVENTS_PER_SESSION", async () => {
-      const { appendEvent, eventBuffers, MAX_EVENTS_PER_SESSION } = await import(
-        "@/agent/run/run-store"
-      );
+      const { appendEvent, eventBuffers, MAX_EVENTS_PER_SESSION } =
+        await import("@/agent/run/run-store");
       const key = "test-key-3";
 
       // 添加超过限制的事件
@@ -135,6 +137,7 @@ describe("run-store", () => {
         appendEvent(key, {
           runId: "run-1",
           scope: "global",
+          workspaceId: null,
           sessionId: "session-1",
           type: "message_delta",
           content: `message-${i}`,
@@ -144,7 +147,7 @@ describe("run-store", () => {
       const buffer = eventBuffers.get(key);
       expect(buffer).toHaveLength(MAX_EVENTS_PER_SESSION);
       // 验证保留的是最新的事件
-      expect(buffer[buffer.length - 1].content).toBe(
+      expect(buffer?.[buffer?.length - 1].content).toBe(
         `message-${MAX_EVENTS_PER_SESSION + 99}`
       );
     });
@@ -225,6 +228,7 @@ describe("run-store", () => {
       appendEvent(key, {
         runId: "run-1",
         scope: "global",
+        workspaceId: null,
         sessionId: "session-1",
         type: "run_start",
       });

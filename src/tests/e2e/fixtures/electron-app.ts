@@ -1,8 +1,8 @@
 import {
+  test as base,
   type ElectronApplication,
   _electron as electron,
   type Page,
-  test as base,
 } from "@playwright/test";
 import { findLatestBuild, parseElectronApp } from "electron-playwright-helpers";
 

@@ -10,7 +10,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : 1,
-  timeout: 30000,
+  timeout: 30_000,
   reporter: [
     ["html", { outputFolder: "test-results/html" }],
     ["json", { outputFile: "test-results/results.json" }],
@@ -29,7 +29,7 @@ export default defineConfig({
     {
       name: "smoke",
       testMatch: /smoke.*\.test\.ts/,
-      timeout: 60000,
+      timeout: 60_000,
     },
     // Session Tests - 会话相关测试
     {

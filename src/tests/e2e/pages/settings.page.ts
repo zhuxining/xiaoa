@@ -1,5 +1,3 @@
-import type { ElectronApplication, Page } from "@playwright/test";
-import { expect } from "@playwright/test";
 import { BasePage } from "./base.page";
 
 /**
@@ -27,17 +25,13 @@ export class SettingsPage extends BasePage {
     testConnectionButton: "button:has-text('测试连接')",
 
     // Toast
-    toast: '[data-sonner-toast]',
+    toast: "[data-sonner-toast]",
     toastSuccess: '[data-sonner-toast][data-type="success"]',
     toastError: '[data-sonner-toast][data-type="error"]',
 
     // 关于部分
     aboutSection: "text=关于",
   };
-
-  constructor(page: Page, electronApp: ElectronApplication) {
-    super(page, electronApp);
-  }
 
   /**
    * 等待设置页面加载完成
@@ -60,7 +54,10 @@ export class SettingsPage extends BasePage {
    * 选择 Provider
    */
   async selectProvider(provider: string): Promise<void> {
-    const select = this.page.locator("label:has-text('Provider')").locator("..").locator("select, [role=combobox]");
+    const select = this.page
+      .locator("label:has-text('Provider')")
+      .locator("..")
+      .locator("select, [role=combobox]");
     await select.click();
     await this.page.click(`text=${provider}`);
   }
@@ -69,7 +66,9 @@ export class SettingsPage extends BasePage {
    * 输入 API Key
    */
   async inputApiKey(apiKey: string): Promise<void> {
-    const input = this.page.locator("input[placeholder*='API'], input[type=password]").first();
+    const input = this.page
+      .locator("input[placeholder*='API'], input[type=password]")
+      .first();
     await input.fill(apiKey);
   }
 
@@ -77,7 +76,10 @@ export class SettingsPage extends BasePage {
    * 选择模型
    */
   async selectModel(model: string): Promise<void> {
-    const modelSelect = this.page.locator("label:has-text('模型')").locator("..").locator("select, [role=combobox]");
+    const modelSelect = this.page
+      .locator("label:has-text('模型')")
+      .locator("..")
+      .locator("select, [role=combobox]");
     await modelSelect.click();
     await this.page.click(`text=${model}`);
   }
@@ -107,18 +109,28 @@ export class SettingsPage extends BasePage {
    * 选择主题
    */
   async selectTheme(theme: "light" | "dark" | "system"): Promise<void> {
-    const themeSelect = this.page.locator("label:has-text('主题')").locator("..").locator("select, [role=combobox]");
+    const themeSelect = this.page
+      .locator("label:has-text('主题')")
+      .locator("..")
+      .locator("select, [role=combobox]");
     await themeSelect.click();
-    await this.page.click(`text=${theme === "light" ? "浅色" : theme === "dark" ? "深色" : "跟随系统"}`);
+    await this.page.click(
+      `text=${theme === "light" ? "浅色" : theme === "dark" ? "深色" : "跟随系统"}`
+    );
   }
 
   /**
    * 选择语言
    */
   async selectLanguage(language: "zh-CN" | "en-US"): Promise<void> {
-    const langSelect = this.page.locator("label:has-text('语言')").locator("..").locator("select, [role=combobox]");
+    const langSelect = this.page
+      .locator("label:has-text('语言')")
+      .locator("..")
+      .locator("select, [role=combobox]");
     await langSelect.click();
-    await this.page.click(`text=${language === "zh-CN" ? "简体中文" : "English"}`);
+    await this.page.click(
+      `text=${language === "zh-CN" ? "简体中文" : "English"}`
+    );
   }
 
   /**

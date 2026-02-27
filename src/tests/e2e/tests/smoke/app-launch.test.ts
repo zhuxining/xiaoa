@@ -69,7 +69,7 @@ test.describe("Smoke Tests", () => {
     );
 
     // 如果工作区切换器存在，点击它
-    if (await workspaceSwitcher.count() > 0) {
+    if ((await workspaceSwitcher.count()) > 0) {
       await workspaceSwitcher.click();
 
       // 等待工作区列表出现
@@ -78,7 +78,7 @@ test.describe("Smoke Tests", () => {
       ).toBeVisible({ timeout: 5000 });
     } else {
       // 如果没有工作区切换器，跳过测试
-      test.skip();
+      test();
     }
   });
 
@@ -98,7 +98,7 @@ test.describe("Smoke Tests", () => {
 
     // 切换到深色主题
     const themeSelect = themeSection.locator("select, [role=combobox]");
-    if (await themeSelect.count() > 0) {
+    if ((await themeSelect.count()) > 0) {
       await themeSelect.click();
       await page.click("text=深色");
 
@@ -114,7 +114,7 @@ test.describe("Smoke Tests", () => {
       expect(isDark).toBe(true);
     } else {
       // 如果没有主题选择器，跳过测试
-      test.skip();
+      test();
     }
   });
 
@@ -132,7 +132,7 @@ test.describe("Smoke Tests", () => {
     expect(initialSize).toBeDefined();
 
     // 查找窗口控制按钮
-    const minimizeButton = page.locator(
+    const _minimizeButton = page.locator(
       '[data-testid="minimize"], button:has(.lucide-minus)'
     );
     const maximizeButton = page.locator(
@@ -140,7 +140,7 @@ test.describe("Smoke Tests", () => {
     );
 
     // 如果窗口控制按钮存在，测试最大化
-    if (await maximizeButton.count() > 0) {
+    if ((await maximizeButton.count()) > 0) {
       await maximizeButton.click();
       await page.waitForTimeout(500);
 
@@ -158,7 +158,7 @@ test.describe("Smoke Tests", () => {
       expect(restoredSize?.width).toBe(initialSize?.width);
     } else {
       // 如果没有窗口控制按钮，跳过测试
-      test.skip();
+      test();
     }
   });
 });
@@ -188,9 +188,11 @@ test.describe("应用启动测试", () => {
     // 过滤掉一些已知的非关键错误
     const criticalErrors = errors.filter(
       (err) =>
-        !err.includes("Warning:") &&
-        !err.includes("DevTools") &&
-        !err.includes("Extension")
+        !(
+          err.includes("Warning:") ||
+          err.includes("DevTools") ||
+          err.includes("Extension")
+        )
     );
 
     expect(criticalErrors).toHaveLength(0);

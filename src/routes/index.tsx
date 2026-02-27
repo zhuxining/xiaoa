@@ -1,7 +1,6 @@
 import type { AgentMessage } from "@mariozechner/pi-agent-core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { FileText, Globe, Wrench } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import {
   abortChat,
@@ -13,33 +12,13 @@ import {
 import { getConfig, updateLLMConfig } from "@/actions/config";
 import {
   createSession,
+  deleteSession,
   getSessionMessages,
   listSessions,
 } from "@/actions/session";
 import { ChatView } from "@/components/chat/chat-view";
 import type { PermissionRequest } from "@/components/chat/permission-dialog";
-import type { SkillMenuItem } from "@/components/chat/skill-menu";
-
-const SKILLS: SkillMenuItem[] = [
-  {
-    id: "web-search",
-    name: "搜索网页",
-    description: "搜索互联网获取最新信息",
-    icon: <Globe className="size-3" />,
-  },
-  {
-    id: "analyze-doc",
-    name: "分析文档",
-    description: "分析和总结文档内容",
-    icon: <FileText className="size-3" />,
-  },
-  {
-    id: "write-code",
-    name: "编写代码",
-    description: "生成代码片段",
-    icon: <Wrench className="size-3" />,
-  },
-];
+import { getModelName, type ModelInfo } from "@/constants/models";
 
 /**
  * 处理 ChatEvent，更新消息状态
@@ -117,12 +96,16 @@ function HomePage() {
 
   // 当前模型信息
   const currentModel = config?.llm
-    ? { id: config.llm.model, name: config.llm.model }
+    ? {
+        id: config.llm.model,
+        name: getModelName(config.llm.model),
+        provider: config.llm.provider,
+      }
     : null;
 
   // 模型变更处理
   const handleModelChange = useCallback(
-    async (model: { id: string; name: string }) => {
+    async (model: ModelInfo) => {
       await updateLLMConfig({ model: model.id });
       queryClient.invalidateQueries({ queryKey: ["config"] });
     },
@@ -172,6 +155,20 @@ function HomePage() {
         queryKey: ["session", "global", "list"],
       });
       setCurrentSessionId(newSession.id);
+    },
+  });
+
+  const deleteSessionMutation = useMutation({
+    mutationFn: (sessionId: string) =>
+      deleteSession({ workspaceId: null, id: sessionId }),
+    onSuccess: (_, sessionId) => {
+      queryClient.invalidateQueries({
+        queryKey: ["session", "global", "list"],
+      });
+      if (currentSessionId === sessionId) {
+        const next = sessions.find((s) => s.id !== sessionId);
+        setCurrentSessionId(next?.id);
+      }
     },
   });
 
@@ -322,6 +319,13 @@ function HomePage() {
     createSessionMutation.mutate();
   }, [createSessionMutation]);
 
+  const handleSessionDelete = useCallback(
+    (id: string) => {
+      deleteSessionMutation.mutate(id);
+    },
+    [deleteSessionMutation]
+  );
+
   const handleMessageSend = useCallback(
     (content: string) => {
       if (!currentSessionId) {
@@ -360,10 +364,6 @@ function HomePage() {
     setPermissionRequest(null);
     setActiveRunId(null);
   }, [activeRunId, currentSessionId]);
-
-  const handleSkillSelect = useCallback((skill: SkillMenuItem) => {
-    console.log("Selected skill:", skill);
-  }, []);
 
   const handlePermissionAllow = useCallback(
     (request: PermissionRequest) => {
@@ -413,11 +413,10 @@ function HomePage() {
       onPermissionAllow={handlePermissionAllow}
       onPermissionDeny={handlePermissionDeny}
       onSessionCreate={handleSessionCreate}
+      onSessionDelete={handleSessionDelete}
       onSessionSelect={handleSessionSelect}
-      onSkillSelect={handleSkillSelect}
       permissionRequest={permissionRequest}
       sessions={sessions}
-      skills={SKILLS}
       streamingMessage={streamingMessage}
     />
   );

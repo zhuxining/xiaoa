@@ -14,7 +14,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 let userDataPath = "";
-let appName = "xiaoa";
+const appName = "xiaoa";
 
 vi.mock("electron", () => ({
   app: {
@@ -31,7 +31,7 @@ describe("config store", () => {
   afterEach(() => {
     vi.resetModules();
     if (userDataPath && existsSync(userDataPath)) {
-    rmSync(userDataPath, { recursive: true, force: true });
+      rmSync(userDataPath, { recursive: true, force: true });
     }
   });
 
@@ -73,7 +73,11 @@ describe("config store", () => {
     });
 
     test("returns default config on corrupted file", async () => {
-      writeFileSync(join(userDataPath, "config.json"), "not valid json", "utf-8");
+      writeFileSync(
+        join(userDataPath, "config.json"),
+        "not valid json",
+        "utf-8"
+      );
 
       const { readConfig } = await import("@/ipc/config/store");
       const config = readConfig();
@@ -140,7 +144,11 @@ describe("config store", () => {
       const { updateConfig } = await import("@/ipc/config/store");
 
       updateConfig({
-        llm: { provider: "anthropic", model: "claude-3-5-sonnet", apiKey: "test-key" },
+        llm: {
+          provider: "anthropic",
+          model: "claude-3-5-sonnet",
+          apiKey: "test-key",
+        },
       });
 
       // credentials.enc should exist
@@ -162,7 +170,9 @@ describe("config store", () => {
 
       // Reset module to read fresh
       vi.resetModules();
-      const { readConfig: readConfigFresh } = await import("@/ipc/config/store");
+      const { readConfig: readConfigFresh } = await import(
+        "@/ipc/config/store"
+      );
 
       const config = readConfigFresh();
       expect(config.llm.apiKey).toBe("my-secret-api-key");
@@ -173,16 +183,26 @@ describe("config store", () => {
 
       // Set anthropic key
       updateConfig({
-        llm: { provider: "anthropic", model: "claude-3-5-sonnet", apiKey: "anthropic-key" },
+        llm: {
+          provider: "anthropic",
+          model: "claude-3-5-sonnet",
+          apiKey: "anthropic-key",
+        },
       });
 
       // Switch to deepseek
       updateConfig({
-        llm: { provider: "deepseek", model: "deepseek-chat", apiKey: "deepseek-key" },
+        llm: {
+          provider: "deepseek",
+          model: "deepseek-chat",
+          apiKey: "deepseek-key",
+        },
       });
 
       vi.resetModules();
-      const { readConfig: readConfigFresh } = await import("@/ipc/config/store");
+      const { readConfig: readConfigFresh } = await import(
+        "@/ipc/config/store"
+      );
 
       const config = readConfigFresh();
       expect(config.llm.provider).toBe("deepseek");

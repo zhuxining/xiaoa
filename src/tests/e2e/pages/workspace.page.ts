@@ -1,4 +1,3 @@
-import type { ElectronApplication, Page } from "@playwright/test";
 import { expect } from "@playwright/test";
 import { BasePage } from "./base.page";
 
@@ -33,10 +32,6 @@ export class WorkspacePage extends BasePage {
     memoriesTab: "text=记忆",
     agentTab: "text=Agent",
   };
-
-  constructor(page: Page, electronApp: ElectronApplication) {
-    super(page, electronApp);
-  }
 
   // ========== 工作区列表 ==========
 

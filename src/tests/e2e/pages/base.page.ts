@@ -21,7 +21,7 @@ export abstract class BasePage {
   /**
    * 等待元素出现
    */
-  async waitForElement(selector: string, timeout = 10000): Promise<void> {
+  async waitForElement(selector: string, timeout = 10_000): Promise<void> {
     await this.page.waitForSelector(selector, { timeout });
   }
 
@@ -30,7 +30,7 @@ export abstract class BasePage {
    */
   async waitForElementHidden(
     selector: string,
-    timeout = 10000
+    timeout = 10_000
   ): Promise<void> {
     await this.page.waitForSelector(selector, { state: "hidden", timeout });
   }

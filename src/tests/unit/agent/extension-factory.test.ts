@@ -3,7 +3,10 @@
  */
 
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { createMockActiveRun, createMockExtensionAPI } from "../utils/mock-factory";
+import {
+  createMockActiveRun,
+  createMockExtensionAPI,
+} from "../utils/mock-factory";
 
 // Mock dependencies
 vi.mock("@/ipc/config/store", () => ({
@@ -61,11 +64,25 @@ describe("extension-factory", () => {
       factory(pi);
 
       // Get the tool_call handler
-      const onCall = pi.on.mock.calls.find((c: unknown[]) => c[0] === "tool_call");
-      const handler = onCall?.[1] as (event: { toolName: string; input: unknown }) => Promise<unknown>;
+      const onCall = pi.on.mock.calls.find(
+        (c: unknown[]) => c[0] === "tool_call"
+      );
+      const handler = onCall?.[1] as (event: {
+        toolName: string;
+        input: unknown;
+      }) => Promise<unknown>;
 
       // Auto-allowed tools should not request permission
-      const autoAllowedTools = ["read", "grep", "find", "ls", "memory_search", "memory_write", "knowledge_read", "knowledge_list"];
+      const autoAllowedTools = [
+        "read",
+        "grep",
+        "find",
+        "ls",
+        "memory_search",
+        "memory_write",
+        "knowledge_read",
+        "knowledge_list",
+      ];
 
       for (const toolName of autoAllowedTools) {
         const result = await handler({ toolName, input: {} });
@@ -90,10 +107,18 @@ describe("extension-factory", () => {
       const factory = createXiaoaExtension(run);
       factory(pi);
 
-      const onCall = pi.on.mock.calls.find((c: unknown[]) => c[0] === "tool_call");
-      const handler = onCall?.[1] as (event: { toolName: string; input: unknown }) => Promise<unknown>;
+      const onCall = pi.on.mock.calls.find(
+        (c: unknown[]) => c[0] === "tool_call"
+      );
+      const handler = onCall?.[1] as (event: {
+        toolName: string;
+        input: unknown;
+      }) => Promise<unknown>;
 
-      const result = await handler({ toolName: "bash", input: { command: "test" } });
+      const result = await handler({
+        toolName: "bash",
+        input: { command: "test" },
+      });
 
       expect(result).toEqual({ block: true, reason: "运行已中止" });
       expect(cancelPendingPermissions).toHaveBeenCalledWith(run.key);
@@ -113,10 +138,18 @@ describe("extension-factory", () => {
       const factory = createXiaoaExtension(run);
       factory(pi);
 
-      const onCall = pi.on.mock.calls.find((c: unknown[]) => c[0] === "tool_call");
-      const handler = onCall?.[1] as (event: { toolName: string; input: unknown }) => Promise<unknown>;
+      const onCall = pi.on.mock.calls.find(
+        (c: unknown[]) => c[0] === "tool_call"
+      );
+      const handler = onCall?.[1] as (event: {
+        toolName: string;
+        input: unknown;
+      }) => Promise<unknown>;
 
-      const result = await handler({ toolName: "bash", input: { command: "test" } });
+      const result = await handler({
+        toolName: "bash",
+        input: { command: "test" },
+      });
 
       expect(result).toBeUndefined();
       expect(requestPermission).not.toHaveBeenCalled();
@@ -140,12 +173,22 @@ describe("extension-factory", () => {
       const factory = createXiaoaExtension(run);
       factory(pi);
 
-      const onCall = pi.on.mock.calls.find((c: unknown[]) => c[0] === "tool_call");
-      const handler = onCall?.[1] as (event: { toolName: string; input: unknown }) => Promise<unknown>;
+      const onCall = pi.on.mock.calls.find(
+        (c: unknown[]) => c[0] === "tool_call"
+      );
+      const handler = onCall?.[1] as (event: {
+        toolName: string;
+        input: unknown;
+      }) => Promise<unknown>;
 
-      const result = await handler({ toolName: "bash", input: { command: "ls" } });
+      const result = await handler({
+        toolName: "bash",
+        input: { command: "ls" },
+      });
 
-      expect(requestPermission).toHaveBeenCalledWith(run, "bash", { command: "ls" });
+      expect(requestPermission).toHaveBeenCalledWith(run, "bash", {
+        command: "ls",
+      });
       expect(result).toBeUndefined();
     });
 
@@ -167,8 +210,13 @@ describe("extension-factory", () => {
       const factory = createXiaoaExtension(run);
       factory(pi);
 
-      const onCall = pi.on.mock.calls.find((c: unknown[]) => c[0] === "tool_call");
-      const handler = onCall?.[1] as (event: { toolName: string; input: unknown }) => Promise<unknown>;
+      const onCall = pi.on.mock.calls.find(
+        (c: unknown[]) => c[0] === "tool_call"
+      );
+      const handler = onCall?.[1] as (event: {
+        toolName: string;
+        input: unknown;
+      }) => Promise<unknown>;
 
       await handler({ toolName: "bash", input: { command: "ls" } });
 
@@ -193,10 +241,18 @@ describe("extension-factory", () => {
       const factory = createXiaoaExtension(run);
       factory(pi);
 
-      const onCall = pi.on.mock.calls.find((c: unknown[]) => c[0] === "tool_call");
-      const handler = onCall?.[1] as (event: { toolName: string; input: unknown }) => Promise<unknown>;
+      const onCall = pi.on.mock.calls.find(
+        (c: unknown[]) => c[0] === "tool_call"
+      );
+      const handler = onCall?.[1] as (event: {
+        toolName: string;
+        input: unknown;
+      }) => Promise<unknown>;
 
-      const result = await handler({ toolName: "bash", input: { command: "rm -rf" } });
+      const result = await handler({
+        toolName: "bash",
+        input: { command: "rm -rf" },
+      });
 
       expect(result).toEqual({ block: true, reason: "操作被用户拒绝" });
     });
@@ -219,7 +275,9 @@ describe("extension-factory", () => {
       const factory = createXiaoaExtension(run);
       factory(pi);
 
-      const onCall = pi.on.mock.calls.find((c: unknown[]) => c[0] === "before_agent_start");
+      const onCall = pi.on.mock.calls.find(
+        (c: unknown[]) => c[0] === "before_agent_start"
+      );
       const handler = onCall?.[1] as () => Promise<{ systemPrompt: string }>;
 
       const result = await handler();
@@ -241,7 +299,9 @@ describe("extension-factory", () => {
       const factory = createXiaoaExtension(run);
       factory(pi);
 
-      const onCall = pi.on.mock.calls.find((c: unknown[]) => c[0] === "before_agent_start");
+      const onCall = pi.on.mock.calls.find(
+        (c: unknown[]) => c[0] === "before_agent_start"
+      );
       const handler = onCall?.[1] as () => Promise<{ systemPrompt: string }>;
 
       const result = await handler();
