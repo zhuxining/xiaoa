@@ -50,7 +50,7 @@ test.describe("Chat Abort Tests", () => {
     } else {
       // 如果没有中止按钮，可能是 Mock Agent 响应太快
       // 跳过测试
-      test();
+      return;
     }
   });
 

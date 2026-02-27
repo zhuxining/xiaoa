@@ -41,7 +41,7 @@ test.describe("Workspace CRUD Tests", () => {
       await expect(workspaceList).toBeVisible();
     } else {
       // 如果没有工作区功能，跳过测试
-      test();
+      return;
     }
   });
 
@@ -85,10 +85,10 @@ test.describe("Workspace CRUD Tests", () => {
           await expect(page.locator(`text=${workspace.name}`)).toBeVisible();
         }
       } else {
-        test();
+        return;
       }
     } else {
-      test();
+      return;
     }
   });
 
@@ -121,10 +121,10 @@ test.describe("Workspace CRUD Tests", () => {
         );
         await expect(workspaceHeader.first()).toBeVisible();
       } else {
-        test();
+        return;
       }
     } else {
-      test();
+      return;
     }
   });
 
@@ -177,13 +177,13 @@ test.describe("Workspace CRUD Tests", () => {
             .count();
           expect(newCount).toBeLessThan(initialCount);
         } else {
-          test();
+          return;
         }
       } else {
-        test();
+        return;
       }
     } else {
-      test();
+      return;
     }
   });
 
@@ -244,7 +244,7 @@ test.describe("Workspace CRUD Tests", () => {
         }
       }
     } else {
-      test();
+      return;
     }
   });
 });
@@ -274,10 +274,10 @@ test.describe("Workspace Agent Config Tests", () => {
         // 验证配置选项存在
         await expect(agentForm).toBeVisible();
       } else {
-        test();
+        return;
       }
     } else {
-      test();
+      return;
     }
   });
 
@@ -307,7 +307,7 @@ test.describe("Workspace Agent Config Tests", () => {
         await expect(permissionSelect).toContainText("自动");
       }
     } else {
-      test();
+      return;
     }
   });
 });

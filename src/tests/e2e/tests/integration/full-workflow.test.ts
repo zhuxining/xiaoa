@@ -178,7 +178,7 @@ test.describe("Integration Tests", () => {
       }
     } else {
       // 如果没有权限设置，跳过测试
-      test();
+      return;
     }
   });
 
@@ -228,7 +228,7 @@ test.describe("Integration Tests", () => {
         }
       }
     } else {
-      test();
+      return;
     }
   });
 

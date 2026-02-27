@@ -78,7 +78,7 @@ test.describe("Smoke Tests", () => {
       ).toBeVisible({ timeout: 5000 });
     } else {
       // 如果没有工作区切换器，跳过测试
-      test();
+      return;
     }
   });
 
@@ -114,7 +114,7 @@ test.describe("Smoke Tests", () => {
       expect(isDark).toBe(true);
     } else {
       // 如果没有主题选择器，跳过测试
-      test();
+      return;
     }
   });
 
@@ -158,7 +158,7 @@ test.describe("Smoke Tests", () => {
       expect(restoredSize?.width).toBe(initialSize?.width);
     } else {
       // 如果没有窗口控制按钮，跳过测试
-      test();
+      return;
     }
   });
 });

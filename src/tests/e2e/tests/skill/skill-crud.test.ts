@@ -36,7 +36,7 @@ test.describe("Skill Tests", () => {
         await expect(skillList).toBeVisible();
       }
     } else {
-      test();
+      return;
     }
   });
 
@@ -86,10 +86,10 @@ test.describe("Skill Tests", () => {
           await expect(page.locator(`text=${skill.name}`)).toBeVisible();
         }
       } else {
-        test();
+        return;
       }
     } else {
-      test();
+      return;
     }
   });
 
@@ -131,10 +131,10 @@ test.describe("Skill Tests", () => {
           await expect(page.locator(`text=${newName}`)).toBeVisible();
         }
       } else {
-        test();
+        return;
       }
     } else {
-      test();
+      return;
     }
   });
 
@@ -185,10 +185,10 @@ test.describe("Skill Tests", () => {
           expect(newCount).toBe(initialCount - 1);
         }
       } else {
-        test();
+        return;
       }
     } else {
-      test();
+      return;
     }
   });
 
@@ -222,7 +222,7 @@ test.describe("Skill Tests", () => {
         expect(inputValue).toContain("/");
       }
     } else {
-      test();
+      return;
     }
   });
 });

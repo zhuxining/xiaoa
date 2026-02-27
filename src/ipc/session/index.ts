@@ -13,4 +13,5 @@ export const session = {
   getMessages: sessionRouter.getMessages,
   create: sessionRouter.create,
   delete: sessionRouter.delete,
+  rename: sessionRouter.rename,
 };

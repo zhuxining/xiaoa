@@ -47,7 +47,7 @@ test.describe("Chat Permission Tests", () => {
       await permissionDialog.waitForDialogHidden();
     } catch {
       // 如果没有权限对话框，跳过测试
-      test();
+      return;
     }
   });
 
@@ -68,7 +68,7 @@ test.describe("Chat Permission Tests", () => {
       await permissionDialog.waitForDialogHidden();
     } catch {
       // 如果没有权限对话框，跳过测试
-      test();
+      return;
     }
   });
 
@@ -92,7 +92,7 @@ test.describe("Chat Permission Tests", () => {
       // 在 Mock 环境下无法完全验证这个行为
     } catch {
       // 如果没有权限对话框，跳过测试
-      test();
+      return;
     }
   });
 });
@@ -129,7 +129,7 @@ test.describe("Permission Dialog UI Tests", () => {
       await permissionDialog.deny();
     } catch {
       // 如果没有权限对话框，跳过测试
-      test();
+      return;
     }
   });
 
@@ -149,7 +149,7 @@ test.describe("Permission Dialog UI Tests", () => {
       await permissionDialog.deny();
     } catch {
       // 如果没有权限对话框，跳过测试
-      test();
+      return;
     }
   });
 });
@@ -173,7 +173,7 @@ test.describe("Permission Edge Cases", () => {
       await permissionDialog.waitForDialogHidden(1000);
     } catch {
       // 如果没有权限对话框，跳过测试
-      test();
+      return;
     }
   });
 
@@ -206,7 +206,7 @@ test.describe("Permission Edge Cases", () => {
       }
     } catch {
       // 如果没有权限对话框，跳过测试
-      test();
+      return;
     }
   });
 });

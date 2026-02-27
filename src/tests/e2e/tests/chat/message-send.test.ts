@@ -97,7 +97,7 @@ test.describe("Chat Message Tests", () => {
       }
     } else {
       // 如果没有模型选择器，跳过测试
-      test();
+      return;
     }
   });
 

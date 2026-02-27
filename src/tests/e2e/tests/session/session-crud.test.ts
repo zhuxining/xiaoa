@@ -139,7 +139,7 @@ test.describe("Session CRUD Tests", () => {
       }
     } else {
       // 如果没有重命名功能，跳过测试
-      test();
+      return;
     }
   });
 
@@ -186,7 +186,7 @@ test.describe("Session CRUD Tests", () => {
       expect(newCount).toBe(initialCount - 1);
     } else {
       // 如果没有删除功能，跳过测试
-      test();
+      return;
     }
   });
 

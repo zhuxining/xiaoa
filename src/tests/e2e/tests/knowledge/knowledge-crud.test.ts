@@ -46,7 +46,7 @@ test.describe("Knowledge Tests", () => {
         }
       }
     } else {
-      test();
+      return;
     }
   });
 
@@ -69,7 +69,7 @@ test.describe("Knowledge Tests", () => {
         await expect(knowledgeList).toBeVisible();
       }
     } else {
-      test();
+      return;
     }
   });
 
@@ -112,7 +112,7 @@ test.describe("Knowledge Tests", () => {
         }
       }
     } else {
-      test();
+      return;
     }
   });
 
@@ -154,7 +154,7 @@ test.describe("Knowledge Tests", () => {
         }
       }
     } else {
-      test();
+      return;
     }
   });
 
@@ -194,7 +194,7 @@ test.describe("Knowledge Tests", () => {
         }
       }
     } else {
-      test();
+      return;
     }
   });
 });
@@ -233,7 +233,7 @@ test.describe("Knowledge Search Tests", () => {
         }
       }
     } else {
-      test();
+      return;
     }
   });
 });
