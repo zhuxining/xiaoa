@@ -57,10 +57,7 @@ function isCustomMessage(message: AgentMessage, role: string): boolean {
 /**
  * 获取消息的 ARIA 标签
  */
-function getMessageAriaLabel(
-  message: AgentMessage,
-  agentName: string
-): string {
+function getMessageAriaLabel(message: AgentMessage, agentName: string): string {
   if (message.role === "user") {
     return "用户消息";
   }
@@ -81,7 +78,7 @@ function isStreamingMessageRedundant(
   if (!streamingMsg || messages.length === 0) {
     return false;
   }
-  const lastMessage = messages[messages.length - 1];
+  const lastMessage = messages.at(-1);
   // 如果最后一条是 assistant 消息且时间戳更新，说明服务器消息已包含内容
   if (
     lastMessage.role === "assistant" &&
@@ -114,9 +111,14 @@ export function AgentMessageList({
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
 
   // 合并 messages + streaming message（避免重复）
-  const isRedundant = isStreamingMessageRedundant(messages, streamingMessage ?? null);
+  const isRedundant = isStreamingMessageRedundant(
+    messages,
+    streamingMessage ?? null
+  );
   const allMessages =
-    streamingMessage && !isRedundant ? [...messages, streamingMessage] : messages;
+    streamingMessage && !isRedundant
+      ? [...messages, streamingMessage]
+      : messages;
 
   // 自动滚动到底部（需要操作 Viewport 而非 Root）
   useEffect(() => {
@@ -243,7 +245,8 @@ export function AgentMessageList({
     // 助手消息
     if (message.role === "assistant") {
       // 只有当流式消息不是冗余的，且是最后一条消息时才显示流式状态
-      const isActuallyStreaming = isStreaming && !isRedundant && index === allMessages.length - 1;
+      const isActuallyStreaming =
+        isStreaming && !isRedundant && index === allMessages.length - 1;
       return (
         <AssistantMessage
           avatar={agentAvatar}
@@ -379,7 +382,7 @@ export function AgentMessageList({
             return (
               <div
                 aria-label={`工具调用: ${toolCall.name}`}
-                className={cn(isFocused && "ring-2 ring-ring/30 rounded-lg")}
+                className={cn(isFocused && "rounded-lg ring-2 ring-ring/30")}
                 key={`tool-${item.index}-${toolCall.id}`}
                 role="article"
                 tabIndex={-1}
@@ -393,7 +396,7 @@ export function AgentMessageList({
           return (
             <div
               aria-label={getMessageAriaLabel(message, agentName)}
-              className={cn(isFocused && "ring-2 ring-ring/30 rounded-lg")}
+              className={cn(isFocused && "rounded-lg ring-2 ring-ring/30")}
               key={`msg-${item.index}-${displayIndex}`}
               role="article"
               tabIndex={-1}

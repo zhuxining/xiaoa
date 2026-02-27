@@ -8,8 +8,8 @@ import { Bot, Copy, Loader2, ThumbsDown, ThumbsUp } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import Markdown from "react-markdown";
-import { toast } from "sonner";
 import remarkGfm from "remark-gfm";
+import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -116,8 +116,8 @@ function extractTextContent(content: ContentBlock[]): string {
 function formatRelativeTime(timestamp: number): string {
   const now = Date.now();
   const diff = now - timestamp;
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
+  const minutes = Math.floor(diff / 60_000);
+  const hours = Math.floor(diff / 3_600_000);
 
   if (minutes < 1) {
     return "刚刚";
@@ -165,7 +165,7 @@ export function AssistantMessage({
 
   return (
     <div
-      className={cn("flex gap-3 group", className)}
+      className={cn("group flex gap-3", className)}
       data-slot="assistant-message"
     >
       <Avatar size="sm">
@@ -184,7 +184,7 @@ export function AssistantMessage({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="text-muted-foreground text-xs cursor-default">
+                <span className="cursor-default text-muted-foreground text-xs">
                   {formatRelativeTime(timestamp)}
                 </span>
               </TooltipTrigger>

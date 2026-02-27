@@ -48,8 +48,10 @@ export async function deleteSession(
 
 export type { SessionMeta } from "@/ipc/session/schemas";
 
-export async function renameSession(
-  input: { workspaceId: string | null; id: string; name: string }
-): Promise<SessionMeta | null> {
+export async function renameSession(input: {
+  workspaceId: string | null;
+  id: string;
+  name: string;
+}): Promise<SessionMeta | null> {
   return await ipc.client.session.rename(input);
 }

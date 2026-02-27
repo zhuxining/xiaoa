@@ -19,9 +19,9 @@ import {
 import {
   createSession as createSessionAction,
   deleteSession as deleteSessionAction,
-  renameSession as renameSessionAction,
   getSessionMessages,
   listSessions,
+  renameSession as renameSessionAction,
 } from "@/actions/session";
 import type { PermissionRequest } from "@/components/chat/permission-dialog";
 import type { ChatSession } from "@/types/session";
@@ -49,7 +49,6 @@ export interface UseChatSessionReturn {
   createSession: () => void;
   currentSessionId: string | undefined;
   deleteSession: (id: string) => void;
-  renameSession: (id: string, name: string) => void;
   denyPermission: (request: PermissionRequest) => void;
 
   isGenerating: boolean;
@@ -57,6 +56,7 @@ export interface UseChatSessionReturn {
   messages: AgentMessage[];
 
   permissionRequest: PermissionRequest | null;
+  renameSession: (id: string, name: string) => void;
   selectSession: (id: string) => void;
   sendMessage: (content: string) => void;
   sessions: ChatSession[];
@@ -282,7 +282,10 @@ export function useChatSession(
             }
             // 使用固定的开始时间戳，避免每次更新都刷新
             setLastStreamingMessage(
-              buildStreamingMessage(newContent, streamingStartTimestampRef.current)
+              buildStreamingMessage(
+                newContent,
+                streamingStartTimestampRef.current
+              )
             );
             return newContent;
           });
@@ -329,7 +332,10 @@ export function useChatSession(
   // 生成中返回当前流式消息，否则返回保留的最后流式消息（避免刷新闪烁）
   const streamingMessage: AgentMessage | null = isGenerating
     ? streamingContent
-      ? buildStreamingMessage(streamingContent, streamingStartTimestampRef.current ?? Date.now())
+      ? buildStreamingMessage(
+          streamingContent,
+          streamingStartTimestampRef.current ?? Date.now()
+        )
       : lastStreamingMessage
     : lastStreamingMessage;
 

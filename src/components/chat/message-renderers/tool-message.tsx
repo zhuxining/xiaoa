@@ -1,9 +1,9 @@
 import type { ToolResultMessage } from "@mariozechner/pi-ai";
 import {
   AlertCircle,
+  CheckCircle,
   ChevronDown,
   ChevronRight,
-  CheckCircle,
   Clock,
   FileText,
   Loader2,

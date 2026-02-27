@@ -9,7 +9,7 @@ import { SkillMenu, type SkillMenuItem } from "./skill-menu";
 const _TRAILING_SLASH_REGEX = /\/$/;
 const _TRAILING_AT_REGEX = /@$/;
 const MAX_HISTORY_SIZE = 50;
-const MAX_INPUT_LENGTH = 128000;
+const MAX_INPUT_LENGTH = 128_000;
 
 interface MessageInputProps {
   className?: string;
@@ -66,7 +66,10 @@ export function MessageInput({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // 上下箭头浏览历史（当输入框为空或在行首/行尾时）
-    if (e.key === "ArrowUp" && (value === "" || textareaRef.current?.selectionStart === 0)) {
+    if (
+      e.key === "ArrowUp" &&
+      (value === "" || textareaRef.current?.selectionStart === 0)
+    ) {
       e.preventDefault();
       if (inputHistory.length > 0) {
         const newIndex = Math.min(historyIndex + 1, inputHistory.length - 1);
@@ -83,7 +86,12 @@ export function MessageInput({
         setHistoryIndex(newIndex);
         setValue(inputHistory[newIndex] ?? "");
       }
-    } else if (e.key === "Enter" && !e.shiftKey && !showSkillMenu && !showFileMenu) {
+    } else if (
+      e.key === "Enter" &&
+      !e.shiftKey &&
+      !showSkillMenu &&
+      !showFileMenu
+    ) {
       e.preventDefault();
       handleSubmit();
     }
@@ -150,7 +158,7 @@ export function MessageInput({
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
-  }, [value]);
+  }, []);
 
   return (
     <div
@@ -191,7 +199,9 @@ export function MessageInput({
             <span className="text-muted-foreground">
               {skills.length > 0 && "输入 / 调用技能，输入 @ 引用文件"}
               {selectedSkill?.argumentHint && (
-                <span className="ml-2">参数提示: {selectedSkill.argumentHint}</span>
+                <span className="ml-2">
+                  参数提示: {selectedSkill.argumentHint}
+                </span>
               )}
             </span>
             <span

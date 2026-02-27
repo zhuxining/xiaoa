@@ -196,10 +196,10 @@ export function SessionList({
                 </p>
               </div>
               <Button
+                className="mt-1"
                 onClick={onSessionCreate}
                 size="sm"
                 variant="secondary"
-                className="mt-1"
               >
                 <Plus className="mr-1 size-4" />
                 创建会话
@@ -220,7 +220,8 @@ export function SessionList({
           <AlertDialogHeader>
             <AlertDialogTitle>确认删除会话？</AlertDialogTitle>
             <AlertDialogDescription>
-              此操作将永久删除会话「{sessionToDelete?.title}」及其所有消息记录，无法恢复。
+              此操作将永久删除会话「{sessionToDelete?.title}
+              」及其所有消息记录，无法恢复。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
