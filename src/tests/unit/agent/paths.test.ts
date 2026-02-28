@@ -16,6 +16,13 @@ vi.mock("electron", () => ({
   },
 }));
 
+// Mock pi-coding-agent SessionManager
+vi.mock("@mariozechner/pi-coding-agent", () => ({
+  SessionManager: {
+    list: vi.fn().mockResolvedValue([]),
+  },
+}));
+
 describe("paths", () => {
   beforeEach(() => {
     mockUserDataPath = "/test/user-data";
@@ -83,24 +90,23 @@ describe("paths", () => {
   });
 
   describe("getSessionFilePath", () => {
-    test("returns correct session file path for workspace", async () => {
+    test("returns new session file path for workspace when session not found", async () => {
       const { getSessionFilePath } = await import("@/agent/paths");
-      expect(getSessionFilePath("ws-123", "session-456")).toBe(
-        join(
-          mockUserDataPath,
-          "workspaces",
-          "ws-123",
-          "sessions",
-          "session-456.jsonl"
-        )
+      const result = await getSessionFilePath("ws-123", "session-456");
+      // 应该包含时间戳和 session ID
+      expect(result).toContain(
+        join(mockUserDataPath, "workspaces", "ws-123", "sessions")
       );
+      expect(result).toContain("session-456");
+      expect(result).toMatch(/\d+_session-456\.jsonl$/);
     });
 
-    test("returns correct session file path for global scope", async () => {
+    test("returns new session file path for global scope when session not found", async () => {
       const { getSessionFilePath } = await import("@/agent/paths");
-      expect(getSessionFilePath(null, "session-789")).toBe(
-        join(mockUserDataPath, "xiaoa", "sessions", "session-789.jsonl")
-      );
+      const result = await getSessionFilePath(null, "session-789");
+      expect(result).toContain(join(mockUserDataPath, "xiaoa", "sessions"));
+      expect(result).toContain("session-789");
+      expect(result).toMatch(/\d+_session-789\.jsonl$/);
     });
   });
 });

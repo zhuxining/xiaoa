@@ -5,8 +5,7 @@ import { expect } from "@playwright/test";
  * 权限对话框组件 Page Object
  */
 export class PermissionDialogComponent {
-  constructor(private readonly page: Page) {}
-
+  private readonly page: Page;
   private readonly selectors = {
     dialog: '[role="alertdialog"]',
     title: '[role="alertdialog"] h2',
@@ -18,6 +17,10 @@ export class PermissionDialogComponent {
     rememberCheckbox: "#remember-in-session",
     rememberLabel: "text=本次会话始终允许",
   };
+
+  constructor(page: Page) {
+    this.page = page;
+  }
 
   /**
    * 等待对话框出现
@@ -68,14 +71,14 @@ export class PermissionDialogComponent {
    * 获取标题
    */
   async getTitle(): Promise<string | null> {
-    return this.page.textContent(this.selectors.title);
+    return await this.page.textContent(this.selectors.title);
   }
 
   /**
    * 获取描述
    */
   async getDescription(): Promise<string | null> {
-    return this.page.textContent(this.selectors.description);
+    return await this.page.textContent(this.selectors.description);
   }
 
   /**
@@ -86,7 +89,7 @@ export class PermissionDialogComponent {
     if ((await element.count()) === 0) {
       return null;
     }
-    return element.textContent();
+    return await element.textContent();
   }
 
   /**

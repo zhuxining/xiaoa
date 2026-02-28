@@ -5,8 +5,7 @@ import { expect } from "@playwright/test";
  * 对话视图组件 Page Object
  */
 export class ChatViewComponent {
-  constructor(private readonly page: Page) {}
-
+  private readonly page: Page;
   private readonly selectors = {
     container: '[data-slot="chat-view"]',
     messageList: '[data-slot="agent-message-list"]',
@@ -19,6 +18,10 @@ export class ChatViewComponent {
     toolMessage: '[data-role="tool"]',
     streamingIndicator: ".animate-pulse, [data-streaming=true]",
   };
+
+  constructor(page: Page) {
+    this.page = page;
+  }
 
   /**
    * 等待组件加载
@@ -60,7 +63,7 @@ export class ChatViewComponent {
   /**
    * 获取消息数量
    */
-  async getMessageCount(): Promise<number> {
+  getMessageCount(): Promise<number> {
     return this.page
       .locator('[data-role="user"], [data-role="assistant"]')
       .count();

@@ -5,8 +5,7 @@ import { expect } from "@playwright/test";
  * 会话列表组件 Page Object
  */
 export class SessionListComponent {
-  constructor(private readonly page: Page) {}
-
+  private readonly page: Page;
   private readonly selectors = {
     container: '[data-slot="session-list"]',
     newSessionButton: "button:has-text('新建会话')",
@@ -16,6 +15,10 @@ export class SessionListComponent {
     sessionTitle: ".font-medium",
     messageCount: ".text-xs",
   };
+
+  constructor(page: Page) {
+    this.page = page;
+  }
 
   /**
    * 等待组件加载

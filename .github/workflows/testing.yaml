@@ -7,7 +7,7 @@ on:
 
 jobs:
   # 单元测试
-  tests-unit:
+  unit-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -17,11 +17,44 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Run unit tests
-        run: npm run test:unit
+        run: npm run test:unit -- --coverage
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/lcov.info
+          flags: unit
+          fail_ci_if_error: false
 
-  # E2E 测试 - 多平台支持
-  test-e2e:
-    timeout-minutes: 20
+  # 组件测试
+  component-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm ci
+      - name: Run component tests
+        run: npm run test:component
+
+  # 集成测试
+  integration-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm ci
+      - name: Run integration tests
+        run: npm run test:integration
+
+  # E2E 测试 - 快速冒烟测试（所有 PR）
+  e2e-smoke:
+    needs: [unit-tests]
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -39,53 +72,115 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
 
-      - name: Build application
-        run: npm run make
+      - name: Package application
+        run: npm run package
 
       - name: Run Smoke Tests
         run: npx playwright test --project=smoke
         env:
           CI: e2e
-
-      - name: Run Session Tests
-        run: npx playwright test --project=session
-        env:
-          CI: e2e
-
-      - name: Run Chat Tests
-        run: npx playwright test --project=chat
-        env:
-          CI: e2e
-
-      - name: Run Workspace Tests
-        run: npx playwright test --project=workspace
-        env:
-          CI: e2e
-
-      - name: Run Integration Tests
-        run: npx playwright test --project=integration
-        env:
-          CI: e2e
+          XIAOA_MOCK_LLM: true
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-report-${{ matrix.os }}
+          name: smoke-results-${{ matrix.os }}
           path: |
             test-results/
-            playwright-report/
+          retention-days: 7
+
+  # E2E 测试 - 核心功能（所有 PR）
+  e2e-core:
+    needs: [e2e-smoke]
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+        project: [session, chat]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Package application
+        run: npm run package
+
+      - name: Run Tests
+        run: npx playwright test --project=${{ matrix.project }}
+        env:
+          CI: e2e
+          XIAOA_MOCK_LLM: true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.project }}-results-${{ matrix.os }}
+          path: |
+            test-results/
+          retention-days: 7
+
+  # E2E 测试 - 完整测试套件（仅 main 分支）
+  e2e-full:
+    if: github.ref == 'refs/heads/main'
+    needs: [e2e-core]
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+        project: [workspace, skill, knowledge, integration]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Package application
+        run: npm run package
+
+      - name: Run Tests
+        run: npx playwright test --project=${{ matrix.project }}
+        env:
+          CI: e2e
+          XIAOA_MOCK_LLM: true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.project }}-full-results-${{ matrix.os }}
+          path: |
+            test-results/
           retention-days: 7
 
   # E2E 测试结果汇总
-  test-e2e-summary:
-    needs: test-e2e
+  e2e-summary:
+    needs: [e2e-smoke, e2e-core]
     runs-on: ubuntu-latest
     if: always()
     steps:
       - name: Check E2E Tests Status
         run: |
-          if [ "${{ needs.test-e2e.result }}" == "failure" ]; then
-            echo "E2E tests failed on one or more platforms"
+          smoke_result="${{ needs.e2e-smoke.result }}"
+          core_result="${{ needs.e2e-core.result }}"
+
+          if [ "$smoke_result" == "failure" ] || [ "$core_result" == "failure" ]; then
+            echo "E2E tests failed"
             exit 1
           fi
           echo "All E2E tests passed"

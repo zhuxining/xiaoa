@@ -2,11 +2,21 @@
  * Mock 工厂函数
  *
  * 提供测试用的 Mock 对象创建函数。
+ * 重导出增强版 Mock 工厂，保持向后兼容。
  */
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { vi } from "vitest";
 import type { ActiveRun } from "@/agent/run/run-types";
+
+// 重导出增强版 Mock 工厂
+export {
+  createMockAgentSession as createMockAgentSessionEnhanced,
+  createMockSessionResult as createMockSessionResultEnhanced,
+  createMockToolCalls,
+  type MockSessionOptions,
+  type MockToolCall,
+} from "../__mocks__/pi-coding-agent";
 
 /**
  * 创建模拟的 ActiveRun
@@ -50,7 +60,7 @@ export function createMockWorkspaceRun(
 }
 
 /**
- * 创建模拟的 AgentSession
+ * 创建模拟的 AgentSession（简化版，向后兼容）
  */
 export function createMockAgentSession() {
   return {
@@ -74,7 +84,7 @@ export function createMockAgentSession() {
 }
 
 /**
- * 创建模拟的 CreateAgentSessionResult
+ * 创建模拟的 CreateAgentSessionResult（简化版，向后兼容）
  */
 export function createMockSessionResult() {
   const session = createMockAgentSession();

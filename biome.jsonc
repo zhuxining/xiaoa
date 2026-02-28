@@ -51,6 +51,36 @@
           }
         }
       }
+    },
+    {
+      "includes": ["src/tests/**"],
+      "linter": {
+        "rules": {
+          "performance": {
+            "noBarrelFile": "off",
+            "useTopLevelRegex": "off"
+          },
+          "style": {
+            "noParameterProperties": "off",
+            "noNonNullAssertion": "off",
+            "noNestedTernary": "off"
+          },
+          "suspicious": {
+            "noEmptyBlockStatements": "off",
+            "useAwait": "off",
+            "useIterableCallbackReturn": "off"
+          },
+          "correctness": {
+            "noEmptyPattern": "off",
+            "noUnusedVariables": "off",
+            "noUnusedFunctionParameters": "off"
+          },
+          "complexity": {
+            "noForEach": "off",
+            "noExcessiveCognitiveComplexity": "off"
+          }
+        }
+      }
     }
   ],
   "assist": {
